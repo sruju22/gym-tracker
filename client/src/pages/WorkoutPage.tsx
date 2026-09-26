@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Play, Plus, Check, Dumbbell } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useAuthStore } from '../store/authStore';
 import { ExerciseCard } from '../components/workout/ExerciseCard';
 import { CoverageIndicator } from '../components/workout/CoverageIndicator';
 import { AddExerciseSheet } from '../components/workout/AddExerciseSheet';
@@ -8,15 +9,20 @@ import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
-import { Exercise, MuscleGroup, MuscleArea, MuscleGroupConfig } from '../types';
+import { Exercise, MuscleGroupConfig } from '../types';
 
 export const WorkoutPage: React.FC = () => {
+  const { currentUser } = useAuthStore();
+  const userId = currentUser?.id || 'user_srujan';
+
   const {
-    activeSession,
+    getActiveSession,
     startTodayWorkout,
     addExerciseToWorkout,
     cancelWorkout,
   } = useWorkoutStore();
+
+  const activeSession = getActiveSession(userId);
 
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -29,21 +35,21 @@ export const WorkoutPage: React.FC = () => {
       <div className="space-y-4">
         <Header title="Workout Session" subtitle="No active workout" />
 
-        <Card className="text-center py-10 my-4 border-dashed border-slate-800 bg-[#121827]">
-          <div className="w-14 h-14 rounded-2xl bg-sky-950/80 text-sky-400 border border-sky-800/60 flex items-center justify-center mx-auto mb-3 shadow-sm">
+        <Card className="text-center py-10 my-4 border-dashed border-[#272B30] bg-[#14171A]">
+          <div className="w-14 h-14 rounded-2xl bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/40 flex items-center justify-center mx-auto mb-3 shadow-sm">
             <Dumbbell className="w-7 h-7" />
           </div>
-          <h2 className="text-lg font-black text-slate-100 mb-1">Ready to Train?</h2>
-          <p className="text-xs text-slate-400 max-w-xs mx-auto mb-5">
+          <h2 className="text-lg font-black text-[#F5F5F5] mb-1">Ready to Train?</h2>
+          <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto mb-5">
             Launch today's scheduled workout session or create a custom workout.
           </p>
           <Button
             variant="primary"
             size="lg"
             fullWidth
-            onClick={() => startTodayWorkout()}
+            onClick={() => startTodayWorkout(userId)}
           >
-            <Play className="w-5 h-5 mr-2 fill-slate-950 text-slate-950" />
+            <Play className="w-5 h-5 mr-2 fill-[#FFFFFF] text-[#FFFFFF]" />
             <span>START TODAY'S WORKOUT</span>
           </Button>
         </Card>
@@ -62,7 +68,7 @@ export const WorkoutPage: React.FC = () => {
   };
 
   const handleSelectSuggested = (exercise: Exercise) => {
-    addExerciseToWorkout(exercise);
+    addExerciseToWorkout(userId, exercise);
   };
 
   const activeTitle = activeSession.workoutName || (
@@ -78,16 +84,16 @@ export const WorkoutPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 max-w-full overflow-x-hidden">
       {/* Workout Active Header */}
-      <div className="flex items-center justify-between py-2 border-b border-slate-800 sticky top-0 bg-[#090d16]/95 backdrop-blur-md z-20">
+      <div className="flex items-center justify-between py-2 border-b border-[#272B30] sticky top-0 bg-[#0B0D0F]/95 backdrop-blur-md z-20">
         <div>
-          <span className="text-[10px] font-extrabold text-sky-400 uppercase tracking-widest">
+          <span className="text-[10px] font-extrabold text-[#E11D48] uppercase tracking-widest">
             IN PROGRESS
           </span>
-          <h1 className="text-lg font-black text-slate-100 uppercase tracking-tight">
+          <h1 className="text-lg font-black text-[#F5F5F5] uppercase tracking-tight">
             {activeTitle}
           </h1>
           {activeSubtitle && (
-            <div className="text-[11px] font-medium text-slate-400">
+            <div className="text-[11px] font-medium text-[#9CA3AF]">
               {activeSubtitle}
             </div>
           )}
@@ -95,13 +101,13 @@ export const WorkoutPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => cancelWorkout()}
-            className="text-xs font-bold text-rose-400 hover:text-rose-300 px-2 py-1"
+            onClick={() => cancelWorkout(userId)}
+            className="text-xs font-bold text-[#EF4444] hover:text-[#EF4444]/80 px-2 py-1 cursor-pointer"
           >
             Cancel
           </button>
           <Button
-            variant="success"
+            variant="primary"
             size="sm"
             onClick={() => setIsSummaryOpen(true)}
           >
@@ -125,17 +131,17 @@ export const WorkoutPage: React.FC = () => {
             <div key={sec.displayName} className="space-y-2.5">
               {/* Section Title Bar */}
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-black text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-sky-400 shadow-sm shadow-sky-500/50"></span>
+                <h2 className="text-sm font-black text-[#F5F5F5] uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#E11D48] shadow-sm shadow-[#E11D48]/50"></span>
                   <span>{sec.displayName}</span>
-                  <span className="text-xs text-slate-500 font-normal">
+                  <span className="text-xs text-[#6B7280] font-normal">
                     ({exList.length})
                   </span>
                 </h2>
 
                 <button
                   onClick={() => handleOpenAdd(sec)}
-                  className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors"
+                  className="text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Exercise</span>
@@ -162,7 +168,7 @@ export const WorkoutPage: React.FC = () => {
       <AddExerciseSheet
         isOpen={isAddSheetOpen}
         onClose={() => setIsAddSheetOpen(false)}
-        onSelectExercise={addExerciseToWorkout}
+        onSelectExercise={(ex) => addExerciseToWorkout(userId, ex)}
         targetMuscleGroup={targetSectionForAdd?.name}
         targetSubAreas={targetSectionForAdd?.subAreas}
         targetSectionName={targetSectionForAdd?.displayName}

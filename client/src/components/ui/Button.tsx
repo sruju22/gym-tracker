@@ -21,17 +21,17 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variants = {
     primary:
-      'bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold shadow-sm shadow-sky-500/20 active:bg-sky-600',
+      'bg-[#E11D48] hover:bg-[#F43F5E] text-[#FFFFFF] font-extrabold shadow-sm shadow-[#E11D48]/20 active:bg-[#BE123C]',
     secondary:
-      'bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 active:bg-slate-700',
+      'bg-[#1B1F23] hover:bg-[#23282D] text-[#F5F5F5] border border-[#272B30] active:bg-[#2B3137]',
     outline:
-      'border border-slate-700 text-slate-300 hover:bg-slate-800/60 active:bg-slate-800',
+      'border border-[#272B30] text-[#9CA3AF] hover:text-[#F5F5F5] hover:bg-[#1B1F23] active:bg-[#23282D]',
     danger:
-      'bg-rose-950/40 text-rose-400 border border-rose-800/50 hover:bg-rose-900/40 active:bg-rose-900/60',
+      'bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/40 hover:bg-[#EF4444]/25 active:bg-[#EF4444]/35',
     ghost:
-      'bg-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/50',
+      'bg-transparent text-[#9CA3AF] hover:text-[#F5F5F5] hover:bg-[#1B1F23]',
     success:
-      'bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold shadow-sm shadow-sky-500/20',
+      'bg-[#22C55E] hover:bg-[#16A34A] text-[#0B0D0F] font-extrabold shadow-sm shadow-[#22C55E]/20',
   };
 
   const sizes = {

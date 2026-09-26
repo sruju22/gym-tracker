@@ -14,8 +14,8 @@
 html {
   width: 100%;
   max-width: 100vw;
-  background-color: #090d16;
-  color: #f8fafc;
+  background-color: #0B0D0F;
+  color: #F5F5F5;
   color-scheme: dark;
   -webkit-text-size-adjust: 100%;
 }
@@ -23,8 +23,8 @@ html {
 body {
   width: 100%;
   max-width: 100vw;
-  background-color: #090d16;
-  color: #f8fafc;
+  background-color: #0B0D0F;
+  color: #F5F5F5;
   color-scheme: dark;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -34,7 +34,7 @@ body {
 #root {
   width: 100%;
   max-width: 100vw;
-  background-color: #090d16;
+  background-color: #0B0D0F;
 }
 
 /* Responsive Safe Area Utility Classes */

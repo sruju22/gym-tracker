@@ -71,7 +71,8 @@ export interface WorkoutExercise {
 
 export interface PreviousPerformance {
   date: string;
-  sets: { weight: number; reps: number }[];
+  workoutName?: string;
+  sets: { setNumber: number; weight: number; reps: number }[];
   bestWeight: number;
   bestReps: number;
   estimated1RM: number;
@@ -90,6 +91,7 @@ export interface WorkoutSession {
   exercises: WorkoutExercise[];
   totalVolume: number;
   totalSets: number;
+  newPRs?: PersonalRecord[];
 }
 
 // ===== Schedule Types =====
@@ -131,15 +133,46 @@ export interface PersonalRecord {
   exerciseId: string;
   exerciseName: string;
   type: 'max_weight' | 'max_reps' | 'max_1rm' | 'max_volume';
-  value: number;
+  value: number; // Max weight
+  weight: number;
+  reps: number;
+  estimated1RM: number;
+  highestVolume?: number;
   date: string;
   details?: string;
 }
 
-// ===== User Settings =====
+// ===== Fitness Goals =====
+export type GoalType = 'body_weight' | 'exercise_strength';
+
+export interface Goal {
+  id: string;
+  title: string;
+  type: GoalType;
+  exerciseId?: string;
+  exerciseName?: string;
+  startValue: number;
+  currentValue: number;
+  targetValue: number;
+  unit: 'kg' | 'lbs';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ===== User & Auth Types =====
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  currentWeight?: number;
+}
+
 export interface UserSettings {
   weightUnit: 'kg' | 'lbs';
   theme: 'dark' | 'light';
   defaultSetsPerExercise: number;
   rotationWindowDays: number;
 }
+
+

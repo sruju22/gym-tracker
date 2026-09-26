@@ -15,10 +15,10 @@ export const Card: React.FC<CardProps> = ({
   hoverable = false,
   bordered = true,
 }) => {
-  const baseStyle = 'bg-[#121827] rounded-2xl p-4 transition-all duration-150 text-slate-100';
-  const borderStyle = bordered ? 'border border-slate-800/90 shadow-sm' : '';
+  const baseStyle = 'bg-[#14171A] rounded-2xl p-4 transition-all duration-150 text-[#F5F5F5]';
+  const borderStyle = bordered ? 'border border-[#272B30] shadow-sm' : '';
   const hoverStyle = hoverable
-    ? 'hover:border-slate-700 hover:shadow-lg active:scale-[0.99] cursor-pointer'
+    ? 'hover:border-[#383D43] hover:shadow-lg active:scale-[0.99] cursor-pointer'
     : '';
 
   return (

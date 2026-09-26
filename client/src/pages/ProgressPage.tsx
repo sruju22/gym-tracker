@@ -1,112 +1,144 @@
 import React from 'react';
-import { Award, Dumbbell } from 'lucide-react';
+import { Award, Dumbbell, Calendar, Flame } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { useWorkoutStore } from '../store/workoutStore';
-import { formatDateShort } from '../utils/formatters';
+import { useAuthStore } from '../store/authStore';
+import { formatDateShort, formatVolume } from '../utils/formatters';
+import { GoalsList } from '../components/goals/GoalsList';
+import { ProgressionChart } from '../components/progress/ProgressionChart';
 
 export const ProgressPage: React.FC = () => {
-  const { history, personalRecords } = useWorkoutStore();
+  const { currentUser } = useAuthStore();
+  const userId = currentUser?.id || 'user_srujan';
 
-  const totalVolume = history.reduce((acc, h) => acc + h.totalVolume, 0);
-  const totalSets = history.reduce((acc, h) => acc + h.totalSets, 0);
+  const { getUserData, getHistory, getPersonalRecords, getExercises } = useWorkoutStore();
+  const userData = getUserData(userId);
+  const history = getHistory(userId);
+  const personalRecords = getPersonalRecords(userId);
+  const exercises = getExercises(userId);
 
-  // Exercise frequency calculation (Section 23)
-  const frequencyMap: Record<string, number> = {};
-  history.forEach((session) => {
-    session.exercises.forEach((ex) => {
-      frequencyMap[ex.exercise.name] = (frequencyMap[ex.exercise.name] || 0) + 1;
-    });
-  });
+  const totalWorkouts = userData.progressSummary?.totalWorkouts ?? 0;
+  const totalVolume = userData.progressSummary?.totalVolume ?? 0;
+  const totalSets = userData.progressSummary?.totalSets ?? 0;
 
-  const sortedFrequency = Object.entries(frequencyMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  // Exercise frequency from MongoDB progressSummary API source of truth
+  const sortedFrequency: [string, number][] = userData.progressSummary?.exerciseFrequency
+    ? userData.progressSummary.exerciseFrequency.slice(0, 5).map((ef) => [ef.exerciseName, ef.count])
+    : [];
 
   return (
-    <div className="w-full max-w-full min-w-0 flex-1 flex flex-col space-y-4 sm:space-y-5">
-      <Header title="Progress & Stats" subtitle="Personal Records & History" />
+    <div className="w-full max-w-full min-w-0 flex-1 flex flex-col space-y-4 sm:space-y-5 pb-16">
+      <Header title="Progress & Stats" subtitle="Personal Records, Analytics & Goals" />
 
       {/* Main Stats Summary Grid */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-        <Card className="bg-[#121827] border-slate-800 p-4">
-          <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-            Total Sessions
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <Card className="bg-[#14171A] border-[#272B30] p-3 sm:p-4 text-center">
+          <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+            Workouts
           </div>
-          <div className="text-3xl font-black text-slate-100">{history.length}</div>
-          <div className="text-[11px] text-sky-400 font-semibold mt-0.5">{totalSets} total sets</div>
+          <div className="text-2xl sm:text-3xl font-black text-[#F5F5F5]">{totalWorkouts}</div>
+          <div className="text-[10px] sm:text-[11px] text-[#E11D48] font-semibold mt-0.5">{totalSets} sets</div>
         </Card>
 
-        <Card className="bg-[#121827] border-slate-800 p-4">
-          <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-            Volume Lifted
+        <Card className="bg-[#14171A] border-[#272B30] p-3 sm:p-4 text-center">
+          <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+            Volume
           </div>
-          <div className="text-3xl font-black text-sky-400">
-            {Math.round(totalVolume / 1000)}k <span className="text-sm font-normal text-slate-400">kg</span>
+          <div className="text-2xl sm:text-3xl font-black text-[#E11D48]">
+            {formatVolume(totalVolume)} <span className="text-xs font-normal text-[#9CA3AF]">kg</span>
           </div>
-          <div className="text-[11px] text-slate-400 font-medium mt-0.5">Lifetime total</div>
+          <div className="text-[10px] sm:text-[11px] text-[#9CA3AF] font-medium mt-0.5">Total volume</div>
+        </Card>
+
+        <Card className="bg-[#14171A] border-[#272B30] p-3 sm:p-4 text-center">
+          <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+            PRs Hit
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-[#F5F5F5]">{personalRecords.length}</div>
+          <div className="text-[10px] sm:text-[11px] text-amber-400 font-semibold mt-0.5">Records</div>
         </Card>
       </div>
 
-      {/* Personal Records (PR) Wall (Section 18) */}
-      <Card className="flex-1 flex flex-col justify-between bg-[#121827] border-slate-800 p-4 sm:p-5 rounded-2xl min-h-0">
+      {/* Fitness Goals Section */}
+      <GoalsList />
+
+      {/* Progression Graphs & Analytics */}
+      <ProgressionChart history={history} exercises={exercises} />
+
+      {/* Personal Records (PR) Wall */}
+      <Card className="flex-1 flex flex-col justify-between bg-[#14171A] border-[#272B30] p-4 sm:p-5 rounded-2xl min-h-0">
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
               <Award className="w-4 h-4 text-amber-400" />
-              <h3 className="text-xs sm:text-sm font-bold text-slate-100 uppercase tracking-wide">
-                Personal Records
+              <h3 className="text-xs sm:text-sm font-bold text-[#F5F5F5] uppercase tracking-wide">
+                Personal Records ({personalRecords.length})
               </h3>
             </div>
-            <Badge variant="warning">{personalRecords.length} Hit</Badge>
+            <Badge variant="warning">Best Lifts</Badge>
           </div>
 
           <div className="space-y-2">
             {personalRecords.map((pr) => (
               <div
                 key={pr.id}
-                className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between"
+                className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 flex items-center justify-between"
               >
                 <div>
-                  <div className="text-xs font-black text-slate-100">{pr.exerciseName}</div>
-                  <div className="text-[11px] text-amber-400 font-semibold">{pr.details}</div>
+                  <div className="text-xs font-black text-[#F5F5F5]">{pr.exerciseName}</div>
+                  <div className="text-[11px] text-amber-400 font-semibold">
+                    {pr.weight} kg × {pr.reps} reps <span className="text-[#9CA3AF] font-normal">(Est. 1RM {pr.estimated1RM} kg)</span>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-extrabold text-sky-400">{pr.value} kg</div>
-                  <div className="text-[10px] text-slate-500">{formatDateShort(pr.date)}</div>
+                  <div className="text-sm font-extrabold text-[#E11D48]">{pr.weight} kg</div>
+                  <div className="text-[10px] text-[#6B7280]">{formatDateShort(pr.date)}</div>
                 </div>
               </div>
             ))}
+
+            {personalRecords.length === 0 && (
+              <div className="text-center py-6 text-xs text-[#9CA3AF] italic">
+                No Personal Records recorded yet. Complete a workout to log PRs!
+              </div>
+            )}
           </div>
         </div>
       </Card>
 
-      {/* Exercise Frequency List (Section 23) */}
-      <Card className="flex-1 flex flex-col justify-between bg-[#121827] border-slate-800 p-4 sm:p-5 rounded-2xl min-h-0">
+      {/* Exercise Frequency List */}
+      <Card className="flex-1 flex flex-col justify-between bg-[#14171A] border-[#272B30] p-4 sm:p-5 rounded-2xl min-h-0">
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
-              <Dumbbell className="w-4 h-4 text-sky-400" />
-              <h3 className="text-xs sm:text-sm font-bold text-slate-100 uppercase tracking-wide">
-                Monthly Frequency
+              <Dumbbell className="w-4 h-4 text-[#E11D48]" />
+              <h3 className="text-xs sm:text-sm font-bold text-[#F5F5F5] uppercase tracking-wide">
+                Top Exercised Muscles
               </h3>
             </div>
-            <span className="text-xs text-slate-500 font-medium">Top 5</span>
+            <span className="text-xs text-[#6B7280] font-medium">Top 5</span>
           </div>
 
           <div className="space-y-2">
             {sortedFrequency.map(([name, count]) => (
               <div
                 key={name}
-                className="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between"
+                className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-2.5 flex items-center justify-between"
               >
-                <span className="text-xs font-semibold text-slate-200">{name}</span>
-                <span className="text-xs font-black bg-sky-950/80 text-sky-400 border border-sky-800/60 px-2.5 py-0.5 rounded-md">
+                <span className="text-xs font-semibold text-[#F5F5F5]">{name}</span>
+                <span className="text-xs font-black bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/40 px-2.5 py-0.5 rounded-md">
                   {count} sessions
                 </span>
               </div>
             ))}
+
+            {sortedFrequency.length === 0 && (
+              <div className="text-center py-6 text-xs text-[#9CA3AF] italic">
+                No exercise stats yet.
+              </div>
+            )}
           </div>
         </div>
       </Card>

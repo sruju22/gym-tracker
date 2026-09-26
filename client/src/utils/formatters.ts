@@ -18,3 +18,12 @@ export function formatDateShort(dateString: string): string {
 export function formatNumber(num: number): string {
   return num.toLocaleString();
 }
+
+export function formatVolume(volume: number): string {
+  if (volume < 1000) {
+    return `${Math.round(volume)}`;
+  }
+  const inK = volume / 1000;
+  const formatted = parseFloat(inK.toFixed(2)).toString();
+  return `${formatted}k`;
+}

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Check, AlertTriangle } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { MuscleGroup, MuscleArea } from '../../types';
 import { Card } from '../ui/Card';
 import { useWorkoutStore } from '../../store/workoutStore';
+import { useAuthStore } from '../../store/authStore';
 import { calculateMuscleCoverage } from '../../utils/coverage';
 
 interface CoverageIndicatorProps {
@@ -16,7 +17,11 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
   sectionTitle,
   subAreas,
 }) => {
-  const { activeSession } = useWorkoutStore();
+  const { currentUser } = useAuthStore();
+  const userId = currentUser?.id || 'user_srujan';
+
+  const { getActiveSession } = useWorkoutStore();
+  const activeSession = getActiveSession(userId);
 
   if (!activeSession) return null;
 
@@ -26,12 +31,12 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
   const displayTitle = sectionTitle || muscleGroup;
 
   return (
-    <Card className="mb-3 border border-slate-800 bg-slate-900/60 p-3">
+    <Card className="mb-3 border border-[#272B30] bg-[#1B1F23]/80 p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+        <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
           {displayTitle} Target Areas
         </span>
-        <span className="text-xs font-semibold text-slate-400">
+        <span className="text-xs font-semibold text-[#6B7280]">
           {coverage.coveredAreas}/{coverage.totalAreas} Covered
         </span>
       </div>
@@ -41,16 +46,16 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
         {coverage.areas.map((item) => (
           <div
             key={item.area}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
               item.covered
-                ? 'bg-sky-950/80 text-sky-300 border-sky-800/60'
-                : 'bg-slate-900 text-slate-500 border-slate-800'
+                ? 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/40 font-extrabold'
+                : 'bg-[#14171A] text-[#6B7280] border-[#272B30]'
             }`}
           >
             {item.covered ? (
-              <Check className="w-3.5 h-3.5 text-sky-400 stroke-[3]" />
+              <Check className="w-3.5 h-3.5 text-[#22C55E] stroke-[3]" />
             ) : (
-              <span className="w-2 h-2 rounded-full bg-slate-600"></span>
+              <X className="w-3 h-3 text-[#6B7280]" />
             )}
             <span>{item.displayName}</span>
           </div>

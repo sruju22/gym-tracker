@@ -44,7 +44,7 @@ export const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
         placeholder="Search exercises or sub-muscles..."
       />
 
-      {/* Horizontal scrolling Muscle Chips — ONLY this row scrolls, page stays locked */}
+      {/* Horizontal scrolling Muscle Chips */}
       <div className="w-full max-w-full min-w-0 flex gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none">
         <FilterChip
           label="All Muscles"
@@ -67,10 +67,10 @@ export const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           <button
             key={eq}
             onClick={() => onEquipmentChange(eq)}
-            className={`px-2.5 py-1 rounded-lg font-bold capitalize whitespace-nowrap flex-shrink-0 transition-all border ${
+            className={`px-2.5 py-1 rounded-lg font-bold capitalize whitespace-nowrap flex-shrink-0 transition-all cursor-pointer border ${
               selectedEquipment === eq
-                ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-sm shadow-sky-500/20'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-[#E11D48] text-[#FFFFFF] border-[#F43F5E] font-extrabold shadow-sm shadow-[#E11D48]/20'
+                : 'bg-[#1B1F23] text-[#9CA3AF] border border-[#272B30] hover:bg-[#23282D] hover:text-[#F5F5F5]'
             }`}
           >
             {eq === 'all' ? 'All Equipment' : eq.replace('_', ' ')}

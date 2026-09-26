@@ -12,7 +12,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   progress,
   size = 64,
   strokeWidth = 6,
-  color = '#0ea5e9',
+  color = '#E11D48',
   children,
 }) => {
   const center = size / 2;
@@ -27,7 +27,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           cx={center}
           cy={center}
           r={radius}
-          stroke="#1e293b"
+          stroke="#272B30"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
