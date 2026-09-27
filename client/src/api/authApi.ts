@@ -19,6 +19,30 @@ export const setStoredToken = (token: string | null): void => {
   }
 };
 
+async function handleResponse<T>(response: Response, defaultErrorMessage: string): Promise<T> {
+  const contentType = response.headers.get('content-type');
+  const isJson = contentType && contentType.includes('application/json');
+  let data: any = null;
+  if (isJson) {
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+  }
+
+  if (!response.ok) {
+    const errorMessage = data?.error || data?.message || (response.status ? `Server error (${response.status})` : defaultErrorMessage);
+    throw new Error(errorMessage);
+  }
+
+  if (!data) {
+    throw new Error('Unexpected empty or non-JSON response from server');
+  }
+
+  return data as T;
+}
+
 export async function registerUser(name: string, email: string, password: string): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
@@ -28,13 +52,7 @@ export async function registerUser(name: string, email: string, password: string
     body: JSON.stringify({ name, email, password }),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to register account');
-  }
-
-  return data;
+  return handleResponse<AuthResponse>(response, 'Failed to register account');
 }
 
 export async function loginUser(email: string, password: string): Promise<AuthResponse> {
@@ -46,13 +64,7 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
     body: JSON.stringify({ email, password }),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to log in');
-  }
-
-  return data;
+  return handleResponse<AuthResponse>(response, 'Failed to log in');
 }
 
 export async function getMe(token: string): Promise<{ user: User }> {
@@ -64,11 +76,5 @@ export async function getMe(token: string): Promise<{ user: User }> {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to restore session');
-  }
-
-  return data;
+  return handleResponse<{ user: User }>(response, 'Failed to restore session');
 }
