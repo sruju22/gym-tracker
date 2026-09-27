@@ -6,7 +6,6 @@ export interface ProgressSummaryResponse {
   totalVolume: number;
   totalSets: number;
   totalWorkouts: number;
-  exerciseFrequency: Array<{ exerciseName: string; count: number }>;
 }
 
 export interface VolumeTrendPoint {

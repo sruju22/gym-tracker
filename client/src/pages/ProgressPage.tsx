@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Dumbbell, Calendar, Flame } from 'lucide-react';
+import { Award } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -22,11 +22,6 @@ export const ProgressPage: React.FC = () => {
   const totalWorkouts = userData.progressSummary?.totalWorkouts ?? 0;
   const totalVolume = userData.progressSummary?.totalVolume ?? 0;
   const totalSets = userData.progressSummary?.totalSets ?? 0;
-
-  // Exercise frequency from MongoDB progressSummary API source of truth
-  const sortedFrequency: [string, number][] = userData.progressSummary?.exerciseFrequency
-    ? userData.progressSummary.exerciseFrequency.slice(0, 5).map((ef) => [ef.exerciseName, ef.count])
-    : [];
 
   return (
     <div className="w-full max-w-full min-w-0 flex-1 flex flex-col space-y-4 sm:space-y-5 pb-16">
@@ -102,41 +97,6 @@ export const ProgressPage: React.FC = () => {
             {personalRecords.length === 0 && (
               <div className="text-center py-6 text-xs text-[#9CA3AF] italic">
                 No Personal Records recorded yet. Complete a workout to log PRs!
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Exercise Frequency List */}
-      <Card className="flex-1 flex flex-col justify-between bg-[#14171A] border-[#272B30] p-4 sm:p-5 rounded-2xl min-h-0">
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1.5">
-              <Dumbbell className="w-4 h-4 text-[#E11D48]" />
-              <h3 className="text-xs sm:text-sm font-bold text-[#F5F5F5] uppercase tracking-wide">
-                Top Exercised Muscles
-              </h3>
-            </div>
-            <span className="text-xs text-[#6B7280] font-medium">Top 5</span>
-          </div>
-
-          <div className="space-y-2">
-            {sortedFrequency.map(([name, count]) => (
-              <div
-                key={name}
-                className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-2.5 flex items-center justify-between"
-              >
-                <span className="text-xs font-semibold text-[#F5F5F5]">{name}</span>
-                <span className="text-xs font-black bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/40 px-2.5 py-0.5 rounded-md">
-                  {count} sessions
-                </span>
-              </div>
-            ))}
-
-            {sortedFrequency.length === 0 && (
-              <div className="text-center py-6 text-xs text-[#9CA3AF] italic">
-                No exercise stats yet.
               </div>
             )}
           </div>

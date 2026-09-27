@@ -239,7 +239,7 @@ export const getExerciseProgress = async (req: AuthenticatedRequest, res: Respon
 };
 
 /**
- * @desc    Get progress summary metrics (total volume, total sets, exercise frequency)
+ * @desc    Get progress summary metrics (total volume, total sets, total workouts)
  * @route   GET /api/progress/summary
  * @access  Private (JWT protected)
  */
@@ -258,22 +258,10 @@ export const getProgressSummary = async (req: AuthenticatedRequest, res: Respons
     const totalVolume = completedSessions.reduce((acc, s) => acc + (s.totalVolume || 0), 0);
     const totalSets = completedSessions.reduce((acc, s) => acc + (s.totalSets || 0), 0);
 
-    const frequencyMap: Record<string, number> = {};
-    completedSessions.forEach((session) => {
-      session.exercises.forEach((ex) => {
-        frequencyMap[ex.exerciseName] = (frequencyMap[ex.exerciseName] || 0) + 1;
-      });
-    });
-
-    const exerciseFrequency = Object.entries(frequencyMap)
-      .map(([name, count]) => ({ exerciseName: name, count }))
-      .sort((a, b) => b.count - a.count);
-
     res.status(200).json({
       totalVolume,
       totalSets,
       totalWorkouts: completedSessions.length,
-      exerciseFrequency,
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to fetch progress summary', details: error.message });
