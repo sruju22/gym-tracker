@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Header } from '../components/layout/Header';
 import { TodayCard } from '../components/home/TodayCard';
 import { WeeklyOverview } from '../components/home/WeeklyOverview';
-import { RecentWorkout } from '../components/home/RecentWorkout';
 import { EditPlanModal } from '../components/plan/EditPlanModal';
 
 export const HomePage: React.FC = () => {
@@ -18,9 +17,6 @@ export const HomePage: React.FC = () => {
 
       {/* 3. Weekly Schedule Overview */}
       <WeeklyOverview onOpenEditPlan={() => setIsEditPlanOpen(true)} />
-
-      {/* 4. Recent Workout */}
-      <RecentWorkout />
 
       {/* Workout Plan Customization Modal */}
       <EditPlanModal isOpen={isEditPlanOpen} onClose={() => setIsEditPlanOpen(false)} />
