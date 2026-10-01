@@ -117,6 +117,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     );
   }
 
+  // Check if at least one set has valid weight and reps (> 0)
+  const hasValidSet = sets.some(
+    (s) => s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
+  );
+  const isDoneEnabled = Boolean(completed) || hasValidSet;
+
   // EXPANDED ACTIVE VIEW
   return (
     <Card className={`mb-3 border transition-all ${completed ? 'border-[#22C55E]/50 bg-[#14171A] shadow-md' : 'border-[#E11D48]/50 bg-[#14171A] shadow-md'}`}>
@@ -269,17 +275,21 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         <Button
           variant="primary"
           size="sm"
+          disabled={!isDoneEnabled}
           onClick={(e) => {
             e.stopPropagation();
+            if (!isDoneEnabled) return;
             toggleExerciseCompleted(userId, workoutExercise.id);
             if (onDone) {
               onDone();
             }
           }}
-          className={`font-black px-4 cursor-pointer min-h-[38px] ${
+          className={`font-black px-4 min-h-[38px] transition-all ${
             completed
-              ? 'bg-[#22C55E] hover:bg-[#16A34A] text-[#0B0D0F]'
-              : 'bg-[#E11D48] hover:bg-[#F43F5E] text-[#FFFFFF]'
+              ? 'bg-[#22C55E] hover:bg-[#16A34A] text-[#0B0D0F] cursor-pointer'
+              : isDoneEnabled
+              ? 'bg-[#E11D48] hover:bg-[#F43F5E] text-[#FFFFFF] cursor-pointer'
+              : 'bg-[#272B30] text-[#6B7280] opacity-50 cursor-not-allowed border border-[#32373E]'
           }`}
         >
           <Check className="w-4 h-4 mr-1 stroke-[3]" />

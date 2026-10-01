@@ -36,12 +36,19 @@ export const WorkoutPage: React.FC = () => {
   );
 
   React.useEffect(() => {
-    if (activeSession && activeSession.exercises.length > 0 && !activeExerciseId) {
-      const firstIncomplete = activeSession.exercises.find((ex) => !ex.completed);
-      if (firstIncomplete) {
-        setActiveExerciseId(firstIncomplete.id);
-      } else {
-        setActiveExerciseId(activeSession.exercises[0].id);
+    if (activeSession && activeSession.exercises.length > 0) {
+      const exists = activeSession.exercises.some((ex) => ex.id === activeExerciseId);
+      if (!activeExerciseId || !exists) {
+        const firstIncomplete = activeSession.exercises.find((ex) => !ex.completed);
+        if (firstIncomplete) {
+          setActiveExerciseId(firstIncomplete.id);
+        } else {
+          setActiveExerciseId(activeSession.exercises[0].id);
+        }
+      }
+    } else if (activeSession && activeSession.exercises.length === 0) {
+      if (activeExerciseId !== null) {
+        setActiveExerciseId(null);
       }
     }
   }, [activeSession, activeExerciseId]);
