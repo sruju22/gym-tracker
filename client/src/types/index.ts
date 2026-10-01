@@ -67,6 +67,7 @@ export interface WorkoutExercise {
   sets: WorkoutSet[];
   notes: string;
   previousPerformance?: PreviousPerformance;
+  completed?: boolean;
 }
 
 export interface PreviousPerformance {

@@ -35,6 +35,39 @@ export const WorkoutPage: React.FC = () => {
     undefined
   );
 
+  React.useEffect(() => {
+    if (activeSession && activeSession.exercises.length > 0 && !activeExerciseId) {
+      const firstIncomplete = activeSession.exercises.find((ex) => !ex.completed);
+      if (firstIncomplete) {
+        setActiveExerciseId(firstIncomplete.id);
+      } else {
+        setActiveExerciseId(activeSession.exercises[0].id);
+      }
+    }
+  }, [activeSession, activeExerciseId]);
+
+  const handleExerciseDone = (currentExId: string) => {
+    if (!activeSession) return;
+    const currentIdx = activeSession.exercises.findIndex(
+      (ex) => ex.id === currentExId || ex.exerciseId === currentExId
+    );
+
+    const remainingInorder = activeSession.exercises
+      .slice(currentIdx + 1)
+      .find((ex) => !ex.completed && ex.id !== currentExId);
+
+    const firstIncomplete = activeSession.exercises.find(
+      (ex) => !ex.completed && ex.id !== currentExId
+    );
+
+    const nextTarget = remainingInorder || firstIncomplete;
+    if (nextTarget) {
+      setActiveExerciseId(nextTarget.id);
+    } else {
+      setActiveExerciseId(null);
+    }
+  };
+
   if (!activeSession) {
     return (
       <div className="space-y-4">
@@ -172,12 +205,39 @@ export const WorkoutPage: React.FC = () => {
                   onToggleExpand={() =>
                     setActiveExerciseId(activeExerciseId === workEx.id ? null : workEx.id)
                   }
+                  onDone={() => handleExerciseDone(workEx.id)}
                 />
               ))}
             </div>
           );
         })}
       </div>
+
+      {/* Workout Completion Indication Banner */}
+      {activeSession.exercises.length > 0 &&
+        activeSession.exercises.every((ex) => ex.completed) && (
+          <div className="bg-[#22C55E]/10 border border-[#22C55E]/40 rounded-2xl p-5 text-center space-y-2.5 my-4">
+            <div className="w-11 h-11 rounded-full bg-[#22C55E] text-[#0B0D0F] flex items-center justify-center mx-auto shadow-sm shadow-[#22C55E]/40">
+              <Check className="w-6 h-6 stroke-[3]" />
+            </div>
+            <h3 className="text-sm font-black text-[#F5F5F5] uppercase tracking-wide">
+              All Exercises Completed!
+            </h3>
+            <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto leading-relaxed">
+              Great job! Tap Finish below to save your workout and view your total volume & PR summary.
+            </p>
+            <Button
+              variant="primary"
+              size="md"
+              fullWidth
+              onClick={() => setIsSummaryOpen(true)}
+              className="bg-[#22C55E] hover:bg-[#16A34A] text-[#0B0D0F] font-black min-h-[46px] mt-1"
+            >
+              <Check className="w-4 h-4 mr-1.5 stroke-[3]" />
+              <span>FINISH & SAVE WORKOUT</span>
+            </Button>
+          </div>
+        )}
 
       {/* Action to Add New Muscle / Workout Section */}
       <div className="pt-2">

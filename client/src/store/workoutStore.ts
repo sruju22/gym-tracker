@@ -73,6 +73,7 @@ interface WorkoutStore {
   removeSetFromExercise: (userId: string, exerciseId: string, setIndex: number) => void;
   addExerciseToWorkout: (userId: string, exercise: Exercise) => void;
   removeExerciseFromWorkout: (userId: string, exerciseId: string) => void;
+  toggleExerciseCompleted: (userId: string, exerciseId: string) => void;
   updateExerciseNotes: (userId: string, exerciseId: string, notes: string) => void;
   finishWorkout: (userId: string) => void;
   cancelWorkout: (userId: string) => void;
@@ -801,6 +802,40 @@ export const useWorkoutStore = create<WorkoutStore>()(
               activeSession: {
                 ...activeSession,
                 exercises: filtered,
+              },
+            },
+          },
+        }));
+      },
+
+      toggleExerciseCompleted: (userId, exerciseId) => {
+        const userData = get().getUserData(userId);
+        const { activeSession } = userData;
+        if (!activeSession) return;
+
+        const updatedExercises = activeSession.exercises.map((ex) => {
+          if (ex.exerciseId === exerciseId || ex.id === exerciseId) {
+            const nextCompleted = !ex.completed;
+            const updatedSets = nextCompleted
+              ? ex.sets.map((s) => {
+                  const isValid = s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0;
+                  return { ...s, completed: s.completed || isValid };
+                })
+              : ex.sets;
+
+            return { ...ex, completed: nextCompleted, sets: updatedSets };
+          }
+          return ex;
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              activeSession: {
+                ...activeSession,
+                exercises: updatedExercises,
               },
             },
           },
