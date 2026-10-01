@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, Trash2, StickyNote, Dumbbell, History, Trophy, Check } from 'lucide-react';
 import { WorkoutExercise } from '../../types';
 import { Card } from '../ui/Card';
@@ -9,6 +9,7 @@ import { getMuscleAreaName } from '../../data/muscleGroups';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatDateShort } from '../../utils/formatters';
+import { calculate1RM } from '../../utils/oneRM';
 
 interface ExerciseCardProps {
   workoutExercise: WorkoutExercise;
@@ -49,6 +50,28 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const prevPerf = getPreviousPerformance(userId, exercise.id);
   const exercisePR = getExercisePR(userId, exercise.id);
 
+  // Compute real-time NEW PR status
+  const isNewPR = useMemo(() => {
+    const validCurrentSets = sets.filter(
+      (s) => s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
+    );
+    if (validCurrentSets.length === 0) return false;
+
+    const maxWeight = Math.max(...validCurrentSets.map((s) => s.weight!));
+    const maxRepSet = validCurrentSets.find((s) => s.weight === maxWeight)!;
+    const currentEst1RM = calculate1RM(maxRepSet.weight!, maxRepSet.reps!);
+
+    if (!exercisePR) {
+      return true;
+    }
+
+    if (maxWeight > exercisePR.weight) return true;
+    if (maxWeight === exercisePR.weight && maxRepSet.reps! > exercisePR.reps) return true;
+    if (currentEst1RM > exercisePR.estimated1RM) return true;
+
+    return false;
+  }, [sets, exercisePR]);
+
   // Compute compact summary string for completed/collapsed exercise
   const validSets = sets.filter((s) => s.weight !== null && s.reps !== null && s.weight > 0 && s.reps > 0);
   const summaryText = validSets.length > 0
@@ -67,8 +90,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <Check className="w-4 h-4 stroke-[3]" />
           </div>
           <div className="min-w-0">
-            <div className="text-xs font-black text-[#F5F5F5] truncate">
-              {exercise.name}
+            <div className="text-xs font-black text-[#F5F5F5] truncate flex items-center gap-1.5">
+              <span>{exercise.name}</span>
+              {isNewPR && (
+                <span className="text-[9px] font-extrabold text-amber-400 bg-amber-400/15 border border-amber-400/40 px-1.5 py-0.2 rounded shrink-0">
+                  🏆 NEW PR
+                </span>
+              )}
             </div>
             {summaryText ? (
               <div className="text-[11px] text-[#22C55E] font-bold truncate mt-0.5">
@@ -176,52 +204,61 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         </div>
       </div>
 
-      {/* PR Badge if available */}
-      {exercisePR && (
-        <div className="mb-2 bg-[#E11D48]/10 border border-[#E11D48]/30 rounded-xl px-3 py-1.5 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5 text-[#E11D48] font-black">
-            <Trophy className="w-3.5 h-3.5" />
-            <span>Personal Record</span>
+      {/* PR & Previous Workout Comparison Panel */}
+      <div className="my-2.5 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-xs space-y-2.5 transition-all">
+        {/* Personal Record Info Row */}
+        <div className="flex items-center justify-between border-b border-[#272B30] pb-2">
+          <div className="flex items-center gap-1.5 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+            <span>PR (Best Lift)</span>
           </div>
-          <div className="text-xs font-bold text-[#F5F5F5]">
-            {exercisePR.weight} kg × {exercisePR.reps} <span className="text-[11px] text-[#9CA3AF] font-normal">(1RM: {exercisePR.estimated1RM} kg)</span>
-          </div>
-        </div>
-      )}
-
-      {/* Previous Workout Comparison Panel */}
-      <div className="my-2 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-xs space-y-2 transition-all">
-        <div className="flex items-center justify-between border-b border-[#272B30] pb-1.5">
-          <div className="flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase tracking-wider text-[11px]">
-            <History className="w-3.5 h-3.5 text-[#E11D48]" />
-            <span>Previous Workout</span>
-          </div>
-          {prevPerf && (
-            <span className="text-[11px] text-[#6B7280] font-medium">
-              {formatDateShort(prevPerf.date)}
+          {isNewPR ? (
+            <span className="text-[10px] font-black text-amber-400 bg-amber-400/15 border border-amber-400/40 px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
+              🏆 NEW PR
             </span>
+          ) : exercisePR ? (
+            <span className="text-xs font-bold text-[#F5F5F5]">
+              {exercisePR.weight} kg × {exercisePR.reps} <span className="text-[11px] text-[#9CA3AF] font-normal">(1RM: {exercisePR.estimated1RM} kg)</span>
+            </span>
+          ) : (
+            <span className="text-[11px] text-[#6B7280] italic">No PR set yet</span>
           )}
         </div>
 
-        {prevPerf && prevPerf.sets && prevPerf.sets.length > 0 ? (
-          <div className="space-y-1 pt-0.5">
-            {prevPerf.sets.map((s, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between text-xs py-1 px-2.5 rounded-lg bg-[#14171A] border border-[#272B30]/80"
-              >
-                <span className="text-[11px] font-bold text-[#6B7280]">Set {s.setNumber}</span>
-                <span className="font-extrabold text-[#F5F5F5]">
-                  {s.weight} kg <span className="text-[#9CA3AF] font-normal">× {s.reps} reps</span>
-                </span>
-              </div>
-            ))}
+        {/* Previous Workout Section */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase tracking-wider text-[11px]">
+              <History className="w-3.5 h-3.5 text-[#E11D48]" />
+              <span>Previous Workout</span>
+            </div>
+            {prevPerf && (
+              <span className="text-[11px] text-[#6B7280] font-medium">
+                {formatDateShort(prevPerf.date)}
+              </span>
+            )}
           </div>
-        ) : (
-          <div className="text-xs text-[#6B7280] italic py-1">
-            No previous workout
-          </div>
-        )}
+
+          {prevPerf && prevPerf.sets && prevPerf.sets.length > 0 ? (
+            <div className="space-y-1 pt-0.5">
+              {prevPerf.sets.map((s, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-xs py-1 px-2.5 rounded-lg bg-[#14171A] border border-[#272B30]/80"
+                >
+                  <span className="text-[11px] font-bold text-[#6B7280]">Set {s.setNumber}</span>
+                  <span className="font-extrabold text-[#F5F5F5]">
+                    {s.weight} kg <span className="text-[#9CA3AF] font-normal">× {s.reps} reps</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-[#6B7280] italic py-0.5">
+              No previous workout
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Set Header */}

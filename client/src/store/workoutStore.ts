@@ -299,12 +299,55 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       getPersonalRecords: (userId: string) => {
         const userData = get().getUserData(userId);
-        return userData.personalRecords || [];
+        const storedPRs = userData.personalRecords || [];
+        if (storedPRs.length > 0) return storedPRs;
+
+        const history = userData.history || [];
+        const prMap = new Map<string, PersonalRecord>();
+
+        history
+          .filter((h) => h.status === 'completed')
+          .forEach((session) => {
+            session.exercises.forEach((ex) => {
+              const completedSets = ex.sets.filter(
+                (s) => s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
+              );
+              completedSets.forEach((s) => {
+                const weight = s.weight!;
+                const reps = s.reps!;
+                const est1RM = calculate1RM(weight, reps);
+                const exId = ex.exerciseId || ex.id;
+                const existing = prMap.get(exId);
+
+                const isBetter =
+                  !existing ||
+                  weight > existing.weight ||
+                  est1RM > existing.estimated1RM ||
+                  (weight === existing.weight && reps > existing.reps);
+
+                if (isBetter) {
+                  prMap.set(exId, {
+                    id: existing ? existing.id : `pr_${exId}`,
+                    exerciseId: exId,
+                    exerciseName: ex.exercise.name,
+                    type: 'max_weight',
+                    value: weight,
+                    weight,
+                    reps,
+                    estimated1RM: est1RM,
+                    date: session.date,
+                  });
+                }
+              });
+            });
+          });
+
+        return Array.from(prMap.values());
       },
 
       getExercisePR: (userId: string, exerciseId: string) => {
         const prs = get().getPersonalRecords(userId);
-        return prs.find((p) => p.exerciseId === exerciseId);
+        return prs.find((p) => p.exerciseId === exerciseId || p.id === exerciseId);
       },
 
       getGoals: (userId: string) => {
