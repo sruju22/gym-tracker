@@ -9,7 +9,9 @@ import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
-import { Exercise, MuscleGroupConfig } from '../types';
+import { Modal } from '../components/ui/Modal';
+import { Exercise, MuscleGroupConfig, MuscleGroup } from '../types';
+import { MUSCLE_GROUPS } from '../data/muscleGroups';
 
 export const WorkoutPage: React.FC = () => {
   const { currentUser } = useAuthStore();
@@ -19,6 +21,7 @@ export const WorkoutPage: React.FC = () => {
     getActiveSession,
     startTodayWorkout,
     addExerciseToWorkout,
+    addMuscleSectionToWorkout,
     cancelWorkout,
   } = useWorkoutStore();
 
@@ -26,6 +29,7 @@ export const WorkoutPage: React.FC = () => {
 
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
   const [targetSectionForAdd, setTargetSectionForAdd] = useState<MuscleGroupConfig | undefined>(
     undefined
   );
@@ -60,7 +64,10 @@ export const WorkoutPage: React.FC = () => {
   // Derive sections list from activeSession.sections or activeSession.muscleGroups
   const sectionsList: MuscleGroupConfig[] = activeSession.sections && activeSession.sections.length > 0
     ? activeSession.sections
-    : activeSession.muscleGroups.map((mg) => ({ name: mg, displayName: mg.toUpperCase() }));
+    : activeSession.muscleGroups.map((mg) => ({
+        name: mg,
+        displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+      }));
 
   const handleOpenAdd = (section?: MuscleGroupConfig) => {
     setTargetSectionForAdd(section);
@@ -164,6 +171,17 @@ export const WorkoutPage: React.FC = () => {
         })}
       </div>
 
+      {/* Action to Add New Muscle / Workout Section */}
+      <div className="pt-2">
+        <button
+          onClick={() => setIsAddSectionModalOpen(true)}
+          className="w-full bg-[#14171A] hover:bg-[#1B1F23] border border-dashed border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-4 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+        >
+          <Plus className="w-4 h-4 text-[#E11D48]" />
+          <span>+ Add Muscle Group</span>
+        </button>
+      </div>
+
       {/* Modals */}
       <AddExerciseSheet
         isOpen={isAddSheetOpen}
@@ -178,6 +196,59 @@ export const WorkoutPage: React.FC = () => {
         isOpen={isSummaryOpen}
         onClose={() => setIsSummaryOpen(false)}
       />
+
+      <Modal
+        isOpen={isAddSectionModalOpen}
+        onClose={() => setIsAddSectionModalOpen(false)}
+        title="Add Muscle Group"
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-[#9CA3AF]">
+            Select a muscle group to add a new section to your current workout.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto pr-1">
+            {Object.values(MUSCLE_GROUPS).map((mg) => {
+              const isAlreadyAdded = sectionsList.some((s) => s.name === mg.id);
+              return (
+                <button
+                  key={mg.id}
+                  disabled={isAlreadyAdded}
+                  onClick={() => {
+                    addMuscleSectionToWorkout(userId, mg.id);
+                    setIsAddSectionModalOpen(false);
+                  }}
+                  className={`p-3 rounded-xl border flex items-center justify-between text-left transition-all ${
+                    isAlreadyAdded
+                      ? 'bg-[#1B1F23]/50 border-[#272B30] opacity-50 cursor-not-allowed'
+                      : 'bg-[#14171A] hover:bg-[#1B1F23] border-[#272B30] hover:border-[#E11D48]/60 cursor-pointer active:scale-[0.98]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-lg">{mg.icon}</span>
+                    <div>
+                      <div className="text-xs font-bold text-[#F5F5F5]">{mg.name}</div>
+                      <div className="text-[10px] text-[#9CA3AF]">
+                        {mg.areas.length} muscle sub-areas
+                      </div>
+                    </div>
+                  </div>
+
+                  {isAlreadyAdded ? (
+                    <span className="text-[10px] font-extrabold text-[#9CA3AF] bg-[#272B30] px-2 py-0.5 rounded-md">
+                      Added
+                    </span>
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-[#1B1F23] border border-[#272B30] text-[#E11D48] flex items-center justify-center font-black text-xs">
+                      +
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

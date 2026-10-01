@@ -3,6 +3,8 @@ import { Goal, GoalType, MuscleGroup } from '../../types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { SearchBar } from '../ui/SearchBar';
+import { MUSCLE_GROUPS } from '../../data/muscleGroups';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -31,12 +33,14 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
   const [title, setTitle] = useState('');
   const [type, setType] = useState<GoalType>('body_weight');
   const [selectedExerciseId, setSelectedExerciseId] = useState('');
+  const [exerciseSearch, setExerciseSearch] = useState('');
   const [startValue, setStartValue] = useState<number | ''>('');
   const [currentValue, setCurrentValue] = useState<number | ''>('');
   const [targetValue, setTargetValue] = useState<number | ''>('');
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
 
   useEffect(() => {
+    setExerciseSearch('');
     if (goal) {
       setTitle(goal.title);
       setType(goal.type);
@@ -60,6 +64,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
 
   const handleTypeChange = (newType: GoalType) => {
     setType(newType);
+    setExerciseSearch('');
     if (newType === 'body_weight') {
       setTitle('Target Body Weight');
       setStartValue(66);
@@ -81,6 +86,10 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
       setTitle(`${ex.name} Target`);
     }
   };
+
+  const filteredExercises = exercises.filter((ex) =>
+    ex.name.toLowerCase().includes(exerciseSearch.toLowerCase().trim())
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,21 +144,49 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
         </div>
 
         {type === 'exercise_strength' && (
-          <div>
-            <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block">
               Target Exercise
             </label>
-            <select
-              value={selectedExerciseId}
-              onChange={(e) => handleExerciseChange(e.target.value)}
-              className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2.5 text-sm font-bold text-[#F5F5F5] focus:outline-none focus:border-[#E11D48]"
-            >
-              {exercises.map((ex) => (
-                <option key={ex.id} value={ex.id}>
-                  {ex.name} ({ex.primaryMuscle})
-                </option>
-              ))}
-            </select>
+            <SearchBar
+              value={exerciseSearch}
+              onChange={setExerciseSearch}
+              placeholder="Search target exercise..."
+            />
+            <div className="max-h-48 overflow-y-auto bg-[#1B1F23] border border-[#272B30] rounded-xl p-1.5 space-y-1">
+              {filteredExercises.length > 0 ? (
+                filteredExercises.map((ex) => {
+                  const isSelected = ex.id === selectedExerciseId;
+                  const muscleMeta = MUSCLE_GROUPS[ex.primaryMuscle as MuscleGroup];
+                  const muscleName = muscleMeta ? muscleMeta.name : ex.primaryMuscle;
+                  return (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() => handleExerciseChange(ex.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#E11D48] text-[#FFFFFF]'
+                          : 'text-[#F5F5F5] hover:bg-[#272B30]'
+                      }`}
+                    >
+                      <span className="truncate pr-2">{ex.name}</span>
+                      <span
+                        className={`text-[11px] capitalize shrink-0 ${
+                          isSelected ? 'text-[#FFFFFF]/80 font-normal' : 'text-[#9CA3AF]'
+                        }`}
+                      >
+                        {muscleName}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-xs text-[#9CA3AF] py-4 text-center font-medium">
+                  No exercises found
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -18,6 +18,7 @@ import {
 } from '../types';
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
+import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getTodayDayOfWeek } from '../utils/formatters';
 import { calculate1RM } from '../utils/oneRM';
 import { fetchWorkoutPlan, updateWorkoutPlanApi, createWorkoutPlanApi } from '../api/workoutPlanApi';
@@ -65,6 +66,7 @@ interface WorkoutStore {
   fetchProgressStats: (userId: string) => Promise<void>;
   startTodayWorkout: (userId: string) => void;
   startCustomWorkout: (userId: string, muscleGroups: MuscleGroup[]) => void;
+  addMuscleSectionToWorkout: (userId: string, muscleGroup: MuscleGroup) => void;
   updateSet: (userId: string, exerciseId: string, setIndex: number, weight: number | null, reps: number | null) => void;
   toggleSetCompleted: (userId: string, exerciseId: string, setIndex: number) => void;
   addSetToExercise: (userId: string, exerciseId: string) => void;
@@ -511,6 +513,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
           date: new Date().toISOString(),
           dayOfWeek: today,
           muscleGroups,
+          sections: muscleGroups.map((mg) => ({
+            name: mg,
+            displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+          })),
           status: 'in_progress',
           startedAt: new Date().toISOString(),
           exercises: [],
@@ -524,6 +530,46 @@ export const useWorkoutStore = create<WorkoutStore>()(
             [userId]: {
               ...state.getUserData(userId),
               activeSession: newSession,
+            },
+          },
+        }));
+      },
+
+      addMuscleSectionToWorkout: (userId: string, muscleGroup: MuscleGroup) => {
+        const userData = get().getUserData(userId);
+        const { activeSession } = userData;
+        if (!activeSession) return;
+
+        const currentSections = activeSession.sections && activeSession.sections.length > 0
+          ? [...activeSession.sections]
+          : activeSession.muscleGroups.map((mg) => ({
+              name: mg,
+              displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+            }));
+
+        if (currentSections.some((s) => s.name === muscleGroup)) return;
+
+        const meta = MUSCLE_GROUPS[muscleGroup];
+        const newSection = {
+          name: muscleGroup,
+          displayName: meta ? meta.name.toUpperCase() : muscleGroup.toUpperCase(),
+        };
+
+        const updatedSections = [...currentSections, newSection];
+        const updatedMuscleGroups = activeSession.muscleGroups.includes(muscleGroup)
+          ? activeSession.muscleGroups
+          : [...activeSession.muscleGroups, muscleGroup];
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              activeSession: {
+                ...activeSession,
+                muscleGroups: updatedMuscleGroups,
+                sections: updatedSections,
+              },
             },
           },
         }));
@@ -699,6 +745,28 @@ export const useWorkoutStore = create<WorkoutStore>()(
           })),
         };
 
+        const currentSections = activeSession.sections && activeSession.sections.length > 0
+          ? [...activeSession.sections]
+          : activeSession.muscleGroups.map((mg) => ({
+              name: mg,
+              displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+            }));
+
+        let updatedSections = currentSections;
+        let updatedMuscleGroups = activeSession.muscleGroups;
+
+        if (!currentSections.some((s) => s.name === exercise.primaryMuscle)) {
+          const meta = MUSCLE_GROUPS[exercise.primaryMuscle];
+          const newSec = {
+            name: exercise.primaryMuscle,
+            displayName: meta ? meta.name.toUpperCase() : exercise.primaryMuscle.toUpperCase(),
+          };
+          updatedSections = [...currentSections, newSec];
+          if (!updatedMuscleGroups.includes(exercise.primaryMuscle)) {
+            updatedMuscleGroups = [...updatedMuscleGroups, exercise.primaryMuscle];
+          }
+        }
+
         set((state) => ({
           userDataMap: {
             ...state.userDataMap,
@@ -706,6 +774,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
               ...state.getUserData(userId),
               activeSession: {
                 ...activeSession,
+                muscleGroups: updatedMuscleGroups,
+                sections: updatedSections,
                 exercises: [...activeSession.exercises, newWorkoutExercise],
                 totalSets: activeSession.totalSets + 3,
               },
