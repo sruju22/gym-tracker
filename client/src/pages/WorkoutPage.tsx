@@ -30,6 +30,7 @@ export const WorkoutPage: React.FC = () => {
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [targetSectionForAdd, setTargetSectionForAdd] = useState<MuscleGroupConfig | undefined>(
     undefined
   );
@@ -164,7 +165,14 @@ export const WorkoutPage: React.FC = () => {
 
               {/* Exercise Cards in this section */}
               {exList.map((workEx) => (
-                <ExerciseCard key={workEx.id} workoutExercise={workEx} />
+                <ExerciseCard
+                  key={workEx.id}
+                  workoutExercise={workEx}
+                  isExpanded={activeExerciseId === workEx.id}
+                  onToggleExpand={() =>
+                    setActiveExerciseId(activeExerciseId === workEx.id ? null : workEx.id)
+                  }
+                />
               ))}
             </div>
           );

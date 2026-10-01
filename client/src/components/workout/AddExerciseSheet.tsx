@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dumbbell } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { SearchBar } from '../ui/SearchBar';
@@ -6,7 +6,7 @@ import { FilterChip } from '../ui/FilterChip';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Exercise, MuscleGroup, MuscleArea, Equipment, ExerciseType } from '../../types';
-import { MUSCLE_GROUPS } from '../../data/muscleGroups';
+import { MUSCLE_GROUPS, getMuscleAreaName } from '../../data/muscleGroups';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -37,27 +37,41 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | 'all'>(
     targetMuscleGroup || 'all'
   );
+  const [selectedSubArea, setSelectedSubArea] = useState<MuscleArea | 'all'>('all');
   const [showCreateCustom, setShowCreateCustom] = useState(false);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedMuscle(targetMuscleGroup || 'all');
+      setSelectedSubArea('all');
+      setSearch('');
+    }
+  }, [isOpen, targetMuscleGroup]);
+
   // Custom Exercise Form state
   const [customName, setCustomName] = useState('');
-  const [customMuscle, setCustomMuscle] = useState<MuscleGroup>('chest');
+  const [customMuscle, setCustomMuscle] = useState<MuscleGroup>(targetMuscleGroup || 'chest');
   const [customEquipment, setCustomEquipment] = useState<Equipment>('dumbbell');
   const [customType, setCustomType] = useState<ExerciseType>('isolation');
   const [customArea, setCustomArea] = useState<MuscleArea>('mid_chest');
 
   const filteredExercises = exercises.filter((ex) => {
-    const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase().trim());
 
     let matchesMuscle = true;
-    if (targetSubAreas && targetSubAreas.length > 0) {
-      matchesMuscle = ex.muscleAreaEmphasis.some((area) => targetSubAreas.includes(area));
-    } else if (selectedMuscle !== 'all') {
-      matchesMuscle = ex.primaryMuscle === selectedMuscle;
+    if (selectedMuscle !== 'all') {
+      matchesMuscle =
+        ex.primaryMuscle === selectedMuscle ||
+        (ex.secondaryMuscles && ex.secondaryMuscles.includes(selectedMuscle));
     }
 
-    return matchesSearch && matchesMuscle;
+    let matchesSubArea = true;
+    if (selectedSubArea !== 'all') {
+      matchesSubArea = ex.muscleAreaEmphasis.includes(selectedSubArea);
+    }
+
+    return matchesSearch && matchesMuscle && matchesSubArea;
   });
 
   const handleCreateCustomSubmit = (e: React.FormEvent) => {
@@ -89,17 +103,42 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
             <FilterChip
               label="All Muscles"
               active={selectedMuscle === 'all'}
-              onClick={() => setSelectedMuscle('all')}
+              onClick={() => {
+                setSelectedMuscle('all');
+                setSelectedSubArea('all');
+              }}
             />
             {Object.values(MUSCLE_GROUPS).map((mg) => (
               <FilterChip
                 key={mg.id}
                 label={mg.name}
                 active={selectedMuscle === mg.id}
-                onClick={() => setSelectedMuscle(mg.id)}
+                onClick={() => {
+                  setSelectedMuscle(mg.id);
+                  setSelectedSubArea('all');
+                }}
               />
             ))}
           </div>
+
+          {/* Sub-area / Muscle Head filter chips */}
+          {selectedMuscle !== 'all' && MUSCLE_GROUPS[selectedMuscle]?.areas && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar border-t border-[#272B30]">
+              <FilterChip
+                label="All Target Areas"
+                active={selectedSubArea === 'all'}
+                onClick={() => setSelectedSubArea('all')}
+              />
+              {MUSCLE_GROUPS[selectedMuscle].areas.map((area) => (
+                <FilterChip
+                  key={area.id}
+                  label={area.name}
+                  active={selectedSubArea === area.id}
+                  onClick={() => setSelectedSubArea(area.id)}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Action to trigger Create Custom Exercise */}
           <button
@@ -119,42 +158,48 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
           {/* Exercises List */}
           <div className="space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">
-            {filteredExercises.map((ex) => (
-              <div
-                key={ex.id}
-                onClick={() => {
-                  onSelectExercise(ex);
-                  onClose();
-                }}
-                className="bg-[#14171A] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
-              >
-                <div className="flex items-center gap-3">
-                  {!imgErrors[ex.id] ? (
-                    <img
-                      src={ex.imageUrl}
-                      alt={ex.name}
-                      loading="lazy"
-                      className="w-10 h-10 rounded-lg object-cover bg-[#1B1F23] border border-[#272B30]"
-                      onError={() => setImgErrors((prev) => ({ ...prev, [ex.id]: true }))}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-[#1B1F23] border border-[#272B30] flex items-center justify-center text-[#6B7280]">
-                      <Dumbbell className="w-4 h-4 opacity-40" />
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-xs font-bold text-[#F5F5F5]">{ex.name}</div>
-                    <div className="text-[11px] text-[#9CA3AF] capitalize">
-                      {ex.primaryMuscle} • {ex.muscleAreaEmphasis.map((area) => area.replace(/_/g, ' ')).join(', ')} • {ex.equipment}
+            {filteredExercises.length > 0 ? (
+              filteredExercises.map((ex) => (
+                <div
+                  key={ex.id}
+                  onClick={() => {
+                    onSelectExercise(ex);
+                    onClose();
+                  }}
+                  className="bg-[#14171A] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-3">
+                    {!imgErrors[ex.id] ? (
+                      <img
+                        src={ex.imageUrl}
+                        alt={ex.name}
+                        loading="lazy"
+                        className="w-10 h-10 rounded-lg object-cover bg-[#1B1F23] border border-[#272B30]"
+                        onError={() => setImgErrors((prev) => ({ ...prev, [ex.id]: true }))}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-[#1B1F23] border border-[#272B30] flex items-center justify-center text-[#6B7280]">
+                        <Dumbbell className="w-4 h-4 opacity-40" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-xs font-bold text-[#F5F5F5]">{ex.name}</div>
+                      <div className="text-[11px] text-[#9CA3AF] capitalize">
+                        {ex.primaryMuscle} • {ex.muscleAreaEmphasis.map((area) => getMuscleAreaName(area)).join(', ')} • {ex.equipment}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="w-7 h-7 rounded-full bg-[#1B1F23] border border-[#272B30] text-[#E11D48] flex items-center justify-center font-black text-xs">
-                  +
+                  <div className="w-7 h-7 rounded-full bg-[#1B1F23] border border-[#272B30] text-[#E11D48] flex items-center justify-center font-black text-xs">
+                    +
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-xs text-[#9CA3AF] py-6 text-center font-medium">
+                No matching exercises found for this muscle section.
               </div>
-            ))}
+            )}
           </div>
         </div>
       ) : (
