@@ -14,7 +14,7 @@
       "Lie down on the floor and secure your feet. Your legs should be bent at the knees.",
       "Place your hands behind or to the side of your head. You will begin with your back on the ground. This will be your starting position.",
       "Flex your hips and spine to raise your torso toward your knees.",
-      "At the top of the contraction your torso should be perpendicular to the ground. Reverse the motion, going only \u00be of the way down.",
+      "At the top of the contraction your torso should be perpendicular to the ground. Reverse the motion, going only ¾ of the way down.",
       "Repeat for the recommended amount of repetitions."
     ],
     "imageUrl": "/exercises/3_4_Sit-Up/0.jpg",
@@ -524,7 +524,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "kettlebell",
     "exerciseType": "isolation",
@@ -556,7 +557,8 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -1662,7 +1664,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -2423,7 +2426,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -2449,9 +2453,12 @@
     "id": "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
     "name": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
     "primaryMuscle": "shoulders",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "back"
+    ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -2515,7 +2522,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -2549,7 +2557,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -2582,7 +2591,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -2613,7 +2623,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -2865,7 +2876,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -3589,7 +3601,7 @@
     "difficulty": "beginner",
     "instructions": [
       "Sit next to a low pulley sideways (with legs stretched in front of you or crossed) and grasp the single hand cable attachment with the arm nearest to the cable. Tip: If you can adjust the pulley's height, you can use a flat bench to sit on instead.",
-      "Position the elbow against your side with the elbow bent at 90\u00b0 and the arm pointing towards the pulley. This will be your starting position.",
+      "Position the elbow against your side with the elbow bent at 90° and the arm pointing towards the pulley. This will be your starting position.",
       "Pull the single hand cable attachment toward your body by internally rotating your shoulder until your forearm is across your abs. You will be creating an imaginary semi-circle. Tip: The forearm should be perpendicular to your torso at all times.",
       "Slowly go back to the initial position.",
       "Repeat for the recommended amount of repetitions and then repeat the movement with the next arm."
@@ -3743,9 +3755,12 @@
     "id": "Cable_Rear_Delt_Fly",
     "name": "Cable Rear Delt Fly",
     "primaryMuscle": "shoulders",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "back"
+    ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -4796,7 +4811,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -6926,7 +6941,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -7188,7 +7204,8 @@
     ],
     "muscleAreaEmphasis": [
       "front_delts",
-      "side_delts"
+      "side_delts",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -8039,7 +8056,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -10130,7 +10148,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -10685,7 +10704,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -10715,7 +10735,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -10831,7 +10852,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -10857,7 +10878,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -11481,7 +11502,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "traps"
+      "traps",
+      "upper_back"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -11915,7 +11937,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "lats"
+      "lats",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -12002,7 +12025,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "lats"
+      "lats",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -12545,7 +12569,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "machine",
     "exerciseType": "compound",
@@ -13300,7 +13325,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -13325,7 +13350,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -13539,9 +13564,12 @@
     "id": "Lying_Rear_Delt_Raise",
     "name": "Lying Rear Delt Raise",
     "primaryMuscle": "shoulders",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "back"
+    ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -13597,7 +13625,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "machine",
     "exerciseType": "compound",
@@ -13884,7 +13913,8 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -14264,7 +14294,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -14455,7 +14485,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -14779,7 +14810,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -14940,7 +14972,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -15779,7 +15812,7 @@
     "exerciseType": "isolation",
     "difficulty": "beginner",
     "instructions": [
-      "Connect a standard handle to a tower, and\u2014if possible\u2014position the cable to shoulder height. If not, a low pulley will suffice.",
+      "Connect a standard handle to a tower, and—if possible—position the cable to shoulder height. If not, a low pulley will suffice.",
       "With your side to the cable, grab the handle with both hands and step away from the tower. You should be approximately arm's length away from the pulley, with the tension of the weight on the cable.",
       "With your feet positioned hip-width apart and knees slightly bent, hold the cable to the middle of your chest. This will be your starting position.",
       "Press the cable away from your chest, fully extending both arms. You core should be tight and engaged.",
@@ -17719,9 +17752,12 @@
     "id": "Reverse_Flyes",
     "name": "Reverse Flyes",
     "primaryMuscle": "shoulders",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "back"
+    ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -17780,7 +17816,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -17957,7 +17994,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -18559,7 +18597,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "traps"
+      "traps",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -18748,9 +18787,12 @@
     "id": "Seated_Bent-Over_Rear_Delt_Raise",
     "name": "Seated Bent-Over Rear Delt Raise",
     "primaryMuscle": "shoulders",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "back"
+    ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -18838,7 +18880,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -19308,7 +19351,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -19444,7 +19487,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -20002,7 +20046,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -20614,7 +20658,7 @@
     "difficulty": "intermediate",
     "instructions": [
       "Roller skating is a fun activity which can be effective in improving cardiorespiratory fitness and muscular endurance. It requires relatively good balance and coordination. It is necessary to learn the basics of skating including turning and stopping and to wear protective gear to avoid possible injury.",
-      "You can skate at a comfortable pace for 30 minutes straight. If you want a cardio challenge, do interval skating \u2014 speed skate two minutes of every five minutes, using the remaining three minutes to recover. A 150 lb person will typically burn about 175 calories in 30 minutes skating at a comfortable pace, similar to brisk walking."
+      "You can skate at a comfortable pace for 30 minutes straight. If you want a cardio challenge, do interval skating — speed skate two minutes of every five minutes, using the remaining three minutes to recover. A 150 lb person will typically burn about 175 calories in 30 minutes skating at a comfortable pace, similar to brisk walking."
     ],
     "imageUrl": "/exercises/Skating/0.jpg",
     "tags": [
@@ -20753,9 +20797,12 @@
     "id": "Sled_Reverse_Flye",
     "name": "Sled Reverse Flye",
     "primaryMuscle": "shoulders",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "back"
+    ],
     "muscleAreaEmphasis": [
-      "rear_delts"
+      "rear_delts",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -20783,7 +20830,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -20941,7 +20989,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "machine",
     "exerciseType": "compound",
@@ -21377,7 +21426,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "traps"
+      "traps",
+      "upper_back"
     ],
     "equipment": "machine",
     "exerciseType": "compound",
@@ -22824,7 +22874,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "traps"
+      "traps",
+      "upper_back"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -23869,7 +23920,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -24297,7 +24349,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -24394,7 +24447,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -25025,7 +25079,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -25114,7 +25169,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -25168,7 +25224,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "traps"
+      "traps",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -25196,7 +25253,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "traps"
+      "traps",
+      "upper_back"
     ],
     "equipment": "bands",
     "exerciseType": "compound",
@@ -25782,7 +25840,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "lats"
+      "lats",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -25816,7 +25875,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "lats"
+      "lats",
+      "upper_back"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
