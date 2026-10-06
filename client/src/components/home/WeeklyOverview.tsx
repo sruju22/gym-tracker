@@ -22,9 +22,31 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
 
   const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
+  const getStartAndEndOfWeek = () => {
+    const now = new Date();
+    const dayIndex = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const diffToMonday = (dayIndex + 6) % 7;
+
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    return { startOfWeek: monday.getTime(), endOfWeek: sunday.getTime() };
+  };
+
+  const { startOfWeek, endOfWeek } = getStartAndEndOfWeek();
+
   const completedDays = new Set(
     history
-      .filter((h) => h.status === 'completed')
+      .filter((h) => {
+        if (h.status !== 'completed') return false;
+        const hTime = new Date(h.completedAt || h.date).getTime();
+        return hTime >= startOfWeek && hTime <= endOfWeek;
+      })
       .map((h) => h.dayOfWeek)
   );
 

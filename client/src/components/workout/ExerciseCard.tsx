@@ -5,6 +5,7 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { SetRow } from './SetRow';
+import { ExerciseImageModal } from './ExerciseImageModal';
 import { getMuscleAreaName } from '../../data/muscleGroups';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
@@ -42,6 +43,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
   const [showNotes, setShowNotes] = useState(Boolean(notes));
   const [imgError, setImgError] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [internalExpanded, setInternalExpanded] = useState(false);
 
   const isCardExpanded = isExpanded !== undefined ? isExpanded : internalExpanded;
@@ -159,13 +161,20 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         onClick={toggleExpand}
         className="flex items-start gap-3 mb-3 cursor-pointer select-none"
       >
-        <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#1B1F23] flex-shrink-0 border border-[#272B30]">
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsImageModalOpen(true);
+          }}
+          className="w-14 h-14 rounded-xl overflow-hidden bg-[#1B1F23] flex-shrink-0 border border-[#272B30] cursor-pointer group relative hover:border-[#E11D48]/60 transition-colors"
+          title="Tap to view exercise demonstration"
+        >
           {!imgError ? (
             <img
               src={exercise.imageUrl}
               alt={exercise.name}
               loading="lazy"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
               onError={() => setImgError(true)}
             />
           ) : (
@@ -316,7 +325,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           onClick={(e) => {
             e.stopPropagation();
             if (!isDoneEnabled) return;
-            toggleExerciseCompleted(userId, workoutExercise.id);
+            if (!completed) {
+              toggleExerciseCompleted(userId, workoutExercise.id);
+            }
             if (onDone) {
               onDone();
             }
@@ -346,6 +357,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           />
         </div>
       )}
+      {/* Exercise Demonstration Image Modal */}
+      <ExerciseImageModal
+        exercise={exercise}
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+      />
     </Card>
   );
 };

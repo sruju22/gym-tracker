@@ -38,13 +38,14 @@ export const WorkoutPage: React.FC = () => {
   React.useEffect(() => {
     if (activeSession && activeSession.exercises.length > 0) {
       const exists = activeSession.exercises.some((ex) => ex.id === activeExerciseId);
-      if (!activeExerciseId || !exists) {
+      if (!activeExerciseId) {
         const firstIncomplete = activeSession.exercises.find((ex) => !ex.completed);
         if (firstIncomplete) {
           setActiveExerciseId(firstIncomplete.id);
-        } else {
-          setActiveExerciseId(activeSession.exercises[0].id);
         }
+      } else if (!exists) {
+        const firstIncomplete = activeSession.exercises.find((ex) => !ex.completed);
+        setActiveExerciseId(firstIncomplete ? firstIncomplete.id : null);
       }
     } else if (activeSession && activeSession.exercises.length === 0) {
       if (activeExerciseId !== null) {
@@ -253,7 +254,7 @@ export const WorkoutPage: React.FC = () => {
           className="w-full bg-[#14171A] hover:bg-[#1B1F23] border border-dashed border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-4 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
         >
           <Plus className="w-4 h-4 text-[#E11D48]" />
-          <span>+ Add Muscle Group</span>
+          <span>Add Muscle Group</span>
         </button>
       </div>
 
