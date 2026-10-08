@@ -100,8 +100,7 @@ export const MUSCLE_GROUPS: Record<MuscleGroup, MuscleGroupMeta> = {
     accentColor: 'rgba(224, 86, 160, 0.15)',
     icon: '🍑',
     areas: [
-      { id: 'glute_max', name: 'Gluteus Maximus' },
-      { id: 'glute_med', name: 'Gluteus Medius' },
+      { id: 'glutes', name: 'Glutes' },
     ],
   },
   calves: {
@@ -111,8 +110,7 @@ export const MUSCLE_GROUPS: Record<MuscleGroup, MuscleGroupMeta> = {
     accentColor: 'rgba(0, 184, 148, 0.15)',
     icon: '🦶',
     areas: [
-      { id: 'gastrocnemius', name: 'Gastrocnemius (Upper)' },
-      { id: 'soleus', name: 'Soleus (Lower)' },
+      { id: 'calves', name: 'Calves' },
     ],
   },
   core: {

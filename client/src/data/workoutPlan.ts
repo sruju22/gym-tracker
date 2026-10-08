@@ -60,12 +60,12 @@ export const DEFAULT_WORKOUT_PLAN: WeeklySchedule = {
       {
         name: 'glutes',
         displayName: 'Glutes',
-        subAreas: ['glute_max', 'glute_med'],
+        subAreas: ['glutes'],
       },
       {
         name: 'calves',
         displayName: 'Calves',
-        subAreas: ['gastrocnemius', 'soleus'],
+        subAreas: ['calves'],
       },
     ],
   },

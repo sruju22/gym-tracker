@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Exercise, MuscleGroup, MuscleArea, Equipment, ExerciseType } from '../../types';
 import { MUSCLE_GROUPS, getMuscleAreaName } from '../../data/muscleGroups';
+import { getLegSection, isLegSubArea } from '../../utils/legSection';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -56,8 +57,14 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
   const [customType, setCustomType] = useState<ExerciseType>('isolation');
   const [customArea, setCustomArea] = useState<MuscleArea>('mid_chest');
 
+  const targetLegKey = isLegSubArea(targetSubAreas, targetSectionName);
+
   const filteredExercises = exercises.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase().trim());
+
+    if (targetLegKey && (selectedMuscle === 'all' || selectedMuscle === targetMuscleGroup) && selectedSubArea === 'all') {
+      return matchesSearch && getLegSection(ex) === targetLegKey;
+    }
 
     let matchesMuscle = true;
     if (selectedMuscle !== 'all') {

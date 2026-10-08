@@ -8,6 +8,7 @@ import { HistoryPage } from './pages/HistoryPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { useAuthStore } from './store/authStore';
 import { useWorkoutStore } from './store/workoutStore';
+import { prewarmBackend } from './api/authApi';
 
 export function App() {
   const { currentUser, restoreAuth } = useAuthStore();
@@ -15,6 +16,10 @@ export function App() {
   const fetchHistory = useWorkoutStore((state) => state.fetchHistory);
   const fetchBackendPRs = useWorkoutStore((state) => state.fetchBackendPRs);
   const fetchProgressStats = useWorkoutStore((state) => state.fetchProgressStats);
+
+  useEffect(() => {
+    prewarmBackend();
+  }, []);
 
   useEffect(() => {
     restoreAuth();

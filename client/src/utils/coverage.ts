@@ -1,5 +1,6 @@
 import { Exercise, MuscleGroup, MuscleArea, MuscleGroupCoverage, CoverageItem } from '../types';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
+import { getLegSection, isLegSubArea } from './legSection';
 
 /**
  * Calculates muscle sub-area coverage for a given muscle group / section based on a set of selected exercises.
@@ -9,6 +10,35 @@ export function calculateMuscleCoverage(
   selectedExercises: Exercise[],
   targetSubAreas?: MuscleArea[]
 ): MuscleGroupCoverage {
+  const legKey = isLegSubArea(targetSubAreas);
+
+  if (legKey) {
+    const legNames: Record<string, string> = {
+      quads: 'Quads',
+      hamstrings: 'Hamstrings',
+      glutes: 'Glutes',
+      calves: 'Calves',
+    };
+
+    const coveringExercises = selectedExercises
+      .filter((ex) => getLegSection(ex) === legKey)
+      .map((ex) => ex.name);
+
+    const item: CoverageItem = {
+      area: legKey as MuscleArea,
+      displayName: legNames[legKey],
+      covered: coveringExercises.length > 0,
+      exercises: coveringExercises,
+    };
+
+    return {
+      muscleGroup,
+      areas: [item],
+      totalAreas: 1,
+      coveredAreas: item.covered ? 1 : 0,
+    };
+  }
+
   const meta = MUSCLE_GROUPS[muscleGroup];
   if (!meta) {
     return {

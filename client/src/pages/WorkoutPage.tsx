@@ -12,6 +12,7 @@ import { Header } from '../components/layout/Header';
 import { Modal } from '../components/ui/Modal';
 import { Exercise, MuscleGroupConfig, MuscleGroup } from '../types';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
+import { getLegSection, isLegSubArea } from '../utils/legSection';
 
 export const WorkoutPage: React.FC = () => {
   const { currentUser } = useAuthStore();
@@ -169,7 +170,11 @@ export const WorkoutPage: React.FC = () => {
       {/* Render sections per targeted workout area */}
       <div className="space-y-6">
         {sectionsList.map((sec) => {
+          const legKey = isLegSubArea(sec.subAreas, sec.displayName);
           const exList = activeSession.exercises.filter((ex) => {
+            if (legKey) {
+              return getLegSection(ex.exercise) === legKey;
+            }
             if (sec.subAreas && sec.subAreas.length > 0) {
               return ex.exercise.muscleAreaEmphasis.some((area) => sec.subAreas!.includes(area));
             }

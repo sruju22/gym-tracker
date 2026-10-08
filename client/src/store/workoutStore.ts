@@ -15,6 +15,7 @@ import {
   PreviousPerformance,
   Goal,
   GoalType,
+  MuscleGroupConfig,
 } from '../types';
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
@@ -551,16 +552,34 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
         const today = getTodayDayOfWeek();
 
+        const sections: MuscleGroupConfig[] = [];
+        muscleGroups.forEach((mg) => {
+          if (mg === 'legs') {
+            sections.push(
+              { name: 'legs', displayName: 'Quads', subAreas: ['quads'] },
+              { name: 'legs', displayName: 'Hamstrings', subAreas: ['hamstrings'] },
+              { name: 'glutes', displayName: 'Glutes', subAreas: ['glutes'] },
+              { name: 'calves', displayName: 'Calves', subAreas: ['calves'] }
+            );
+          } else if (mg === 'glutes') {
+            sections.push({ name: 'glutes', displayName: 'Glutes', subAreas: ['glutes'] });
+          } else if (mg === 'calves') {
+            sections.push({ name: 'calves', displayName: 'Calves', subAreas: ['calves'] });
+          } else {
+            sections.push({
+              name: mg,
+              displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+            });
+          }
+        });
+
         const newSession: WorkoutSession = {
           id: `session_${Date.now()}`,
           workoutName: 'Custom Workout',
           date: new Date().toISOString(),
           dayOfWeek: today,
           muscleGroups,
-          sections: muscleGroups.map((mg) => ({
-            name: mg,
-            displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
-          })),
+          sections,
           status: 'in_progress',
           startedAt: new Date().toISOString(),
           exercises: [],
@@ -591,15 +610,41 @@ export const useWorkoutStore = create<WorkoutStore>()(
               displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
             }));
 
-        if (currentSections.some((s) => s.name === muscleGroup)) return;
+        const newSections: MuscleGroupConfig[] = [];
 
-        const meta = MUSCLE_GROUPS[muscleGroup];
-        const newSection = {
-          name: muscleGroup,
-          displayName: meta ? meta.name.toUpperCase() : muscleGroup.toUpperCase(),
-        };
+        if (muscleGroup === 'legs') {
+          const legItems: MuscleGroupConfig[] = [
+            { name: 'legs', displayName: 'Quads', subAreas: ['quads'] },
+            { name: 'legs', displayName: 'Hamstrings', subAreas: ['hamstrings'] },
+            { name: 'glutes', displayName: 'Glutes', subAreas: ['glutes'] },
+            { name: 'calves', displayName: 'Calves', subAreas: ['calves'] },
+          ];
+          legItems.forEach((item) => {
+            if (!currentSections.some((s) => s.displayName === item.displayName)) {
+              newSections.push(item);
+            }
+          });
+        } else if (muscleGroup === 'glutes') {
+          if (!currentSections.some((s) => s.displayName === 'Glutes')) {
+            newSections.push({ name: 'glutes', displayName: 'Glutes', subAreas: ['glutes'] });
+          }
+        } else if (muscleGroup === 'calves') {
+          if (!currentSections.some((s) => s.displayName === 'Calves')) {
+            newSections.push({ name: 'calves', displayName: 'Calves', subAreas: ['calves'] });
+          }
+        } else {
+          if (!currentSections.some((s) => s.name === muscleGroup)) {
+            const meta = MUSCLE_GROUPS[muscleGroup];
+            newSections.push({
+              name: muscleGroup,
+              displayName: meta ? meta.name.toUpperCase() : muscleGroup.toUpperCase(),
+            });
+          }
+        }
 
-        const updatedSections = [...currentSections, newSection];
+        if (newSections.length === 0) return;
+
+        const updatedSections = [...currentSections, ...newSections];
         const updatedMuscleGroups = activeSession.muscleGroups.includes(muscleGroup)
           ? activeSession.muscleGroups
           : [...activeSession.muscleGroups, muscleGroup];

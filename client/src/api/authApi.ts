@@ -78,3 +78,15 @@ export async function getMe(token: string): Promise<{ user: User }> {
 
   return handleResponse<{ user: User }>(response, 'Failed to restore session');
 }
+
+let hasPrewarmed = false;
+
+export function prewarmBackend(): void {
+  if (hasPrewarmed) return;
+  hasPrewarmed = true;
+
+  fetch(`${API_BASE_URL}/health`).catch(() => {
+    // Silently handle any pre-warm failure without throwing or blocking UI
+  });
+}
+

@@ -19,9 +19,9 @@ export type MuscleArea =
   // Legs
   | 'quads' | 'hamstrings'
   // Glutes
-  | 'glute_max' | 'glute_med'
+  | 'glutes' | 'glute_max' | 'glute_med'
   // Calves
-  | 'gastrocnemius' | 'soleus'
+  | 'calves' | 'gastrocnemius' | 'soleus'
   // Core
   | 'upper_abs' | 'lower_abs' | 'obliques';
 

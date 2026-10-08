@@ -61,9 +61,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (email: string, password: string) => {
+    const startTime = performance.now();
+    console.log(`[Auth Performance] 🚀 Sign In started at ${new Date().toISOString()}`);
     set({ isLoading: true, error: null });
     try {
       const data = await loginUser(email, password);
+      const duration = (performance.now() - startTime).toFixed(2);
+      console.log(`[Auth Performance] ✅ Sign In completed in ${duration}ms`);
       setStoredToken(data.token);
       set({
         currentUser: data.user,
@@ -72,6 +76,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
       });
     } catch (err: any) {
+      const duration = (performance.now() - startTime).toFixed(2);
+      console.warn(`[Auth Performance] ❌ Sign In failed after ${duration}ms:`, err.message);
       set({
         isLoading: false,
         error: err.message || 'Failed to log in',
