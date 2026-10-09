@@ -112,7 +112,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -136,7 +136,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -165,7 +165,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "kettlebell",
     "exerciseType": "isolation",
@@ -218,9 +218,7 @@
     "id": "All_Fours_Quad_Stretch",
     "name": "All Fours Quad Stretch",
     "primaryMuscle": "legs",
-    "secondaryMuscles": [
-      "legs"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "quads"
     ],
@@ -332,10 +330,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -459,7 +454,6 @@
       "calves",
       "forearms",
       "glutes",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -520,8 +514,7 @@
     "name": "Alternating Kettlebell Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -553,7 +546,6 @@
       "core",
       "biceps",
       "chest",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -587,7 +579,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -611,7 +603,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -635,7 +627,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -657,7 +649,6 @@
     "name": "Anti-Gravity Press",
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
-      "back",
       "back",
       "triceps"
     ],
@@ -777,7 +768,6 @@
       "biceps",
       "forearms",
       "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
@@ -815,11 +805,7 @@
       "biceps",
       "calves",
       "forearms",
-      "glutes",
-      "legs",
-      "back",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -858,10 +844,7 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -930,7 +913,6 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -987,11 +969,10 @@
     "name": "Balance Board",
     "primaryMuscle": "calves",
     "secondaryMuscles": [
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -1048,8 +1029,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "core",
-      "forearms",
-      "back"
+      "forearms"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -1138,7 +1118,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bands",
     "exerciseType": "isolation",
@@ -1164,7 +1144,6 @@
     "name": "Band Pull Apart",
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -1369,11 +1348,7 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
-      "back",
-      "back",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -1411,7 +1386,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -1449,7 +1423,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -1506,8 +1480,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "forearms",
-      "legs"
+      "forearms"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -1541,7 +1514,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -1627,8 +1600,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -1660,12 +1632,10 @@
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -1727,7 +1697,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -1810,8 +1780,7 @@
     "name": "Barbell Shrug Behind The Back",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "forearms",
-      "back"
+      "forearms"
     ],
     "muscleAreaEmphasis": [
       "traps"
@@ -1843,7 +1812,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -1869,7 +1838,6 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -1902,7 +1870,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -1938,7 +1905,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -1975,9 +1941,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2009,8 +1973,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2072,8 +2035,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2161,8 +2123,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2295,8 +2256,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2327,7 +2287,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "chest",
-      "back",
       "shoulders",
       "triceps"
     ],
@@ -2396,7 +2355,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -2422,7 +2381,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -2457,8 +2415,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -2483,8 +2440,6 @@
     "name": "Bent Over Low-Pulley Side Lateral",
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
-      "back",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -2516,10 +2471,7 @@
     "name": "Bent Over One-Arm Long Bar Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back",
-      "back",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -2553,8 +2505,7 @@
     "name": "Bent Over Two-Arm Long Bar Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -2587,7 +2538,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -2619,8 +2569,7 @@
     "name": "Bent Over Two-Dumbbell Row With Palms In",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -2653,7 +2602,6 @@
       "glutes",
       "legs",
       "back",
-      "legs",
       "shoulders",
       "triceps"
     ],
@@ -2688,8 +2636,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2717,8 +2664,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2872,8 +2818,7 @@
     "name": "Bodyweight Mid Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -2902,8 +2847,7 @@
     "name": "Bodyweight Squat",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2932,8 +2876,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -2964,7 +2907,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -2998,7 +2941,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -3047,10 +2990,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -3082,10 +3022,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -3120,8 +3057,6 @@
     "secondaryMuscles": [
       "glutes",
       "calves",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -3155,10 +3090,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -3193,10 +3125,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -3315,7 +3244,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -3453,7 +3382,6 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -3759,8 +3687,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -3785,7 +3712,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -3870,7 +3797,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -3923,7 +3850,6 @@
     "name": "Cable Seated Lateral Raise",
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -4012,7 +3938,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -4064,7 +3990,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -4089,7 +4015,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -4115,7 +4041,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -4141,7 +4067,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "bands",
     "exerciseType": "isolation",
@@ -4167,7 +4093,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -4191,7 +4117,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -4215,7 +4141,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -4239,8 +4165,6 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -4303,14 +4227,11 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
       "core",
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -4338,10 +4259,7 @@
     "id": "Cat_Stretch",
     "name": "Cat Stretch",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back",
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "lower_back"
     ],
@@ -4479,9 +4397,7 @@
     "id": "Chair_Lower_Back_Stretch",
     "name": "Chair Lower Back Stretch",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "lats"
     ],
@@ -4508,8 +4424,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -4746,8 +4661,7 @@
     "name": "Child's Pose",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "glutes",
-      "back"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -4776,8 +4690,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "forearms",
-      "back"
+      "forearms"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -4807,9 +4720,7 @@
     "id": "Chin_To_Chest_Stretch",
     "name": "Chin To Chest Stretch",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "upper_back"
     ],
@@ -4837,7 +4748,6 @@
       "forearms",
       "glutes",
       "legs",
-      "back",
       "back",
       "triceps"
     ],
@@ -4877,9 +4787,7 @@
       "forearms",
       "glutes",
       "back",
-      "legs",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -4917,9 +4825,6 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "back",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -4954,8 +4859,6 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -5019,8 +4922,6 @@
       "glutes",
       "legs",
       "back",
-      "legs",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -5065,10 +4966,6 @@
       "glutes",
       "legs",
       "back",
-      "back",
-      "legs",
-      "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -5112,7 +5009,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "shoulders",
       "back"
     ],
@@ -5335,7 +5231,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -5460,8 +5355,7 @@
       "calves",
       "forearms",
       "back",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -5611,8 +5505,6 @@
     "secondaryMuscles": [
       "core",
       "glutes",
-      "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
@@ -5782,7 +5674,6 @@
     "name": "Dancer's Stretch",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "glutes",
       "glutes"
     ],
     "muscleAreaEmphasis": [
@@ -5842,10 +5733,7 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -5879,10 +5767,7 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -6119,7 +6004,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -6149,7 +6034,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "lower_chest"
+      "upper_chest"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -6176,7 +6061,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -6234,10 +6119,7 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -6270,10 +6152,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -6399,7 +6278,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -6428,8 +6307,6 @@
       "calves",
       "forearms",
       "glutes",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -6531,7 +6408,6 @@
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
       "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
@@ -6568,7 +6444,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -6597,10 +6473,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -6636,7 +6509,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -6842,9 +6715,7 @@
       "forearms",
       "glutes",
       "back",
-      "legs",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -6937,7 +6808,6 @@
     "secondaryMuscles": [
       "biceps",
       "forearms",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -7001,8 +6871,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -7062,7 +6931,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -7115,7 +6984,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -7289,8 +7158,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -7349,8 +7217,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -7381,7 +7248,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -7464,7 +7331,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -7490,7 +7357,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -7525,7 +7391,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -7559,8 +7424,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -7799,8 +7663,7 @@
     "name": "Elevated Back Lunge",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -7828,10 +7691,7 @@
     "id": "Elevated_Cable_Rows",
     "name": "Elevated Cable Rows",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back",
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "lats"
     ],
@@ -7863,8 +7723,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8056,8 +7915,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -8082,12 +7940,10 @@
       "core",
       "glutes",
       "legs",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -8117,10 +7973,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8152,7 +8005,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -8231,7 +8084,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -8376,7 +8229,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -8403,7 +8256,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -8427,7 +8280,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "legs",
       "shoulders",
       "triceps"
@@ -8463,8 +8315,7 @@
     "secondaryMuscles": [
       "core",
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8496,8 +8347,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8530,8 +8380,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8588,8 +8437,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8622,8 +8470,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8656,10 +8503,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -8718,10 +8562,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8887,8 +8728,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "core",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -8973,7 +8813,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -9002,8 +8841,7 @@
     "name": "Gironda Sternum Chins",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -9066,7 +8904,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -9093,7 +8931,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -9217,7 +9054,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -9241,7 +9078,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -9265,8 +9102,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -9439,10 +9275,8 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -9478,10 +9312,8 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -9520,9 +9352,7 @@
       "forearms",
       "glutes",
       "back",
-      "legs",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -9562,9 +9392,7 @@
       "forearms",
       "glutes",
       "back",
-      "legs",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -9632,7 +9460,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -9685,7 +9513,6 @@
       "core",
       "forearms",
       "glutes",
-      "legs",
       "shoulders",
       "triceps"
     ],
@@ -9775,11 +9602,9 @@
     "id": "Hip_Circles_prone",
     "name": "Hip Circles (prone)",
     "primaryMuscle": "glutes",
-    "secondaryMuscles": [
-      "glutes"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -9806,7 +9631,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bands",
     "exerciseType": "compound",
@@ -9860,7 +9685,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bands",
     "exerciseType": "compound",
@@ -9943,10 +9768,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -10042,7 +9864,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -10065,7 +9887,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -10144,7 +9966,6 @@
     "name": "Incline Bench Pull",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -10442,7 +10263,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_chest"
+      "lower_chest"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -10503,7 +10324,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_chest"
+      "lower_chest"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -10534,7 +10355,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_chest"
+      "lower_chest"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -10567,7 +10388,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_chest"
+      "lower_chest"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -10600,7 +10421,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_chest"
+      "lower_chest"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -10700,9 +10521,7 @@
     "id": "Inverted_Row",
     "name": "Inverted Row",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "mid_back",
       "upper_back"
@@ -10731,8 +10550,7 @@
     "name": "Inverted Row with Straps",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -10764,8 +10582,6 @@
     "secondaryMuscles": [
       "chest",
       "glutes",
-      "legs",
-      "back",
       "legs",
       "back"
     ],
@@ -11019,8 +10835,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -11057,7 +10871,6 @@
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
       "glutes",
-      "legs",
       "legs",
       "triceps"
     ],
@@ -11118,8 +10931,7 @@
     "name": "Jogging, Treadmill",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -11152,10 +10964,7 @@
       "forearms",
       "glutes",
       "legs",
-      "back",
-      "legs",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -11221,8 +11030,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -11285,8 +11092,7 @@
       "calves",
       "glutes",
       "back",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -11407,7 +11213,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -11496,8 +11301,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "legs",
       "legs",
       "shoulders"
     ],
@@ -11563,7 +11366,6 @@
     "secondaryMuscles": [
       "core",
       "legs",
-      "legs",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -11597,7 +11399,6 @@
     "secondaryMuscles": [
       "core",
       "calves",
-      "legs",
       "legs",
       "triceps"
     ],
@@ -11637,7 +11438,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -11667,9 +11468,7 @@
       "core",
       "biceps",
       "forearms",
-      "back",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -11705,11 +11504,10 @@
     "name": "Knee Across The Body",
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
-      "glutes",
       "back"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -11733,11 +11531,10 @@
     "name": "Knee Circles",
     "primaryMuscle": "calves",
     "secondaryMuscles": [
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -11763,7 +11560,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -11789,10 +11586,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -11853,7 +11647,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -11911,7 +11705,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -11933,8 +11727,7 @@
     "name": "Kneeling High Pulley Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats",
@@ -11962,9 +11755,7 @@
     "id": "Kneeling_Hip_Flexor",
     "name": "Kneeling Hip Flexor",
     "primaryMuscle": "legs",
-    "secondaryMuscles": [
-      "legs"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "quads"
     ],
@@ -11990,11 +11781,10 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
       "calves",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -12021,8 +11811,7 @@
     "name": "Kneeling Single-Arm High Pulley Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats",
@@ -12057,7 +11846,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -12120,7 +11909,6 @@
       "calves",
       "chest",
       "legs",
-      "legs",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -12156,14 +11944,11 @@
     "name": "Lateral Bound",
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -12193,14 +11978,11 @@
     "name": "Lateral Box Jump",
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -12230,14 +12012,11 @@
     "name": "Lateral Cone Hops",
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -12395,7 +12174,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -12422,8 +12201,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -12509,8 +12287,7 @@
     "name": "Leverage Deadlift",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -12565,9 +12342,7 @@
     "id": "Leverage_High_Row",
     "name": "Leverage High Row",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "mid_back",
       "upper_back"
@@ -12624,8 +12399,7 @@
     "name": "Leverage Iso Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -12710,8 +12484,7 @@
     "name": "Linear 3-Part Start Technique",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -12741,8 +12514,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -12773,8 +12545,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -12807,9 +12578,6 @@
       "core",
       "chest",
       "glutes",
-      "legs",
-      "back",
-      "back",
       "legs",
       "back",
       "triceps"
@@ -12849,8 +12617,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "forearms",
-      "back"
+      "forearms"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -12906,7 +12673,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_chest"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -12959,7 +12726,6 @@
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -13039,8 +12805,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -13072,8 +12837,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -13104,7 +12868,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -13155,9 +12919,7 @@
     "name": "Lying Cambered Barbell Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back"
@@ -13270,7 +13032,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -13373,11 +13135,9 @@
     "id": "Lying_Glute",
     "name": "Lying Glute",
     "primaryMuscle": "glutes",
-    "secondaryMuscles": [
-      "glutes"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -13481,8 +13241,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -13568,8 +13327,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -13621,8 +13379,7 @@
     "name": "Lying T-Bar Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -13855,7 +13612,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -13881,7 +13638,6 @@
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
       "core",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
@@ -13938,9 +13694,7 @@
     "name": "Middle Back Stretch",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "core",
-      "back",
-      "back"
+      "core"
     ],
     "muscleAreaEmphasis": [
       "mid_back"
@@ -13968,8 +13722,7 @@
     "name": "Mixed Grip Chin",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back"
@@ -14000,7 +13753,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bands",
     "exerciseType": "compound",
@@ -14024,7 +13777,6 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "chest",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -14053,8 +13805,7 @@
     "name": "Moving Claw Series",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -14084,7 +13835,6 @@
     "secondaryMuscles": [
       "glutes",
       "back",
-      "legs",
       "shoulders",
       "triceps"
     ],
@@ -14120,9 +13870,7 @@
       "core",
       "biceps",
       "forearms",
-      "back",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -14158,8 +13906,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -14193,8 +13940,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -14227,7 +13973,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -14348,7 +14093,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -14376,7 +14121,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -14402,8 +14147,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -14481,7 +14225,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -14544,7 +14287,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -14601,8 +14344,7 @@
     "secondaryMuscles": [
       "glutes",
       "back",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -14806,8 +14548,7 @@
     "name": "One-Arm Kettlebell Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -14837,7 +14578,6 @@
       "calves",
       "glutes",
       "legs",
-      "back",
       "back",
       "triceps"
     ],
@@ -14874,7 +14614,6 @@
     "secondaryMuscles": [
       "glutes",
       "legs",
-      "legs",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -14908,7 +14647,6 @@
     "name": "One-Arm Kettlebell Split Snatch",
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
@@ -14968,8 +14706,7 @@
     "name": "One-Arm Long Bar Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -15033,7 +14770,6 @@
       "forearms",
       "glutes",
       "back",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -15068,7 +14804,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -15102,8 +14837,6 @@
       "core",
       "calves",
       "glutes",
-      "legs",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -15169,7 +14902,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -15220,8 +14953,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "forearms",
-      "back"
+      "forearms"
     ],
     "muscleAreaEmphasis": [
       "mid_back"
@@ -15348,8 +15080,7 @@
     "name": "One Arm Lat Pulldown",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -15494,7 +15225,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -15521,8 +15252,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -15557,7 +15287,6 @@
     "secondaryMuscles": [
       "glutes",
       "back",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -15703,7 +15432,6 @@
       "core",
       "calves",
       "glutes",
-      "legs",
       "back",
       "shoulders",
       "triceps"
@@ -15873,7 +15601,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_extensors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -15901,7 +15629,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_extensors"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -15929,7 +15657,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -15957,7 +15685,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -16040,7 +15768,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -16063,7 +15791,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -16088,7 +15816,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -16114,7 +15842,6 @@
     "secondaryMuscles": [
       "chest",
       "forearms",
-      "back",
       "back",
       "shoulders"
     ],
@@ -16152,7 +15879,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -16198,7 +15925,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -16224,7 +15951,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -16279,8 +16006,7 @@
     "secondaryMuscles": [
       "core",
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -16374,7 +16100,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -16400,10 +16126,7 @@
       "forearms",
       "glutes",
       "back",
-      "back",
-      "legs",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -16459,9 +16182,7 @@
     "id": "Power_Clean_from_Blocks",
     "name": "Power Clean from Blocks",
     "primaryMuscle": "legs",
-    "secondaryMuscles": [
-      "legs"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "hamstrings"
     ],
@@ -16492,7 +16213,6 @@
       "core",
       "calves",
       "glutes",
-      "legs",
       "shoulders",
       "triceps"
     ],
@@ -16558,9 +16278,7 @@
       "calves",
       "glutes",
       "back",
-      "legs",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -16599,10 +16317,8 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -16641,11 +16357,8 @@
     "secondaryMuscles": [
       "glutes",
       "calves",
-      "glutes",
       "back",
-      "legs",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -16793,7 +16506,6 @@
       "calves",
       "chest",
       "glutes",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -16829,7 +16541,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -16853,8 +16565,7 @@
     "name": "Pullups",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -16951,7 +16662,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "upper_chest"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -17230,8 +16941,7 @@
     "name": "Quick Leap",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -17292,9 +17002,7 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -17327,8 +17035,7 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -17382,8 +17089,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -17447,7 +17153,6 @@
       "chest",
       "forearms",
       "back",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -17482,11 +17187,8 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
       "calves",
       "forearms",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -17522,10 +17224,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
@@ -17562,8 +17261,6 @@
     "secondaryMuscles": [
       "glutes",
       "calves",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -17597,12 +17294,8 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
       "calves",
       "forearms",
-      "glutes",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -17728,7 +17421,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -17756,8 +17449,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -17812,7 +17504,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -17904,8 +17595,7 @@
     "primaryMuscle": "shoulders",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "front_delts",
-      "side_delts"
+      "rear_delts"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -17990,9 +17680,7 @@
     "id": "Rhomboids-SMR",
     "name": "Rhomboids-SMR",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "mid_back",
       "upper_back"
@@ -18022,12 +17710,10 @@
       "calves",
       "glutes",
       "legs",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -18058,8 +17744,6 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -18122,8 +17806,7 @@
     "name": "Rocket Jump",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -18152,7 +17835,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -18181,7 +17864,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -18249,7 +17931,6 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -18282,7 +17963,6 @@
     "secondaryMuscles": [
       "biceps",
       "forearms",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -18341,8 +18021,7 @@
     "name": "Rope Jumping",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -18427,8 +18106,6 @@
       "biceps",
       "calves",
       "glutes",
-      "legs",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -18489,8 +18166,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -18521,7 +18197,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -18552,11 +18228,8 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back",
-      "back",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -18592,10 +18265,7 @@
     "id": "Scapular_Pull-Up",
     "name": "Scapular Pull-Up",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back",
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "traps",
       "upper_back"
@@ -18624,7 +18294,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -18649,8 +18319,7 @@
     "name": "Scissors Jump",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -18734,7 +18403,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -18791,8 +18460,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -18876,7 +18544,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -18939,7 +18606,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -18969,7 +18636,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -19078,7 +18745,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_extensors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -19106,7 +18773,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -19241,11 +18908,9 @@
     "id": "Seated_Glute",
     "name": "Seated Glute",
     "primaryMuscle": "glutes",
-    "secondaryMuscles": [
-      "glutes"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -19429,7 +19094,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_extensors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -19456,7 +19121,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -19482,9 +19147,7 @@
     "name": "Seated One-arm Cable Pulley Rows",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -19543,7 +19206,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -19569,7 +19232,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_extensors"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -19646,7 +19309,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -19706,8 +19369,7 @@
     "name": "Shotgun Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -19887,9 +19549,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -19995,7 +19655,7 @@
     "primaryMuscle": "glutes",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -20021,7 +19681,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -20069,8 +19729,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20101,7 +19760,6 @@
     "secondaryMuscles": [
       "biceps",
       "forearms",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -20165,9 +19823,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20285,8 +19941,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20315,8 +19970,7 @@
     "name": "Single-Leg High Box Squat",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20345,9 +19999,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20379,9 +20031,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20438,9 +20088,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20500,8 +20148,7 @@
     "name": "Single Leg Butt Kick",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20533,7 +20180,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -20558,8 +20205,7 @@
     "name": "Single Leg Push-off",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20613,9 +20259,7 @@
     "name": "Sit Squats",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20645,10 +20289,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20679,8 +20320,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -20767,7 +20407,6 @@
       "calves",
       "chest",
       "glutes",
-      "legs",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -20801,8 +20440,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "rear_delts",
-      "upper_back"
+      "rear_delts"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -20826,8 +20464,7 @@
     "name": "Sled Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -20859,7 +20496,6 @@
     "secondaryMuscles": [
       "calves",
       "forearms",
-      "back",
       "back",
       "shoulders"
     ],
@@ -20985,7 +20621,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -21020,7 +20655,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -21110,9 +20745,7 @@
     "secondaryMuscles": [
       "glutes",
       "back",
-      "legs",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -21147,7 +20780,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -21203,8 +20836,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -21295,8 +20927,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -21328,7 +20959,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -21356,7 +20987,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -21422,7 +21052,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -21456,8 +21085,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -21492,10 +21120,8 @@
     "secondaryMuscles": [
       "biceps",
       "glutes",
-      "legs",
       "back",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -21535,7 +21161,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "shoulders",
       "triceps"
     ],
@@ -21571,9 +21196,6 @@
     "secondaryMuscles": [
       "forearms",
       "glutes",
-      "legs",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -21608,8 +21230,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -21673,10 +21293,8 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -21739,8 +21357,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -21773,7 +21390,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -21896,12 +21512,7 @@
     "id": "Spinal_Stretch",
     "name": "Spinal Stretch",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back",
-      "back",
-      "back",
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "mid_back"
     ],
@@ -21934,10 +21545,8 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back",
-      "shoulders",
-      "back"
+      "shoulders"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -21974,7 +21583,6 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "legs",
       "shoulders",
       "triceps"
     ],
@@ -22008,8 +21616,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -22043,11 +21650,8 @@
       "calves",
       "forearms",
       "glutes",
-      "legs",
       "back",
-      "legs",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -22086,8 +21690,7 @@
     "name": "Split Squat with Dumbbells",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -22117,8 +21720,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -22148,7 +21750,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "shoulders",
       "triceps"
     ],
@@ -22183,8 +21784,6 @@
     "secondaryMuscles": [
       "glutes",
       "calves",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -22219,8 +21818,6 @@
     "secondaryMuscles": [
       "glutes",
       "calves",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -22254,10 +21851,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -22295,7 +21889,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -22329,8 +21922,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -22389,7 +21981,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -22682,7 +22274,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -22737,7 +22329,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -22954,7 +22546,7 @@
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -23001,11 +22593,9 @@
     "id": "Standing_Hip_Circles",
     "name": "Standing Hip Circles",
     "primaryMuscle": "glutes",
-    "secondaryMuscles": [
-      "glutes"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -23134,8 +22724,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -23260,7 +22849,7 @@
       "biceps"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -23463,7 +23052,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -23542,7 +23131,7 @@
     "primaryMuscle": "calves",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "gastrocnemius"
+      "calves"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -23646,7 +23235,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -23677,11 +23265,10 @@
     "name": "Step-up with Knee Raise",
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
-      "legs",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -23707,8 +23294,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -23916,8 +23502,7 @@
     "name": "Straight Bar Bench Mid Rows",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -23976,9 +23561,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -24011,10 +23594,6 @@
     "secondaryMuscles": [
       "glutes",
       "forearms",
-      "glutes",
-      "back",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -24051,10 +23630,6 @@
     "secondaryMuscles": [
       "glutes",
       "forearms",
-      "glutes",
-      "back",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -24091,12 +23666,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
       "forearms",
-      "glutes",
-      "back",
-      "back",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -24321,7 +23891,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -24345,8 +23915,7 @@
     "name": "Suspended Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -24376,10 +23945,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "glutes",
-      "calves",
-      "glutes",
-      "legs"
+      "calves"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -24443,8 +24009,7 @@
     "name": "T-Bar Row with Handle",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -24534,11 +24099,9 @@
     "id": "Thigh_Abductor",
     "name": "Thigh Abductor",
     "primaryMuscle": "glutes",
-    "secondaryMuscles": [
-      "glutes"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -24563,11 +24126,10 @@
     "name": "Thigh Adductor",
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
-      "glutes",
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -24597,10 +24159,8 @@
       "chest",
       "forearms",
       "glutes",
-      "legs",
       "back",
       "shoulders",
-      "back",
       "triceps"
     ],
     "muscleAreaEmphasis": [
@@ -24687,8 +24247,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -24716,8 +24275,7 @@
     "name": "Trap Bar Deadlift",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -24986,7 +24544,6 @@
       "calves",
       "glutes",
       "legs",
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -25075,8 +24632,7 @@
     "name": "Two-Arm Kettlebell Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "mid_back",
@@ -25105,7 +24661,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -25138,7 +24693,6 @@
     "name": "Upper Back-Leg Grab",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "back",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -25165,9 +24719,7 @@
     "id": "Upper_Back_Stretch",
     "name": "Upper Back Stretch",
     "primaryMuscle": "back",
-    "secondaryMuscles": [
-      "back"
-    ],
+    "secondaryMuscles": [],
     "muscleAreaEmphasis": [
       "mid_back",
       "upper_back"
@@ -25309,7 +24861,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -25343,7 +24894,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -25376,7 +24926,6 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "glutes",
-      "legs",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -25408,8 +24957,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -25438,8 +24986,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "glutes",
-      "legs",
-      "back"
+      "legs"
     ],
     "muscleAreaEmphasis": [
       "lower_back"
@@ -25470,7 +25017,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -25557,7 +25104,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -25589,8 +25135,7 @@
     "name": "Weighted Pull Ups",
     "primaryMuscle": "back",
     "secondaryMuscles": [
-      "biceps",
-      "back"
+      "biceps"
     ],
     "muscleAreaEmphasis": [
       "lats"
@@ -25620,8 +25165,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -25677,8 +25221,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
@@ -25802,7 +25345,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -25836,7 +25378,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -25871,7 +25412,6 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
-      "back",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
@@ -25933,7 +25473,6 @@
     "secondaryMuscles": [
       "calves",
       "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -25967,7 +25506,6 @@
     "name": "Wide Stance Stiff Legs",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "glutes",
       "glutes",
       "back"
     ],
@@ -26022,12 +25560,11 @@
     "name": "Windmills",
     "primaryMuscle": "glutes",
     "secondaryMuscles": [
-      "glutes",
       "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
-      "glute_max"
+      "glutes"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -26054,8 +25591,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "hamstrings"
@@ -26085,7 +25621,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "bodyweight",
     "exerciseType": "isolation",
@@ -26111,7 +25647,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -26138,7 +25674,7 @@
     "primaryMuscle": "forearms",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "forearm_flexors"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -26163,10 +25699,7 @@
     "secondaryMuscles": [
       "core",
       "glutes",
-      "glutes",
       "calves",
-      "glutes",
-      "legs",
       "back"
     ],
     "muscleAreaEmphasis": [
@@ -26201,8 +25734,7 @@
     "primaryMuscle": "legs",
     "secondaryMuscles": [
       "calves",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
       "quads"
