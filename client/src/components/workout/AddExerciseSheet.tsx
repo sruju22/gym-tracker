@@ -8,6 +8,7 @@ import { Input } from '../ui/Input';
 import { Exercise, MuscleGroup, MuscleArea, Equipment, ExerciseType } from '../../types';
 import { MUSCLE_GROUPS, getMuscleAreaName } from '../../data/muscleGroups';
 import { getLegSection, isLegSubArea } from '../../utils/legSection';
+import { matchExerciseSearch, scoreExerciseSearch } from '../../utils/search';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -59,27 +60,34 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
   const targetLegKey = isLegSubArea(targetSubAreas, targetSectionName);
 
-  const filteredExercises = exercises.filter((ex) => {
-    const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase().trim());
+  const trimmedSearch = search.trim();
 
-    if (targetLegKey && (selectedMuscle === 'all' || selectedMuscle === targetMuscleGroup) && selectedSubArea === 'all') {
-      return matchesSearch && getLegSection(ex) === targetLegKey;
-    }
+  const filteredExercises = exercises
+    .filter((ex) => {
+      const matchesSearch = matchExerciseSearch(ex, trimmedSearch);
 
-    let matchesMuscle = true;
-    if (selectedMuscle !== 'all') {
-      matchesMuscle =
-        ex.primaryMuscle === selectedMuscle ||
-        (ex.secondaryMuscles && ex.secondaryMuscles.includes(selectedMuscle));
-    }
+      if (targetLegKey && (selectedMuscle === 'all' || selectedMuscle === targetMuscleGroup) && selectedSubArea === 'all') {
+        return matchesSearch && getLegSection(ex) === targetLegKey;
+      }
 
-    let matchesSubArea = true;
-    if (selectedSubArea !== 'all') {
-      matchesSubArea = ex.muscleAreaEmphasis.includes(selectedSubArea);
-    }
+      let matchesMuscle = true;
+      if (selectedMuscle !== 'all') {
+        matchesMuscle =
+          ex.primaryMuscle === selectedMuscle ||
+          (ex.secondaryMuscles && ex.secondaryMuscles.includes(selectedMuscle));
+      }
 
-    return matchesSearch && matchesMuscle && matchesSubArea;
-  });
+      let matchesSubArea = true;
+      if (selectedSubArea !== 'all') {
+        matchesSubArea = ex.muscleAreaEmphasis.includes(selectedSubArea);
+      }
+
+      return matchesSearch && matchesMuscle && matchesSubArea;
+    })
+    .sort((a, b) => {
+      if (!trimmedSearch) return 0;
+      return scoreExerciseSearch(b, trimmedSearch) - scoreExerciseSearch(a, trimmedSearch);
+    });
 
   const handleCreateCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();

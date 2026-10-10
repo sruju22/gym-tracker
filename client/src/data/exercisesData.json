@@ -25349,7 +25349,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "lats"
+      "lats",
+      "upper_back"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -25366,12 +25367,50 @@
     "tags": [
       "strength",
       "lats",
-      "biceps",
-      "middle back",
-      "shoulders"
+      "upper back",
+      "wide grip",
+      "pulldown",
+      "back",
+      "cable"
     ],
     "isCustom": false,
     "imageEnd": "/exercises/Wide-Grip_Lat_Pulldown/1.jpg"
+  },
+  {
+    "id": "Neutral-Grip_Lat_Pulldown",
+    "name": "Neutral-Grip Lat Pulldown (MAG Grip)",
+    "primaryMuscle": "back",
+    "secondaryMuscles": [
+      "biceps",
+      "shoulders"
+    ],
+    "muscleAreaEmphasis": [
+      "lats"
+    ],
+    "equipment": "cable",
+    "exerciseType": "compound",
+    "difficulty": "beginner",
+    "instructions": [
+      "Attach a medium-width neutral-grip bar (MAG grip / parallel-grip attachment) to the lat pulldown cable station.",
+      "Sit down and adjust the thigh pads firmly against your upper legs with feet flat on the floor to stabilize your body.",
+      "Grasp the ergonomic handles with palms facing inward toward each other at approximately shoulder width.",
+      "With a slight natural arch in your upper back and chest lifted, pull the handles down toward your upper chest by driving your elbows down and back along your ribcage.",
+      "Focus on driving tension through the mid and lower lats at the bottom contraction without excessively swinging your torso back.",
+      "Slowly extend your arms back up to the starting position for a full lat stretch under control before beginning the next repetition."
+    ],
+    "imageUrl": "/exercises/Close-Grip_Front_Lat_Pulldown/0.jpg",
+    "tags": [
+      "strength",
+      "lats",
+      "neutral grip",
+      "mag grip",
+      "pulldown",
+      "parallel grip",
+      "back",
+      "cable"
+    ],
+    "isCustom": false,
+    "imageEnd": "/exercises/Close-Grip_Front_Lat_Pulldown/1.jpg"
   },
   {
     "id": "Wide-Grip_Pulldown_Behind_The_Neck",

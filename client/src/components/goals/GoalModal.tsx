@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { SearchBar } from '../ui/SearchBar';
 import { MUSCLE_GROUPS } from '../../data/muscleGroups';
+import { matchExerciseSearch, scoreExerciseSearch } from '../../utils/search';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -87,9 +88,13 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
     }
   };
 
-  const filteredExercises = exercises.filter((ex) =>
-    ex.name.toLowerCase().includes(exerciseSearch.toLowerCase().trim())
-  );
+  const trimmedExerciseSearch = exerciseSearch.trim();
+  const filteredExercises = exercises
+    .filter((ex) => matchExerciseSearch(ex, trimmedExerciseSearch))
+    .sort((a, b) => {
+      if (!trimmedExerciseSearch) return 0;
+      return scoreExerciseSearch(b, trimmedExerciseSearch) - scoreExerciseSearch(a, trimmedExerciseSearch);
+    });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

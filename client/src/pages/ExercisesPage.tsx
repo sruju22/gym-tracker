@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { Exercise, MuscleGroup, Equipment, ExerciseType } from '../types';
+import { matchExerciseSearch, scoreExerciseSearch } from '../utils/search';
 import { Plus } from 'lucide-react';
 
 export const ExercisesPage: React.FC = () => {
@@ -42,21 +43,21 @@ export const ExercisesPage: React.FC = () => {
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const filteredExercises = exercises.filter((ex) => {
-    const query = search.toLowerCase().trim();
-    const matchesSearch =
-      !query ||
-      ex.name.toLowerCase().includes(query) ||
-      ex.primaryMuscle.toLowerCase().includes(query) ||
-      ex.tags.some((t) => t.toLowerCase().includes(query)) ||
-      ex.muscleAreaEmphasis.some((area) => area.replace(/_/g, ' ').toLowerCase().includes(query));
+  const filteredExercises = exercises
+    .filter((ex) => {
+      const query = search.trim();
+      const matchesSearch = matchExerciseSearch(ex, query);
+      const matchesMuscle = selectedMuscle === 'all' || ex.primaryMuscle === selectedMuscle;
+      const matchesEquipment = selectedEquipment === 'all' || ex.equipment === selectedEquipment;
+      const matchesType = selectedType === 'all' || ex.exerciseType === selectedType;
 
-    const matchesMuscle = selectedMuscle === 'all' || ex.primaryMuscle === selectedMuscle;
-    const matchesEquipment = selectedEquipment === 'all' || ex.equipment === selectedEquipment;
-    const matchesType = selectedType === 'all' || ex.exerciseType === selectedType;
-
-    return matchesSearch && matchesMuscle && matchesEquipment && matchesType;
-  });
+      return matchesSearch && matchesMuscle && matchesEquipment && matchesType;
+    })
+    .sort((a, b) => {
+      const query = search.trim();
+      if (!query) return 0;
+      return scoreExerciseSearch(b, query) - scoreExerciseSearch(a, query);
+    });
 
   const handleOpenDetail = (ex: Exercise) => {
     setSelectedExercise(ex);
