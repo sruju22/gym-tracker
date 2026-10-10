@@ -63,15 +63,25 @@ export const runMigration = async (options: { dryRun?: boolean; sampleSize?: num
   const sourceExercises: SourceExercise[] = JSON.parse(rawData);
   console.log(`📋 Total exercises found in source file: ${sourceExercises.length}`);
 
-  // 2. Connect to MongoDB
+  // 2. Connect to MongoDB (optional for local JSON dryRun validation)
   const mongoUri = process.env.MONGODB_URI;
-  if (!mongoUri) {
-    throw new Error('MONGODB_URI is not defined in server/.env');
-  }
+  let isDbConnected = false;
 
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(mongoUri);
-    console.log('✅ Connected to MongoDB Atlas successfully');
+  if (mongoUri && mongoose.connection.readyState === 0) {
+    try {
+      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 3000 });
+      isDbConnected = true;
+      console.log('✅ Connected to MongoDB Atlas successfully');
+    } catch (err: any) {
+      if (dryRun) {
+        console.warn(`⚠️ MongoDB connection warning in dry-run mode: ${err.message}`);
+        console.warn('   Proceeding with offline source JSON schema & image asset validation...');
+      } else {
+        throw err;
+      }
+    }
+  } else if (mongoose.connection.readyState !== 0) {
+    isDbConnected = true;
   }
 
   // 3. Process & Map Records
@@ -174,14 +184,46 @@ export const runMigration = async (options: { dryRun?: boolean; sampleSize?: num
     });
   }
 
-  // 5. Execute Migration in MongoDB (if not dryRun)
-  if (!dryRun) {
+  // 5. Execute Migration in MongoDB (or simulate in dryRun)
+  if (dryRun) {
+    if (isDbConnected) {
+      const existingDocs = await Exercise.find({ isCustom: { $ne: true } }).lean();
+      const existingMap = new Map(existingDocs.map((d: any) => [d.name.toLowerCase(), d]));
+      console.log(`\n🔍 Performing Dry Run comparison against MongoDB (${existingDocs.length} existing built-in records found in DB)...`);
+      itemsToProcess.forEach(({ doc }) => {
+        const existing = existingMap.get(doc.name.toLowerCase());
+        if (!existing) {
+          report.insertedCount++;
+        } else {
+          const isDifferent =
+            existing.muscleGroup !== doc.muscleGroup ||
+            existing.equipment !== doc.equipment ||
+            existing.category !== doc.category ||
+            existing.description !== doc.description ||
+            existing.instructions !== doc.instructions ||
+            existing.imageUrl !== doc.imageUrl;
+          if (isDifferent) {
+            report.updatedCount++;
+          } else {
+            report.skippedCount++;
+          }
+        }
+      });
+      console.log('✅ Dry Run calculation completed (NO database writes performed).');
+    } else {
+      console.log('\n🔍 Dry Run mode (Offline JSON schema validation mode)...');
+      report.insertedCount = itemsToProcess.length;
+      report.updatedCount = 0;
+      report.skippedCount = 0;
+      console.log('✅ Dry Run JSON schema validation completed (NO database writes performed).');
+    }
+  } else {
     console.log(`\n🚀 Executing import of ${itemsToProcess.length} exercises into MongoDB...`);
 
-    // Use bulkWrite with upsert on unique exercise name to ensure idempotency & prevent duplicates
+    // Use bulkWrite with upsert on unique exercise name & isCustom: false to prevent overwriting custom exercises
     const bulkOps = itemsToProcess.map(({ doc }) => ({
       updateOne: {
-        filter: { name: doc.name },
+        filter: { name: doc.name, isCustom: { $ne: true } },
         update: { $set: doc },
         upsert: true
       }
@@ -197,10 +239,10 @@ export const runMigration = async (options: { dryRun?: boolean; sampleSize?: num
   }
 
   // 6. Query Total Documents in Database
-  const totalInDb = await Exercise.countDocuments();
+  const totalInDb = isDbConnected ? await Exercise.countDocuments() : 'N/A (Offline Dry Run)';
 
   console.log('\n' + '='.repeat(60));
-  console.log('📊 MIGRATION SUMMARY REPORT');
+  console.log(`📊 MIGRATION SUMMARY REPORT ${dryRun ? '(DRY RUN PREVIEW)' : ''}`);
   console.log('='.repeat(60));
   console.log(`Total Source Records Found       : ${report.totalSourceRecords}`);
   console.log(`Valid Records Mapped             : ${report.validRecords}`);
@@ -208,12 +250,10 @@ export const runMigration = async (options: { dryRun?: boolean; sampleSize?: num
   console.log(`Invalid Records                  : ${report.invalidRecords}`);
   console.log(`Image Files Matched on Disk      : ${report.matchedImages}`);
   console.log(`Image Files Unmatched on Disk    : ${report.unmatchedImages}`);
-  if (!dryRun) {
-    console.log(`New Exercises Inserted in DB     : ${report.insertedCount}`);
-    console.log(`Existing Exercises Updated in DB : ${report.updatedCount}`);
-    console.log(`Existing Exercises Unchanged     : ${report.skippedCount}`);
-    console.log(`Total Exercise Documents in DB   : ${totalInDb}`);
-  }
+  console.log(`New Exercises To Insert (DB)     : ${report.insertedCount}`);
+  console.log(`Existing Exercises To Update (DB): ${report.updatedCount}`);
+  console.log(`Existing Exercises Unchanged (DB): ${report.skippedCount}`);
+  console.log(`Total Exercise Documents in DB   : ${totalInDb}`);
   console.log('='.repeat(60) + '\n');
 
   return { report, totalInDb };

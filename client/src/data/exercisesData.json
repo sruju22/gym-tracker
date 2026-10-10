@@ -3327,7 +3327,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "lower_chest"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -3548,7 +3548,7 @@
     "primaryMuscle": "chest",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "lower_chest"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -7073,8 +7073,7 @@
     ],
     "muscleAreaEmphasis": [
       "front_delts",
-      "side_delts",
-      "upper_back"
+      "side_delts"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -12402,7 +12401,9 @@
       "biceps"
     ],
     "muscleAreaEmphasis": [
-      "lats"
+      "lats",
+      "mid_back",
+      "upper_back"
     ],
     "equipment": "machine",
     "exerciseType": "compound",
@@ -19854,7 +19855,7 @@
     "primaryMuscle": "chest",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "mid_chest"
+      "lower_chest"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
