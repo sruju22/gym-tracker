@@ -18541,7 +18541,7 @@
   },
   {
     "id": "Seated_Cable_Rows",
-    "name": "Seated Cable Rows",
+    "name": "V-Bar Seated Cable Row",
     "primaryMuscle": "back",
     "secondaryMuscles": [
       "biceps",
@@ -18549,7 +18549,7 @@
     ],
     "muscleAreaEmphasis": [
       "mid_back",
-      "upper_back"
+      "lats"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -18567,10 +18567,55 @@
       "middle back",
       "biceps",
       "lats",
-      "shoulders"
+      "shoulders",
+      "v-bar",
+      "v bar",
+      "close grip",
+      "seated cable row",
+      "cable row",
+      "back"
     ],
     "isCustom": false,
     "imageEnd": "/exercises/Seated_Cable_Rows/1.jpg"
+  },
+  {
+    "id": "Wide-Grip_Seated_Cable_Row",
+    "name": "Wide-Grip Seated Cable Row",
+    "primaryMuscle": "back",
+    "secondaryMuscles": [
+      "biceps",
+      "shoulders"
+    ],
+    "muscleAreaEmphasis": [
+      "upper_back",
+      "mid_back"
+    ],
+    "equipment": "cable",
+    "exerciseType": "compound",
+    "difficulty": "beginner",
+    "instructions": [
+      "Attach a wide straight bar or lat bar to the low pulley of a seated cable row station.",
+      "Sit on the bench, place your feet firmly against the footrests with knees slightly bent, and grasp the bar using an overhand (pronated) grip wider than shoulder width.",
+      "With your arms extended forward and your torso upright (approximately 90 degrees to your thighs), keep your chest lifted and spine neutral. This is your starting position.",
+      "Initiate the pull by driving your elbows out and back away from your sides (flared at about 60 to 75 degrees), pulling the bar smoothly toward your sternum or upper abdomen.",
+      "Squeeze your shoulder blades firmly together at peak contraction, emphasizing the upper back, rhomboids, rear delts, and middle trapezius.",
+      "Slowly extend your arms back to the starting position under control, allowing your shoulder blades to spread for a full stretch before repeating."
+    ],
+    "imageUrl": "/exercises/Wide-Grip_Seated_Cable_Row/0.jpg",
+    "tags": [
+      "strength",
+      "upper back",
+      "middle back",
+      "rhomboids",
+      "rear delts",
+      "wide grip",
+      "cable row",
+      "seated cable row",
+      "cable",
+      "back"
+    ],
+    "isCustom": false,
+    "imageEnd": "/exercises/Wide-Grip_Seated_Cable_Row/1.jpg"
   },
   {
     "id": "Seated_Cable_Shoulder_Press",

@@ -117,8 +117,12 @@ function buildExerciseSearchBlob(exercise: Exercise): string {
 function tokenMatchesBlob(token: string, blob: string): boolean {
   if (!token) return true;
 
-  // Exact substring match
-  if (blob.includes(token)) {
+  // Exact substring match (for single-character tokens, enforce whole word)
+  if (token.length === 1) {
+    if (new RegExp(`\\b${token}\\b`).test(blob)) {
+      return true;
+    }
+  } else if (blob.includes(token)) {
     return true;
   }
 
@@ -154,12 +158,15 @@ export function matchExerciseSearch(exercise: Exercise, query: string): boolean 
 
   const blob = buildExerciseSearchBlob(exercise);
 
-  // Handle special compound phrases in query like "pull down", "push up", "pull up"
+  // Handle special compound phrases in query like "pull down", "push up", "pull up", "v bar"
   const expandedQuery = cleanQuery
     .replace(/\bpull down\b/g, 'pulldown')
     .replace(/\bpush up\b/g, 'pushup')
     .replace(/\bpull up\b/g, 'pullup')
-    .replace(/\bsit up\b/g, 'situp');
+    .replace(/\bsit up\b/g, 'situp')
+    .replace(/\bv bar\b/g, 'v-bar')
+    .replace(/\bt bar\b/g, 't-bar')
+    .replace(/\bez bar\b/g, 'ez-bar');
 
   const tokens = expandedQuery.split(' ').filter(Boolean);
 
@@ -199,6 +206,24 @@ export function scoreExerciseSearch(exercise: Exercise, query: string): number {
     }
   }
   score += nameTokenHits * 60;
+
+  // Match in tags
+  if (exercise.tags && exercise.tags.length > 0) {
+    const tagBlob = exercise.tags.map((t) => normalizeSearchText(t)).join(' ');
+    if (tagBlob.includes(cleanQuery)) {
+      score += 250;
+    }
+  }
+
+  // Match expanded compound query in name (e.g., 'v bar' matching 'v-bar')
+  const expandedQuery = cleanQuery
+    .replace(/\bv bar\b/g, 'v-bar')
+    .replace(/\bt bar\b/g, 't-bar')
+    .replace(/\bez bar\b/g, 'ez-bar')
+    .replace(/\bpull down\b/g, 'pulldown');
+  if (expandedQuery !== cleanQuery && cleanName.includes(expandedQuery)) {
+    score += 350;
+  }
 
   // Match in primary muscle
   if (cleanQuery.includes(exercise.primaryMuscle.toLowerCase())) {

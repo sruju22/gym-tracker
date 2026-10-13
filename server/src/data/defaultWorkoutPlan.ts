@@ -50,7 +50,7 @@ export const DEFAULT_WORKOUT_PLAN: IWeeklySchedule = {
     ],
   },
   wednesday: {
-    name: 'Legs',
+    name: 'Legs + Forearms',
     isRest: false,
     muscleGroups: [
       {
@@ -75,6 +75,12 @@ export const DEFAULT_WORKOUT_PLAN: IWeeklySchedule = {
         name: 'calves',
         displayName: 'Calves',
         subAreas: ['gastrocnemius', 'soleus'],
+        exerciseCount: 2,
+      },
+      {
+        name: 'forearms',
+        displayName: 'Forearms',
+        subAreas: ['forearm_flexors', 'forearm_extensors'],
         exerciseCount: 2,
       },
     ],

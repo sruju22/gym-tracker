@@ -1,0 +1,29 @@
+{
+  "name": "Wide-Grip Seated Cable Row",
+  "force": "pull",
+  "level": "beginner",
+  "mechanic": "compound",
+  "equipment": "cable",
+  "primaryMuscles": [
+    "middle back",
+    "upper back"
+  ],
+  "secondaryMuscles": [
+    "biceps",
+    "shoulders"
+  ],
+  "instructions": [
+    "Attach a wide straight bar or lat bar to the low pulley cable row station.",
+    "Sit on the bench, place your feet firmly against the footrests with knees slightly bent, and grasp the bar using an overhand (pronated) grip wider than shoulder width.",
+    "With your arms extended forward and your torso upright (approximately 90 degrees to your thighs), keep your chest lifted and spine neutral. This is your starting position.",
+    "Initiate the pull by driving your elbows out and back away from your sides (flared at about 60 to 75 degrees), pulling the bar smoothly toward your sternum or upper abdomen.",
+    "Squeeze your shoulder blades firmly together at peak contraction, emphasizing the upper back, rhomboids, rear delts, and middle trapezius.",
+    "Slowly extend your arms back to the starting position under control, allowing your shoulder blades to spread for a full stretch before repeating."
+  ],
+  "category": "strength",
+  "images": [
+    "Wide-Grip_Seated_Cable_Row/0.jpg",
+    "Wide-Grip_Seated_Cable_Row/1.jpg"
+  ],
+  "id": "Wide-Grip_Seated_Cable_Row"
+}

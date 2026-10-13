@@ -275,7 +275,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
           }));
           return newDefault;
         }
-        return userDataMap[userId];
+        const data = userDataMap[userId];
+        if (
+          data.weeklyPlan?.wednesday &&
+          data.weeklyPlan.wednesday.name === 'Legs' &&
+          !data.weeklyPlan.wednesday.muscleGroups.some((m) => m.name === 'forearms')
+        ) {
+          data.weeklyPlan.wednesday = JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN.wednesday));
+        }
+        return data;
       },
 
       getExercises: (userId: string) => {
