@@ -16,7 +16,8 @@ export const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, onClose 
   const { currentUser } = useAuthStore();
   const userId = currentUser?.id || 'user_srujan';
 
-  const { getActiveSession, getPersonalRecords, finishWorkout, isFinishing } = useWorkoutStore();
+  const { getActiveSession, getPersonalRecords, finishWorkout, isFinishing, saveError } = useWorkoutStore();
+  const [localError, setLocalError] = React.useState<string | null>(null);
 
   const activeSession = getActiveSession(userId);
   const personalRecords = getPersonalRecords(userId);
@@ -34,15 +35,26 @@ export const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, onClose 
     });
   });
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (isFinishing) return;
-    finishWorkout(userId);
-    onClose();
-    navigate('/');
+    setLocalError(null);
+    try {
+      const success = await finishWorkout(userId);
+      if (success) {
+        onClose();
+        navigate('/');
+      } else {
+        setLocalError('Failed to save workout session to database. Please retry.');
+      }
+    } catch (err: any) {
+      setLocalError(err.message || 'Failed to save workout session. Please retry.');
+    }
   };
 
+  const errorMessage = localError || saveError;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Workout Summary">
+    <Modal isOpen={isOpen} onClose={isFinishing ? () => {} : onClose} title="Workout Summary">
       <div className="text-center py-2 space-y-4">
         <div>
           <h2 className="text-xl font-black text-[#F5F5F5] uppercase tracking-tight">
@@ -84,15 +96,29 @@ export const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, onClose 
           </div>
         )}
 
+        {/* Error Feedback */}
+        {errorMessage && (
+          <div className="bg-[#EF4444]/15 border border-[#EF4444]/40 rounded-xl p-3 text-xs text-[#EF4444] font-bold text-left flex items-start justify-between gap-2">
+            <span>{errorMessage}</span>
+            <button
+              onClick={handleFinish}
+              className="text-[#F5F5F5] underline hover:text-[#EF4444] shrink-0 font-extrabold cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         <Button
           variant="primary"
           size="lg"
           fullWidth
           onClick={handleFinish}
           disabled={isFinishing}
+          className="font-extrabold"
         >
           <Check className="w-5 h-5 mr-2 stroke-[3]" />
-          <span>{isFinishing ? 'SAVING...' : 'SAVE WORKOUT SESSION'}</span>
+          <span>{isFinishing ? 'SAVING WORKOUT SESSION...' : 'SAVE WORKOUT SESSION'}</span>
         </Button>
       </div>
     </Modal>

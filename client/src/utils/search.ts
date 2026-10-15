@@ -106,8 +106,10 @@ function buildExerciseSearchBlob(exercise: Exercise): string {
   const secondaries = (exercise.secondaryMuscles || []).join(' ');
   const tags = (exercise.tags || []).join(' ');
 
+  const equipName = exercise.equipmentName || '';
+
   return normalizeSearchText(
-    `${exercise.name} ${nameDecompounded} ${exercise.primaryMuscle} ${areas} ${secondaries} ${exercise.equipment} ${exercise.exerciseType} ${tags}`
+    `${exercise.name} ${nameDecompounded} ${exercise.primaryMuscle} ${areas} ${secondaries} ${exercise.equipment} ${equipName} ${exercise.exerciseType} ${tags}`
   );
 }
 
@@ -233,6 +235,11 @@ export function scoreExerciseSearch(exercise: Exercise, query: string): number {
   // Match in equipment
   if (cleanQuery.includes(exercise.equipment.toLowerCase())) {
     score += 30;
+  }
+
+  // Match in specific equipmentName (e.g. Dual-System Power Smith Machine)
+  if (exercise.equipmentName && cleanQuery.includes(exercise.equipmentName.toLowerCase())) {
+    score += 150;
   }
 
   return score;

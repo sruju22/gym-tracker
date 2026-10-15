@@ -6082,37 +6082,6 @@
     "imageEnd": "/exercises/Decline_Reverse_Crunch/1.jpg"
   },
   {
-    "id": "Decline_Smith_Press",
-    "name": "Decline Smith Press",
-    "primaryMuscle": "chest",
-    "secondaryMuscles": [
-      "shoulders",
-      "triceps"
-    ],
-    "muscleAreaEmphasis": [
-      "lower_chest"
-    ],
-    "equipment": "machine",
-    "exerciseType": "compound",
-    "difficulty": "beginner",
-    "instructions": [
-      "Place a decline bench underneath the Smith machine. Now place the barbell at a height that you can reach when lying down and your arms are almost fully extended. Using a pronated grip that is wider than shoulder width, unlock the bar from the rack and hold it straight over you with your arms extended. This will be your starting position.",
-      "As you inhale, lower the bar under control by allowing the elbows to flex, lightly contacting the torso.",
-      "After a brief pause, bring the bar back to the starting position by extending the elbows, exhaling as you do so.",
-      "Repeat the movement for the prescribed amount of repetitions.",
-      "When the set is complete, lock the bar back in the rack."
-    ],
-    "imageUrl": "/exercises/Decline_Smith_Press/0.jpg",
-    "tags": [
-      "strength",
-      "chest",
-      "shoulders",
-      "triceps"
-    ],
-    "isCustom": false,
-    "imageEnd": "/exercises/Decline_Smith_Press/1.jpg"
-  },
-  {
     "id": "Deficit_Deadlift",
     "name": "Deficit Deadlift",
     "primaryMuscle": "back",
@@ -20660,6 +20629,84 @@
     ],
     "isCustom": false,
     "imageEnd": "/exercises/Smith_Machine_Bench_Press/1.jpg"
+  },
+  {
+    "id": "Dual-System_Smith_Flat_Bench_Press",
+    "name": "Dual-System Smith Flat Bench Press",
+    "primaryMuscle": "chest",
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "muscleAreaEmphasis": [
+      "mid_chest"
+    ],
+    "equipment": "machine",
+    "equipmentName": "Dual-System Power Smith Machine",
+    "exerciseType": "compound",
+    "difficulty": "intermediate",
+    "instructions": [
+      "Set the Dual-System Power Smith Machine's integrated bench to the flat, horizontal position using the adjustment lever.",
+      "Load the desired weight plates onto the dual plate horns on each side of the machine.",
+      "Lie flat on the bench with your chest aligned directly underneath the dual independent press handles.",
+      "Grasp the handles with an overhand grip, rotate to release the safety catches, and start with your arms extended.",
+      "Lower the handles smoothly toward your mid chest under control, feeling a deep stretch across the pectorals.",
+      "Press the handles back up firmly by contracting your chest until your arms are extended, then re-engage the safety catch when the set is complete."
+    ],
+    "imageUrl": "/exercises/Dual-System_Smith_Flat_Bench_Press/0.jpg",
+    "tags": [
+      "strength",
+      "chest",
+      "mid chest",
+      "smith machine",
+      "dual system",
+      "dual-system power smith machine",
+      "flat bench",
+      "bench press",
+      "power smith",
+      "dual smith"
+    ],
+    "isCustom": false,
+    "imageEnd": "/exercises/Dual-System_Smith_Flat_Bench_Press/1.jpg"
+  },
+  {
+    "id": "Dual-System_Smith_Decline_Bench_Press",
+    "name": "Dual-System Smith Decline Bench Press",
+    "primaryMuscle": "chest",
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "muscleAreaEmphasis": [
+      "lower_chest"
+    ],
+    "equipment": "machine",
+    "equipmentName": "Dual-System Power Smith Machine",
+    "exerciseType": "compound",
+    "difficulty": "intermediate",
+    "instructions": [
+      "On the Dual-System Power Smith Machine, adjust the central bench into the decline angle (lowering the rear headrest down toward the base frame).",
+      "Elevate and secure your legs firmly over and under the double round padded hold-down rollers at the front.",
+      "Lie back so your head rests on the declined lower section, with your lower chest positioned directly beneath the dual press handles.",
+      "Grasp the handles firmly, rotate to release the safety catches, and start with arms extended.",
+      "Inhale and lower the handles under control until they reach the lower chest line, maintaining full control.",
+      "Exhale and press upward focusing on driving tension through the lower pectorals, then safely lock the handles back into the catches."
+    ],
+    "imageUrl": "/exercises/Dual-System_Smith_Decline_Bench_Press/0.jpg",
+    "tags": [
+      "strength",
+      "chest",
+      "lower chest",
+      "smith machine",
+      "dual system",
+      "dual-system power smith machine",
+      "decline bench",
+      "decline press",
+      "power smith",
+      "dual smith"
+    ],
+    "isCustom": false,
+    "imageEnd": "/exercises/Dual-System_Smith_Decline_Bench_Press/1.jpg"
   },
   {
     "id": "Smith_Machine_Bent_Over_Row",

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Play, Plus, Check, Dumbbell } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useBlocker, useNavigate } from 'react-router-dom';
+import { Play, Plus, Check, Dumbbell, AlertTriangle, Edit3 } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { ExerciseCard } from '../components/workout/ExerciseCard';
@@ -10,62 +11,186 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
 import { Modal } from '../components/ui/Modal';
-import { Exercise, MuscleGroupConfig, MuscleGroup } from '../types';
+import { Exercise, MuscleGroupConfig } from '../types';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
+import { formatDateShort } from '../utils/formatters';
 
 export const WorkoutPage: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuthStore();
   const userId = currentUser?.id || 'user_srujan';
 
   const {
     getActiveSession,
+    getEditingSession,
     startTodayWorkout,
     addExerciseToWorkout,
     addMuscleSectionToWorkout,
     cancelWorkout,
+    cancelEditingWorkout,
+    saveWorkoutEdits,
+    finishWorkout,
+    isFinishing,
+    saveError,
   } = useWorkoutStore();
 
   const activeSession = getActiveSession(userId);
+  const editingSession = getEditingSession(userId);
+  const isEditing = Boolean(editingSession);
+  const currentSession = editingSession || activeSession;
 
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [targetSectionForAdd, setTargetSectionForAdd] = useState<MuscleGroupConfig | undefined>(
     undefined
   );
 
-  React.useEffect(() => {
-    if (activeSession && activeSession.exercises.length > 0) {
-      const exists = activeSession.exercises.some((ex) => ex.id === activeExerciseId);
+  // Auto-focus on first incomplete exercise
+  useEffect(() => {
+    if (currentSession && currentSession.exercises.length > 0) {
+      const exists = currentSession.exercises.some((ex) => ex.id === activeExerciseId);
       if (!activeExerciseId) {
-        const firstIncomplete = activeSession.exercises.find((ex) => !ex.completed);
+        const firstIncomplete = currentSession.exercises.find((ex) => !ex.completed);
         if (firstIncomplete) {
           setActiveExerciseId(firstIncomplete.id);
         }
       } else if (!exists) {
-        const firstIncomplete = activeSession.exercises.find((ex) => !ex.completed);
+        const firstIncomplete = currentSession.exercises.find((ex) => !ex.completed);
         setActiveExerciseId(firstIncomplete ? firstIncomplete.id : null);
       }
-    } else if (activeSession && activeSession.exercises.length === 0) {
+    } else if (currentSession && currentSession.exercises.length === 0) {
       if (activeExerciseId !== null) {
         setActiveExerciseId(null);
       }
     }
-  }, [activeSession, activeExerciseId]);
+  }, [currentSession, activeExerciseId]);
+
+  // Track meaningful unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    if (isEditing && editingSession) {
+      const original = useWorkoutStore.getState().userDataMap[userId]?.editingOriginalSession;
+      if (!original) return false;
+      return JSON.stringify(editingSession.exercises) !== JSON.stringify(original.exercises);
+    }
+    if (activeSession) {
+      return (
+        activeSession.exercises.length > 0 &&
+        activeSession.exercises.some(
+          (ex) =>
+            Boolean(ex.notes) ||
+            ex.sets.some(
+              (s) =>
+                (s.weight !== null && s.weight > 0) ||
+                (s.reps !== null && s.reps > 0) ||
+                s.completed
+            )
+        )
+      );
+    }
+    return false;
+  }, [isEditing, editingSession, activeSession, userId]);
+
+  // Intercept in-app navigation when unsaved changes exist
+  const blocker = useBlocker(
+    useCallback(
+      ({ currentLocation, nextLocation }: any) => {
+        if (!hasUnsavedChanges) return false;
+        if (currentLocation.pathname === nextLocation.pathname) return false;
+        return true;
+      },
+      [hasUnsavedChanges]
+    )
+  );
+
+  // Intercept browser refresh / window close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Navigation Blocker Actions
+  const handleSaveAndProceed = async () => {
+    if (isFinishing) return;
+    if (isEditing) {
+      const success = await saveWorkoutEdits(userId);
+      if (success) {
+        blocker.proceed?.();
+      }
+    } else {
+      const success = await finishWorkout(userId);
+      if (success) {
+        blocker.proceed?.();
+      }
+    }
+  };
+
+  const handleDiscardAndProceed = () => {
+    if (isEditing) {
+      cancelEditingWorkout(userId);
+    } else {
+      cancelWorkout(userId);
+    }
+    blocker.proceed?.();
+  };
+
+  // Explicit Header Cancel
+  const handleHeaderCancel = () => {
+    if (hasUnsavedChanges) {
+      setIsCancelConfirmOpen(true);
+    } else {
+      if (isEditing) {
+        cancelEditingWorkout(userId);
+      } else {
+        cancelWorkout(userId);
+      }
+      navigate('/');
+    }
+  };
+
+  const confirmDiscard = () => {
+    if (isEditing) {
+      cancelEditingWorkout(userId);
+    } else {
+      cancelWorkout(userId);
+    }
+    setIsCancelConfirmOpen(false);
+    navigate('/');
+  };
+
+  // Save Edits Handler (Post-Completion Editing)
+  const handleSaveEdits = async () => {
+    if (isFinishing) return;
+    const success = await saveWorkoutEdits(userId);
+    if (success) {
+      setSaveSuccessMsg('Workout edits saved successfully!');
+      setTimeout(() => {
+        navigate(-1);
+      }, 700);
+    }
+  };
 
   const handleExerciseDone = (currentExId: string) => {
-    if (!activeSession) return;
-    const currentIdx = activeSession.exercises.findIndex(
+    if (!currentSession) return;
+    const currentIdx = currentSession.exercises.findIndex(
       (ex) => ex.id === currentExId || ex.exerciseId === currentExId
     );
 
-    const remainingInorder = activeSession.exercises
+    const remainingInorder = currentSession.exercises
       .slice(currentIdx + 1)
       .find((ex) => !ex.completed && ex.id !== currentExId);
 
-    const firstIncomplete = activeSession.exercises.find(
+    const firstIncomplete = currentSession.exercises.find(
       (ex) => !ex.completed && ex.id !== currentExId
     );
 
@@ -77,7 +202,7 @@ export const WorkoutPage: React.FC = () => {
     }
   };
 
-  if (!activeSession) {
+  if (!currentSession) {
     return (
       <div className="space-y-4">
         <Header title="Workout Session" subtitle="No active workout" />
@@ -104,66 +229,112 @@ export const WorkoutPage: React.FC = () => {
     );
   }
 
-  // Derive sections list from activeSession.sections or activeSession.muscleGroups
-  const sectionsList: MuscleGroupConfig[] = activeSession.sections && activeSession.sections.length > 0
-    ? activeSession.sections
-    : activeSession.muscleGroups.map((mg) => ({
-        name: mg,
-        displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
-      }));
+  // Derive sections list from currentSession.sections or currentSession.muscleGroups
+  const sectionsList: MuscleGroupConfig[] =
+    currentSession.sections && currentSession.sections.length > 0
+      ? currentSession.sections
+      : currentSession.muscleGroups.map((mg) => ({
+          name: mg,
+          displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+        }));
 
   const handleOpenAdd = (section?: MuscleGroupConfig) => {
     setTargetSectionForAdd(section);
     setIsAddSheetOpen(true);
   };
 
-  const handleSelectSuggested = (exercise: Exercise) => {
-    addExerciseToWorkout(userId, exercise);
-  };
+  const activeTitle =
+    currentSession.workoutName ||
+    (currentSession.sections && currentSession.sections.length > 0
+      ? currentSession.sections.map((s) => s.displayName).join(' + ')
+      : currentSession.muscleGroups.join(' + '));
 
-  const activeTitle = activeSession.workoutName || (
-    activeSession.sections && activeSession.sections.length > 0
-      ? activeSession.sections.map((s) => s.displayName).join(' + ')
-      : activeSession.muscleGroups.join(' + ')
-  );
-
-  const activeSubtitle = activeSession.sections && activeSession.sections.length > 0
-    ? activeSession.sections.map((s) => s.displayName).join(' · ')
-    : '';
+  const activeSubtitle =
+    currentSession.sections && currentSession.sections.length > 0
+      ? currentSession.sections.map((s) => s.displayName).join(' · ')
+      : '';
 
   return (
     <div className="space-y-6 pb-24 max-w-full overflow-x-hidden">
-      {/* Workout Active Header */}
-      <div className="flex items-center justify-between py-2 border-b border-[#272B30] sticky top-0 bg-[#0B0D0F]/95 backdrop-blur-md z-20">
-        <div>
-          <span className="text-[10px] font-extrabold text-[#E11D48] uppercase tracking-widest">
-            IN PROGRESS
+      {/* Editing Mode Banner */}
+      {isEditing && editingSession && (
+        <div className="bg-[#1B1F23] border border-amber-500/30 rounded-xl px-3.5 py-2.5 flex items-center justify-between text-xs">
+          <span className="font-bold text-amber-400 flex items-center gap-1.5">
+            <Edit3 className="w-3.5 h-3.5" />
+            Editing Saved Workout
           </span>
-          <h1 className="text-lg font-black text-[#F5F5F5] uppercase tracking-tight">
+          <span className="text-[#9CA3AF] font-medium">
+            {formatDateShort(editingSession.date)}
+          </span>
+        </div>
+      )}
+
+      {/* Success Notification */}
+      {saveSuccessMsg && (
+        <div className="bg-[#22C55E]/15 border border-[#22C55E]/40 text-[#22C55E] text-xs font-bold px-3 py-2 rounded-xl text-center">
+          {saveSuccessMsg}
+        </div>
+      )}
+
+      {/* Save Error Alert */}
+      {saveError && (
+        <div className="bg-[#EF4444]/15 border border-[#EF4444]/40 text-[#EF4444] text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-between">
+          <span>{saveError}</span>
+          <button onClick={handleSaveEdits} className="underline hover:text-white cursor-pointer">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Workout Sticky Header */}
+      <div className="flex items-center justify-between py-2 border-b border-[#272B30] sticky top-0 bg-[#0B0D0F]/95 backdrop-blur-md z-20">
+        <div className="min-w-0 mr-2">
+          <span
+            className={`text-[10px] font-extrabold uppercase tracking-widest ${
+              isEditing ? 'text-amber-400' : 'text-[#E11D48]'
+            }`}
+          >
+            {isEditing ? 'EDITING SAVED WORKOUT' : 'IN PROGRESS'}
+          </span>
+          <h1 className="text-lg font-black text-[#F5F5F5] uppercase tracking-tight truncate">
             {activeTitle}
           </h1>
           {activeSubtitle && (
-            <div className="text-[11px] font-medium text-[#9CA3AF]">
+            <div className="text-[11px] font-medium text-[#9CA3AF] truncate">
               {activeSubtitle}
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => cancelWorkout(userId)}
+            onClick={handleHeaderCancel}
             className="text-xs font-bold text-[#EF4444] hover:text-[#EF4444]/80 px-2 py-1 cursor-pointer"
           >
             Cancel
           </button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setIsSummaryOpen(true)}
-          >
-            <Check className="w-4 h-4 mr-1 stroke-[3]" />
-            <span>Finish</span>
-          </Button>
+
+          {isEditing ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSaveEdits}
+              disabled={isFinishing}
+              className="font-extrabold"
+            >
+              <Check className="w-4 h-4 mr-1 stroke-[3]" />
+              <span>{isFinishing ? 'Saving...' : 'Save Changes'}</span>
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsSummaryOpen(true)}
+            >
+              <Check className="w-4 h-4 mr-1 stroke-[3]" />
+              <span>Finish</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -171,7 +342,7 @@ export const WorkoutPage: React.FC = () => {
       <div className="space-y-6">
         {sectionsList.map((sec) => {
           const legKey = isLegSubArea(sec.subAreas, sec.displayName);
-          const exList = activeSession.exercises.filter((ex) => {
+          const exList = currentSession.exercises.filter((ex) => {
             if (legKey) {
               return getLegSection(ex.exercise) === legKey;
             }
@@ -202,14 +373,14 @@ export const WorkoutPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Sub-area Coverage Indicator for this specific section */}
+              {/* Sub-area Coverage Indicator */}
               <CoverageIndicator
                 muscleGroup={sec.name}
                 sectionTitle={sec.displayName}
                 subAreas={sec.subAreas}
               />
 
-              {/* Exercise Cards in this section */}
+              {/* Exercise Cards */}
               {exList.map((workEx) => (
                 <ExerciseCard
                   key={workEx.id}
@@ -226,9 +397,10 @@ export const WorkoutPage: React.FC = () => {
         })}
       </div>
 
-      {/* Workout Completion Indication Banner */}
-      {activeSession.exercises.length > 0 &&
-        activeSession.exercises.every((ex) => ex.completed) && (
+      {/* Completion Indication Banner (Active Session only) */}
+      {!isEditing &&
+        currentSession.exercises.length > 0 &&
+        currentSession.exercises.every((ex) => ex.completed) && (
           <div className="bg-[#22C55E]/10 border border-[#22C55E]/40 rounded-2xl p-5 text-center space-y-2.5 my-4">
             <div className="w-11 h-11 rounded-full bg-[#22C55E] text-[#0B0D0F] flex items-center justify-center mx-auto shadow-sm shadow-[#22C55E]/40">
               <Check className="w-6 h-6 stroke-[3]" />
@@ -251,6 +423,34 @@ export const WorkoutPage: React.FC = () => {
             </Button>
           </div>
         )}
+
+      {/* Post-Completion Editing Bottom Save Actions */}
+      {isEditing && (
+        <div className="bg-[#1B1F23] border border-[#272B30] rounded-2xl p-4 space-y-2.5 mt-4">
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            onClick={handleSaveEdits}
+            disabled={isFinishing}
+            className="font-extrabold min-h-[46px]"
+          >
+            <Check className="w-4 h-4 mr-1.5 stroke-[3]" />
+            <span>{isFinishing ? 'SAVING CHANGES...' : 'SAVE WORKOUT CHANGES'}</span>
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            onClick={handleHeaderCancel}
+            disabled={isFinishing}
+            className="font-bold"
+          >
+            Cancel & Discard Changes
+          </Button>
+        </div>
+      )}
 
       {/* Action to Add New Muscle / Workout Section */}
       <div className="pt-2">
@@ -278,6 +478,7 @@ export const WorkoutPage: React.FC = () => {
         onClose={() => setIsSummaryOpen(false)}
       />
 
+      {/* Add Muscle Group Modal */}
       <Modal
         isOpen={isAddSectionModalOpen}
         onClose={() => setIsAddSectionModalOpen(false)}
@@ -327,6 +528,102 @@ export const WorkoutPage: React.FC = () => {
                 </button>
               );
             })}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Custom Confirmation Modal for Unsaved Navigation Blocker */}
+      <Modal
+        isOpen={blocker.state === 'blocked'}
+        onClose={() => blocker.reset?.()}
+        title="Workout not saved!"
+      >
+        <div className="space-y-4 py-2">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-extrabold text-[#F5F5F5]">
+                Unsaved Progress Detected
+              </h4>
+              <p className="text-xs text-[#9CA3AF] mt-1 leading-relaxed">
+                You have an unfinished workout with unsaved progress. If you leave now, your changes may be lost.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <Button
+              variant="secondary"
+              size="md"
+              fullWidth
+              disabled={isFinishing}
+              onClick={() => blocker.reset?.()}
+              className="font-bold"
+            >
+              Stay in Workout
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              fullWidth
+              disabled={isFinishing}
+              onClick={handleSaveAndProceed}
+              className="font-black"
+            >
+              {isFinishing
+                ? 'Saving Workout...'
+                : isEditing
+                ? 'Save Changes & Leave'
+                : 'Save Workout & Leave'}
+            </Button>
+
+            <button
+              onClick={handleDiscardAndProceed}
+              disabled={isFinishing}
+              className="w-full text-center text-xs font-bold text-[#EF4444] hover:text-[#EF4444]/80 py-2 transition-colors cursor-pointer"
+            >
+              Leave Without Saving
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Header Cancel Confirmation Modal */}
+      <Modal
+        isOpen={isCancelConfirmOpen}
+        onClose={() => setIsCancelConfirmOpen(false)}
+        title={isEditing ? 'Discard Changes?' : 'Discard Workout?'}
+      >
+        <div className="space-y-4 py-2">
+          <p className="text-xs text-[#9CA3AF] leading-relaxed">
+            {isEditing
+              ? 'Are you sure you want to discard your edits? Your previous saved workout will remain unchanged.'
+              : 'Are you sure you want to discard this workout? All sets and progress entered during this session will be lost.'}
+          </p>
+
+          <div className="flex items-center gap-2 pt-2">
+            <Button
+              variant="secondary"
+              size="md"
+              fullWidth
+              onClick={() => setIsCancelConfirmOpen(false)}
+              className="font-bold"
+            >
+              Keep Workout
+            </Button>
+
+            <Button
+              variant="danger"
+              size="md"
+              fullWidth
+              onClick={confirmDiscard}
+              className="font-bold bg-[#EF4444] hover:bg-[#DC2626] text-white"
+            >
+              Discard
+            </Button>
           </div>
         </div>
       </Modal>

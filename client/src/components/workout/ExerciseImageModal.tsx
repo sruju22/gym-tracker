@@ -32,7 +32,7 @@ export const ExerciseImageModal: React.FC<ExerciseImageModalProps> = ({
             {exercise.primaryMuscle.toUpperCase()}
           </Badge>
           <Badge variant="secondary" size="md">
-            {exercise.equipment.toUpperCase()}
+            {(exercise.equipmentName || exercise.equipment).toUpperCase()}
           </Badge>
           {exercise.muscleAreaEmphasis.map((area) => (
             <Badge key={area} variant="secondary" size="md">

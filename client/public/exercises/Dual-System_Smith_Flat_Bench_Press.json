@@ -1,0 +1,29 @@
+{
+  "name": "Dual-System Smith Flat Bench Press",
+  "force": "push",
+  "level": "intermediate",
+  "mechanic": "compound",
+  "equipment": "machine",
+  "equipmentName": "Dual-System Power Smith Machine",
+  "primaryMuscles": [
+    "chest"
+  ],
+  "secondaryMuscles": [
+    "shoulders",
+    "triceps"
+  ],
+  "instructions": [
+    "Set the Dual-System Power Smith Machine's integrated bench to the flat, horizontal position using the adjustment lever.",
+    "Load the desired weight plates onto the dual plate horns on each side of the machine.",
+    "Lie flat on the bench with your chest aligned directly underneath the dual independent press handles.",
+    "Grasp the handles with an overhand grip, rotate to release the safety catches, and start with your arms extended.",
+    "Lower the handles smoothly toward your mid chest under control, feeling a deep stretch across the pectorals.",
+    "Press the handles back up firmly by contracting your chest until your arms are extended, then re-engage the safety catch when the set is complete."
+  ],
+  "category": "strength",
+  "images": [
+    "Dual-System_Smith_Flat_Bench_Press/0.jpg",
+    "Dual-System_Smith_Flat_Bench_Press/1.jpg"
+  ],
+  "id": "Dual-System_Smith_Flat_Bench_Press"
+}

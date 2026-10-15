@@ -80,7 +80,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
             {exercise.primaryMuscle.toUpperCase()}
           </Badge>
           <Badge variant="secondary" size="md">
-            {exercise.equipment.toUpperCase()}
+            {(exercise.equipmentName || exercise.equipment).toUpperCase()}
           </Badge>
           <Badge variant="info" size="md">
             {exercise.exerciseType.toUpperCase()}

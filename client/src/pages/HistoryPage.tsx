@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Edit3 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { formatDateShort, formatDayName } from '../utils/formatters';
 import { WorkoutSession } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 export const HistoryPage: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuthStore();
   const userId = currentUser?.id || 'user_srujan';
 
-  const { getHistory } = useWorkoutStore();
+  const { getHistory, startEditingWorkout } = useWorkoutStore();
   const history = getHistory(userId);
 
   const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(null);
@@ -105,6 +108,23 @@ export const HistoryPage: React.FC = () => {
                   )}
                 </div>
               ))}
+            </div>
+
+            <div className="pt-2 border-t border-[#272B30]">
+              <Button
+                variant="primary"
+                size="md"
+                fullWidth
+                onClick={() => {
+                  startEditingWorkout(userId, selectedSession);
+                  setSelectedSession(null);
+                  navigate('/workout');
+                }}
+                className="font-bold flex items-center justify-center gap-1.5 min-h-[44px]"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Edit Workout</span>
+              </Button>
             </div>
           </div>
         </Modal>

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { WorkoutPage } from './pages/WorkoutPage';
@@ -9,6 +9,20 @@ import { ProgressPage } from './pages/ProgressPage';
 import { useAuthStore } from './store/authStore';
 import { useWorkoutStore } from './store/workoutStore';
 import { prewarmBackend } from './api/authApi';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppShell />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: 'workout', element: <WorkoutPage /> },
+      { path: 'exercises', element: <ExercisesPage /> },
+      { path: 'history', element: <HistoryPage /> },
+      { path: 'progress', element: <ProgressPage /> },
+    ],
+  },
+]);
 
 export function App() {
   const { currentUser, restoreAuth } = useAuthStore();
@@ -26,27 +40,14 @@ export function App() {
   }, [restoreAuth]);
 
   useEffect(() => {
-    if (currentUser?.id) {
-      fetchWeeklyPlan(currentUser.id);
-      fetchHistory(currentUser.id);
-      fetchBackendPRs(currentUser.id);
-      fetchProgressStats(currentUser.id);
-    }
+    const id = currentUser?.id || 'user_srujan';
+    fetchWeeklyPlan(id);
+    fetchHistory(id);
+    fetchBackendPRs(id);
+    fetchProgressStats(id);
   }, [currentUser?.id, fetchWeeklyPlan, fetchHistory, fetchBackendPRs, fetchProgressStats]);
 
-  return (
-    <Router>
-      <AppShell>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/workout" element={<WorkoutPage />} />
-          <Route path="/exercises" element={<ExercisesPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/progress" element={<ProgressPage />} />
-        </Routes>
-      </AppShell>
-    </Router>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

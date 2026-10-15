@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { DayOfWeek } from '../../types';
-import { getTodayDayOfWeek, formatDayName } from '../../utils/formatters';
+import { getTodayDayOfWeek, formatDayName, parseLocalDate } from '../../utils/formatters';
 import { Edit2 } from 'lucide-react';
 
 interface WeeklyOverviewProps {
@@ -17,6 +17,30 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
   const { getWeeklyPlan, getHistory } = useWorkoutStore();
   const weeklyPlan = getWeeklyPlan(userId);
   const history = getHistory(userId);
+
+  const [, setTick] = useState(0);
+
+  // Periodically refresh to stay accurate across midnight / date boundaries
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 30000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setTick((t) => t + 1);
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+    };
+  }, []);
 
   const today = getTodayDayOfWeek();
 
@@ -40,15 +64,18 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
 
   const { startOfWeek, endOfWeek } = getStartAndEndOfWeek();
 
-  const completedDays = new Set(
-    history
-      .filter((h) => {
-        if (h.status !== 'completed') return false;
-        const hTime = new Date(h.completedAt || h.date).getTime();
-        return hTime >= startOfWeek && hTime <= endOfWeek;
-      })
-      .map((h) => h.dayOfWeek)
-  );
+  const dayNames: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const completedDays = new Set<string>();
+
+  history.forEach((h) => {
+    if (h.status !== 'completed') return;
+    const d = parseLocalDate(h.completedAt || h.date);
+    const hTime = d.getTime();
+    if (hTime >= startOfWeek && hTime <= endOfWeek) {
+      const day = (h.dayOfWeek || '').trim().toLowerCase() || dayNames[d.getDay()];
+      if (day) completedDays.add(day);
+    }
+  });
 
   return (
     <Card className="w-full flex-1 flex flex-col min-h-0 p-4 sm:p-5 rounded-2xl border border-[#272B30] bg-[#14171A]">

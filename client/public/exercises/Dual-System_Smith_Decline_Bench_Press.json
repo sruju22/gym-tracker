@@ -1,0 +1,29 @@
+{
+  "name": "Dual-System Smith Decline Bench Press",
+  "force": "push",
+  "level": "intermediate",
+  "mechanic": "compound",
+  "equipment": "machine",
+  "equipmentName": "Dual-System Power Smith Machine",
+  "primaryMuscles": [
+    "chest"
+  ],
+  "secondaryMuscles": [
+    "shoulders",
+    "triceps"
+  ],
+  "instructions": [
+    "On the Dual-System Power Smith Machine, adjust the central bench into the decline angle (lowering the rear headrest down toward the base frame).",
+    "Elevate and secure your legs firmly over and under the double round padded hold-down rollers at the front.",
+    "Lie back so your head rests on the declined lower section, with your lower chest positioned directly beneath the dual press handles.",
+    "Grasp the handles firmly, rotate to release the safety catches, and start with arms extended.",
+    "Inhale and lower the handles under control until they reach the lower chest line, maintaining full control.",
+    "Exhale and press upward focusing on driving tension through the lower pectorals, then safely lock the handles back into the catches."
+  ],
+  "category": "strength",
+  "images": [
+    "Dual-System_Smith_Decline_Bench_Press/0.jpg",
+    "Dual-System_Smith_Decline_Bench_Press/1.jpg"
+  ],
+  "id": "Dual-System_Smith_Decline_Bench_Press"
+}

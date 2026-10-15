@@ -4,6 +4,7 @@ export interface IExercise {
   name: string;
   muscleGroup: string;
   equipment?: string;
+  equipmentName?: string;
   category?: string;
   description?: string;
   instructions?: string;
@@ -28,6 +29,10 @@ const exerciseSchema = new Schema<IExerciseDocument>(
       trim: true
     },
     equipment: {
+      type: String,
+      trim: true
+    },
+    equipmentName: {
       type: String,
       trim: true
     },

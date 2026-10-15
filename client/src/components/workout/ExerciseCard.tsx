@@ -87,15 +87,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         onClick={toggleExpand}
         className="mb-3 bg-[#14171A] border border-[#22C55E]/40 hover:border-[#22C55E]/70 rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] shadow-xs"
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
           <div className="w-7 h-7 rounded-full bg-[#22C55E]/15 border border-[#22C55E]/40 text-[#22C55E] flex items-center justify-center font-black shrink-0">
             <Check className="w-4 h-4 stroke-[3]" />
           </div>
-          <div className="min-w-0">
-            <div className="text-xs font-black text-[#F5F5F5] truncate flex items-center gap-1.5">
-              <span>{exercise.name}</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-black text-[#F5F5F5] flex items-center gap-1.5 min-w-0">
+              <span className="truncate min-w-0">{exercise.name}</span>
               {isNewPR && (
-                <span className="text-[9px] font-extrabold text-amber-400 bg-amber-400/15 border border-amber-400/40 px-1.5 py-0.2 rounded shrink-0">
+                <span className="text-[9px] font-extrabold text-amber-400 bg-amber-400/15 border border-amber-400/40 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
                   🏆 NEW PR
                 </span>
               )}
@@ -126,11 +126,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         onClick={toggleExpand}
         className="mb-3 bg-[#14171A] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
           <div className="w-7 h-7 rounded-full bg-[#1B1F23] border border-[#272B30] text-[#E11D48] flex items-center justify-center font-black text-xs shrink-0">
             +
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="text-xs font-black text-[#F5F5F5] truncate">
               {exercise.name}
             </div>
@@ -186,9 +186,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
-            <h3 className="text-base font-extrabold text-[#F5F5F5] truncate leading-tight flex items-center gap-1.5">
-              {completed && <Check className="w-4 h-4 text-[#22C55E] stroke-[3] inline shrink-0" />}
-              <span>{exercise.name}</span>
+            <h3 className="text-base font-extrabold text-[#F5F5F5] leading-tight flex items-center gap-1.5 min-w-0 mr-1">
+              {completed && <Check className="w-4 h-4 text-[#22C55E] stroke-[3] shrink-0" />}
+              <span className="truncate min-w-0">{exercise.name}</span>
             </h3>
             <button
               onClick={(e) => {

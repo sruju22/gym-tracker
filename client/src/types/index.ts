@@ -41,6 +41,7 @@ export interface Exercise {
   secondaryMuscles: MuscleGroup[];
   muscleAreaEmphasis: MuscleArea[];
   equipment: Equipment;
+  equipmentName?: string;
   exerciseType: ExerciseType;
   difficulty: Difficulty;
   instructions: string[];

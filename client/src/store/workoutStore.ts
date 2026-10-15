@@ -20,10 +20,10 @@ import {
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
-import { getTodayDayOfWeek } from '../utils/formatters';
+import { getTodayDayOfWeek, isSameLocalDay } from '../utils/formatters';
 import { calculate1RM } from '../utils/oneRM';
 import { fetchWorkoutPlan, updateWorkoutPlanApi, createWorkoutPlanApi } from '../api/workoutPlanApi';
-import { fetchWorkoutHistoryApi, createWorkoutHistoryApi } from '../api/workoutHistoryApi';
+import { fetchWorkoutHistoryApi, createWorkoutHistoryApi, updateWorkoutHistoryApi } from '../api/workoutHistoryApi';
 import {
   fetchPersonalRecordsApi,
   fetchProgressSummaryApi,
@@ -39,6 +39,8 @@ export interface UserWorkoutData {
   weeklyPlan: WeeklySchedule;
   workoutPlanDocId?: string;
   activeSession: WorkoutSession | null;
+  editingSession?: WorkoutSession | null;
+  editingOriginalSession?: WorkoutSession | null;
   goals: Goal[];
   currentWeight?: number;
   progressSummary?: ProgressSummaryResponse;
@@ -49,12 +51,15 @@ interface WorkoutStore {
   userDataMap: Record<string, UserWorkoutData>;
   settings: UserSettings;
   isFinishing: boolean;
+  saveError: string | null;
 
   // Selectors for active user ID
   getUserData: (userId: string) => UserWorkoutData;
   getExercises: (userId: string) => Exercise[];
   getWeeklyPlan: (userId: string) => WeeklySchedule;
   getActiveSession: (userId: string) => WorkoutSession | null;
+  getEditingSession: (userId: string) => WorkoutSession | null;
+  getTodayCompletedWorkout: (userId: string) => WorkoutSession | null;
   getHistory: (userId: string) => WorkoutSession[];
   getPersonalRecords: (userId: string) => PersonalRecord[];
   getExercisePR: (userId: string, exerciseId: string) => PersonalRecord | undefined;
@@ -67,6 +72,9 @@ interface WorkoutStore {
   fetchProgressStats: (userId: string) => Promise<void>;
   startTodayWorkout: (userId: string) => void;
   startCustomWorkout: (userId: string, muscleGroups: MuscleGroup[]) => void;
+  startEditingWorkout: (userId: string, session: WorkoutSession) => void;
+  cancelEditingWorkout: (userId: string) => void;
+  saveWorkoutEdits: (userId: string) => Promise<boolean>;
   addMuscleSectionToWorkout: (userId: string, muscleGroup: MuscleGroup) => void;
   updateSet: (userId: string, exerciseId: string, setIndex: number, weight: number | null, reps: number | null) => void;
   toggleSetCompleted: (userId: string, exerciseId: string, setIndex: number) => void;
@@ -76,7 +84,7 @@ interface WorkoutStore {
   removeExerciseFromWorkout: (userId: string, exerciseId: string) => void;
   toggleExerciseCompleted: (userId: string, exerciseId: string) => void;
   updateExerciseNotes: (userId: string, exerciseId: string, notes: string) => void;
-  finishWorkout: (userId: string) => void;
+  finishWorkout: (userId: string) => Promise<boolean>;
   cancelWorkout: (userId: string) => void;
 
   // Actions - Custom Exercises (CRUD)
@@ -210,6 +218,8 @@ const createDefaultUserData = (): UserWorkoutData => {
     customExercises: [],
     weeklyPlan: JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN)),
     activeSession: null,
+    editingSession: null,
+    editingOriginalSession: null,
     currentWeight: 66,
     goals: [
       {
@@ -253,6 +263,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         rotationWindowDays: 7,
       },
       isFinishing: false,
+      saveError: null,
 
       // Selectors with auto-fallback for newly created users
       getUserData: (userId: string) => {
@@ -264,6 +275,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             customExercises: [],
             weeklyPlan: JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN)),
             activeSession: null,
+            editingSession: null,
+            editingOriginalSession: null,
             goals: [],
             currentWeight: 70,
           };
@@ -299,6 +312,45 @@ export const useWorkoutStore = create<WorkoutStore>()(
       getActiveSession: (userId: string) => {
         const userData = get().getUserData(userId);
         return userData.activeSession;
+      },
+
+      getEditingSession: (userId: string) => {
+        const userData = get().getUserData(userId);
+        return userData.editingSession || null;
+      },
+
+      getTodayCompletedWorkout: (userId: string) => {
+        const userData = get().getUserData(userId);
+        const history = userData.history || [];
+        const todayDay = getTodayDayOfWeek();
+        const weeklyPlan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
+        const todayConfig = weeklyPlan[todayDay];
+        const now = new Date();
+
+        // 1. Only consider sessions completed on today's local calendar day
+        const todaySessions = history.filter((h) => {
+          if (h.status !== 'completed') return false;
+          return isSameLocalDay(h.completedAt || h.date, now);
+        });
+
+        if (todaySessions.length === 0) return null;
+
+        // 2. If today is a scheduled workout day, prefer matching scheduled workout name
+        if (!todayConfig?.isRest && todayConfig?.name) {
+          const nameMatch = todaySessions.find(
+            (h) => (h.workoutName || '').trim().toLowerCase() === todayConfig.name.trim().toLowerCase()
+          );
+          if (nameMatch) return nameMatch;
+        }
+
+        // 3. Prefer matching today's day of week
+        const dayMatch = todaySessions.find(
+          (h) => (h.dayOfWeek || '').trim().toLowerCase() === todayDay.toLowerCase()
+        );
+        if (dayMatch) return dayMatch;
+
+        // 4. If today is a rest day or custom session completed today, return the session
+        return todaySessions[0];
       },
 
       getHistory: (userId: string) => {
@@ -606,14 +658,188 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
       },
 
+      startEditingWorkout: (userId: string, session: WorkoutSession) => {
+        const cloned: WorkoutSession = JSON.parse(JSON.stringify(session));
+        if (!cloned.sections || cloned.sections.length === 0) {
+          cloned.sections = cloned.muscleGroups.map((mg) => ({
+            name: mg,
+            displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+          }));
+        }
+
+        set((state) => ({
+          saveError: null,
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              editingSession: cloned,
+              editingOriginalSession: JSON.parse(JSON.stringify(session)),
+            },
+          },
+        }));
+      },
+
+      cancelEditingWorkout: (userId: string) => {
+        set((state) => ({
+          saveError: null,
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              editingSession: null,
+              editingOriginalSession: null,
+            },
+          },
+        }));
+      },
+
+      saveWorkoutEdits: async (userId: string) => {
+        const { isFinishing } = get();
+        if (isFinishing) return false;
+
+        const userData = get().getUserData(userId);
+        const { editingSession, personalRecords } = userData;
+        if (!editingSession) return false;
+
+        set({ isFinishing: true, saveError: null });
+
+        try {
+          let totalVolume = 0;
+          let totalCompletedSets = 0;
+          const updatedPRs: PersonalRecord[] = [...personalRecords];
+
+          editingSession.exercises.forEach((ex) => {
+            const completedSets = ex.sets.filter(
+              (s) => s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
+            );
+
+            completedSets.forEach((s) => {
+              const weight = s.weight!;
+              const reps = s.reps!;
+              totalVolume += weight * reps;
+              totalCompletedSets++;
+
+              const est1RM = calculate1RM(weight, reps);
+              const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
+              const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+
+              const isNewPR =
+                !existingPR ||
+                weight > existingPR.weight ||
+                est1RM > existingPR.estimated1RM ||
+                (weight === existingPR.weight && reps > existingPR.reps);
+
+              if (isNewPR) {
+                const prRecord: PersonalRecord = {
+                  id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                  exerciseId: ex.exerciseId,
+                  exerciseName: ex.exercise.name,
+                  type: 'max_weight',
+                  value: weight,
+                  weight,
+                  reps,
+                  estimated1RM: est1RM,
+                  date: editingSession.date || new Date().toISOString(),
+                  details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                };
+
+                if (prIndex >= 0) {
+                  updatedPRs[prIndex] = prRecord;
+                } else {
+                  updatedPRs.push(prRecord);
+                }
+              }
+            });
+          });
+
+          const apiExercises = editingSession.exercises.map((ex) => ({
+            exerciseId: ex.exerciseId || ex.exercise.id,
+            exerciseName: ex.exercise.name,
+            primaryMuscle: ex.exercise.primaryMuscle,
+            muscleAreaEmphasis: ex.exercise.muscleAreaEmphasis,
+            equipment: ex.exercise.equipment,
+            exerciseType: ex.exercise.exerciseType,
+            order: ex.order,
+            sets: ex.sets.map((s) => ({
+              setNumber: s.setNumber,
+              weight: s.weight,
+              reps: s.reps,
+              completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
+            })),
+            notes: ex.notes || '',
+          }));
+
+          const apiPayload = {
+            workoutName: editingSession.workoutName,
+            date: editingSession.date,
+            dayOfWeek: editingSession.dayOfWeek,
+            muscleGroups: editingSession.muscleGroups,
+            status: 'completed' as const,
+            exercises: apiExercises,
+            totalVolume,
+            totalSets: totalCompletedSets,
+          };
+
+          await updateWorkoutHistoryApi(editingSession.id, apiPayload);
+
+          const updatedSession: WorkoutSession = {
+            ...editingSession,
+            status: 'completed',
+            totalVolume,
+            totalSets: totalCompletedSets,
+            exercises: editingSession.exercises.map((ex) => ({
+              ...ex,
+              sets: ex.sets.map((s) => ({
+                ...s,
+                completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
+              })),
+            })),
+          };
+
+          set((state) => {
+            const uData = state.getUserData(userId);
+            const updatedHistory = uData.history.map((h) =>
+              h.id === editingSession.id ? updatedSession : h
+            );
+            return {
+              isFinishing: false,
+              saveError: null,
+              userDataMap: {
+                ...state.userDataMap,
+                [userId]: {
+                  ...uData,
+                  history: updatedHistory,
+                  personalRecords: updatedPRs,
+                  editingSession: null,
+                  editingOriginalSession: null,
+                },
+              },
+            };
+          });
+
+          get().fetchBackendPRs(userId);
+          get().fetchProgressStats(userId);
+
+          return true;
+        } catch (err: any) {
+          set({
+            isFinishing: false,
+            saveError: err.message || 'Failed to update workout session',
+          });
+          return false;
+        }
+      },
+
       addMuscleSectionToWorkout: (userId: string, muscleGroup: MuscleGroup) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const currentSections = activeSession.sections && activeSession.sections.length > 0
-          ? [...activeSession.sections]
-          : activeSession.muscleGroups.map((mg) => ({
+        const currentSections = targetSession.sections && targetSession.sections.length > 0
+          ? [...targetSession.sections]
+          : targetSession.muscleGroups.map((mg) => ({
               name: mg,
               displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
             }));
@@ -653,17 +879,17 @@ export const useWorkoutStore = create<WorkoutStore>()(
         if (newSections.length === 0) return;
 
         const updatedSections = [...currentSections, ...newSections];
-        const updatedMuscleGroups = activeSession.muscleGroups.includes(muscleGroup)
-          ? activeSession.muscleGroups
-          : [...activeSession.muscleGroups, muscleGroup];
+        const updatedMuscleGroups = targetSession.muscleGroups.includes(muscleGroup)
+          ? targetSession.muscleGroups
+          : [...targetSession.muscleGroups, muscleGroup];
 
         set((state) => ({
           userDataMap: {
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 muscleGroups: updatedMuscleGroups,
                 sections: updatedSections,
               },
@@ -674,10 +900,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       updateSet: (userId, exerciseId, setIndex, weight, reps) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const updatedExercises = activeSession.exercises.map((ex) => {
+        const updatedExercises = targetSession.exercises.map((ex) => {
           if (ex.exerciseId !== exerciseId && ex.id !== exerciseId) return ex;
 
           const updatedSets = [...ex.sets];
@@ -699,8 +926,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 exercises: updatedExercises,
               },
             },
@@ -710,10 +937,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       toggleSetCompleted: (userId, exerciseId, setIndex) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const updatedExercises = activeSession.exercises.map((ex) => {
+        const updatedExercises = targetSession.exercises.map((ex) => {
           if (ex.exerciseId !== exerciseId && ex.id !== exerciseId) return ex;
 
           const updatedSets = [...ex.sets];
@@ -742,8 +970,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 exercises: updatedExercises,
               },
             },
@@ -753,10 +981,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       addSetToExercise: (userId, exerciseId) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const updatedExercises = activeSession.exercises.map((ex) => {
+        const updatedExercises = targetSession.exercises.map((ex) => {
           if (ex.exerciseId !== exerciseId && ex.id !== exerciseId) return ex;
 
           const lastSet = ex.sets[ex.sets.length - 1];
@@ -778,10 +1007,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 exercises: updatedExercises,
-                totalSets: activeSession.totalSets + 1,
+                totalSets: targetSession.totalSets + 1,
               },
             },
           },
@@ -790,10 +1019,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       removeSetFromExercise: (userId, exerciseId, setIndex) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const updatedExercises = activeSession.exercises.map((ex) => {
+        const updatedExercises = targetSession.exercises.map((ex) => {
           if (ex.exerciseId !== exerciseId && ex.id !== exerciseId) return ex;
           if (ex.sets.length <= 1) return ex;
 
@@ -811,8 +1041,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 exercises: updatedExercises,
               },
             },
@@ -822,16 +1052,17 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       addExerciseToWorkout: (userId, exercise) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        if (activeSession.exercises.some((e) => e.exerciseId === exercise.id)) return;
+        if (targetSession.exercises.some((e) => e.exerciseId === exercise.id)) return;
 
         const newWorkoutExercise: WorkoutExercise = {
           id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
           exerciseId: exercise.id,
           exercise,
-          order: activeSession.exercises.length + 1,
+          order: targetSession.exercises.length + 1,
           notes: '',
           sets: Array.from({ length: 3 }, (_, i) => ({
             id: `set_${Date.now()}_${i + 1}`,
@@ -842,15 +1073,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
           })),
         };
 
-        const currentSections = activeSession.sections && activeSession.sections.length > 0
-          ? [...activeSession.sections]
-          : activeSession.muscleGroups.map((mg) => ({
+        const currentSections = targetSession.sections && targetSession.sections.length > 0
+          ? [...targetSession.sections]
+          : targetSession.muscleGroups.map((mg) => ({
               name: mg,
               displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
             }));
 
         let updatedSections = currentSections;
-        let updatedMuscleGroups = activeSession.muscleGroups;
+        let updatedMuscleGroups = targetSession.muscleGroups;
 
         if (!currentSections.some((s) => s.name === exercise.primaryMuscle)) {
           const meta = MUSCLE_GROUPS[exercise.primaryMuscle];
@@ -869,12 +1100,12 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 muscleGroups: updatedMuscleGroups,
                 sections: updatedSections,
-                exercises: [...activeSession.exercises, newWorkoutExercise],
-                totalSets: activeSession.totalSets + 3,
+                exercises: [...targetSession.exercises, newWorkoutExercise],
+                totalSets: targetSession.totalSets + 3,
               },
             },
           },
@@ -883,10 +1114,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       removeExerciseFromWorkout: (userId, exerciseId) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const filtered = activeSession.exercises.filter(
+        const filtered = targetSession.exercises.filter(
           (ex) => ex.exerciseId !== exerciseId && ex.id !== exerciseId
         );
 
@@ -895,8 +1127,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 exercises: filtered,
               },
             },
@@ -906,10 +1138,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       toggleExerciseCompleted: (userId, exerciseId) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const updatedExercises = activeSession.exercises.map((ex) => {
+        const updatedExercises = targetSession.exercises.map((ex) => {
           if (ex.exerciseId === exerciseId || ex.id === exerciseId) {
             const nextCompleted = !ex.completed;
             const updatedSets = nextCompleted
@@ -929,8 +1162,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 exercises: updatedExercises,
               },
             },
@@ -940,10 +1173,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       updateExerciseNotes: (userId, exerciseId, notes) => {
         const userData = get().getUserData(userId);
-        const { activeSession } = userData;
-        if (!activeSession) return;
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
 
-        const updatedExercises = activeSession.exercises.map((ex) => {
+        const updatedExercises = targetSession.exercises.map((ex) => {
           if (ex.exerciseId === exerciseId || ex.id === exerciseId) {
             return { ...ex, notes };
           }
@@ -955,8 +1189,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...state.userDataMap,
             [userId]: {
               ...state.getUserData(userId),
-              activeSession: {
-                ...activeSession,
+              [sessionKey]: {
+                ...targetSession,
                 exercises: updatedExercises,
               },
             },
@@ -964,11 +1198,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
       },
 
-      finishWorkout: (userId) => {
+      finishWorkout: async (userId: string) => {
         const { isFinishing } = get();
-        if (isFinishing) return;
+        if (isFinishing) return false;
 
-        set({ isFinishing: true });
+        set({ isFinishing: true, saveError: null });
 
         try {
           const userData = get().getUserData(userId);
@@ -976,7 +1210,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
           if (!activeSession) {
             set({ isFinishing: false });
-            return;
+            return false;
           }
 
           let totalVolume = 0;
@@ -1078,8 +1312,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
             workoutPlanId: userData.workoutPlanDocId || undefined,
           };
 
+          // Await API persistence before updating state!
+          const res = await createWorkoutHistoryApi(apiPayload);
+          const mongoId = res && res.workout && res.workout._id ? res.workout._id : activeSession.id;
+
           const completedSession: WorkoutSession = {
             ...activeSession,
+            id: mongoId,
             status: 'completed',
             completedAt: new Date().toISOString(),
             totalVolume,
@@ -1094,9 +1333,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
             })),
           };
 
-          // Optimistically save locally
+          // ONLY update history and clear activeSession upon successful backend save
           set((state) => ({
             isFinishing: false,
+            saveError: null,
             userDataMap: {
               ...state.userDataMap,
               [userId]: {
@@ -1109,41 +1349,22 @@ export const useWorkoutStore = create<WorkoutStore>()(
             },
           }));
 
-          // Async persist to MongoDB Atlas backend
-          createWorkoutHistoryApi(apiPayload)
-            .then((res) => {
-              if (res && res.workout && res.workout._id) {
-                const mongoId = res.workout._id;
-                set((state) => {
-                  const uData = state.getUserData(userId);
-                  const updatedHistory = uData.history.map((h) =>
-                    h.id === completedSession.id ? { ...h, id: mongoId } : h
-                  );
-                  return {
-                    userDataMap: {
-                      ...state.userDataMap,
-                      [userId]: {
-                        ...uData,
-                        history: updatedHistory,
-                      },
-                    },
-                  };
-                });
-              }
-              // Refresh backend PRs and progress summary stats dynamically derived from MongoDB WorkoutSessions
-              get().fetchBackendPRs(userId);
-              get().fetchProgressStats(userId);
-            })
-            .catch((err) => {
-              console.error('Failed to persist completed workout session to backend:', err);
-            });
-        } catch (error) {
-          set({ isFinishing: false });
+          get().fetchBackendPRs(userId);
+          get().fetchProgressStats(userId);
+
+          return true;
+        } catch (error: any) {
+          set({
+            isFinishing: false,
+            saveError: error.message || 'Failed to save workout session',
+          });
+          return false;
         }
       },
 
       cancelWorkout: (userId) => {
         set((state) => ({
+          saveError: null,
           userDataMap: {
             ...state.userDataMap,
             [userId]: {

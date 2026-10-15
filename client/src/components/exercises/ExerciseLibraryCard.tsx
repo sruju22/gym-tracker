@@ -83,7 +83,7 @@ export const ExerciseLibraryCard: React.FC<ExerciseLibraryCardProps> = ({
       </div>
 
       <div className="px-2.5 pb-2 pt-1 border-t border-[#272B30] flex items-center justify-between text-[10px] text-[#6B7280] capitalize">
-        <span>{exercise.equipment}</span>
+        <span>{exercise.equipmentName || exercise.equipment}</span>
         <span>{exercise.exerciseType}</span>
       </div>
     </div>

@@ -200,7 +200,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
                     <div>
                       <div className="text-xs font-bold text-[#F5F5F5]">{ex.name}</div>
                       <div className="text-[11px] text-[#9CA3AF] capitalize">
-                        {ex.primaryMuscle} • {ex.muscleAreaEmphasis.map((area) => getMuscleAreaName(area)).join(', ')} • {ex.equipment}
+                        {ex.primaryMuscle} • {ex.muscleAreaEmphasis.map((area) => getMuscleAreaName(area)).join(', ')} • {ex.equipmentName || ex.equipment}
                       </div>
                     </div>
                   </div>

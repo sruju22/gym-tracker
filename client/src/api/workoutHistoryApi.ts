@@ -59,7 +59,7 @@ export async function createWorkoutHistoryApi(sessionData: Record<string, any>):
   return data;
 }
 
-export async function updateWorkoutHistoryApi(id: string, sessionData: Partial<WorkoutSession>): Promise<WorkoutSessionCreateResponse> {
+export async function updateWorkoutHistoryApi(id: string, sessionData: Record<string, any>): Promise<WorkoutSessionCreateResponse> {
   const token = getStoredToken();
   if (!token) {
     throw new Error('Not authenticated');
