@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes';
 import workoutRoutes from './routes/workoutRoutes';
 import workoutPlanRoutes from './routes/workoutPlanRoutes';
 import progressRoutes from './routes/progressRoutes';
+import combinationRoutes from './routes/combinationRoutes';
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ app.use('/api/exercises', exerciseRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/workout-plans', workoutPlanRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/combinations', combinationRoutes);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(Number(PORT), '0.0.0.0', () => {

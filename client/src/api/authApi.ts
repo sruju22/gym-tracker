@@ -8,10 +8,12 @@ export interface AuthResponse {
 }
 
 export const getStoredToken = (): string | null => {
+  if (typeof localStorage === 'undefined') return null;
   return localStorage.getItem('gymtracker_jwt_token');
 };
 
 export const setStoredToken = (token: string | null): void => {
+  if (typeof localStorage === 'undefined') return;
   if (token) {
     localStorage.setItem('gymtracker_jwt_token', token);
   } else {

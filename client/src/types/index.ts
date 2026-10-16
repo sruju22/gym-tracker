@@ -69,6 +69,38 @@ export interface WorkoutExercise {
   notes: string;
   previousPerformance?: PreviousPerformance;
   completed?: boolean;
+  combinationId?: string;
+  combinationName?: string;
+  combinationType?: CombinationType;
+  stageDescription?: string;
+  stageOrder?: number;
+}
+
+// ===== Combination Types =====
+export type CombinationType =
+  | 'combine_exercises'
+  | 'combine_movements'
+  | 'change_weights'
+  | 'build_own';
+
+export interface CombinationStage {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  movementDescription?: string;
+  targetWeight?: number | null;
+  targetReps?: number | null;
+}
+
+export interface SavedCombination {
+  id: string;
+  userId?: string;
+  name: string;
+  type: CombinationType;
+  techniqueLabel?: string;
+  rounds: number;
+  stages: CombinationStage[];
+  createdAt: string;
 }
 
 export interface PreviousPerformance {
@@ -82,6 +114,7 @@ export interface PreviousPerformance {
 
 export interface WorkoutSession {
   id: string;
+  clientSessionId?: string;
   workoutName?: string;
   date: string;
   dayOfWeek: DayOfWeek;

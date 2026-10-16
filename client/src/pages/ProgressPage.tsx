@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Award, Lock, LogIn } from 'lucide-react';
+import { Lock, LogIn } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
-import { formatDateShort, formatVolume } from '../utils/formatters';
+import { formatVolume } from '../utils/formatters';
 import { GoalsList } from '../components/goals/GoalsList';
 import { ProgressionChart } from '../components/progress/ProgressionChart';
+import { PersonalRecordsWall } from '../components/progress/PersonalRecordsWall';
 import { UserModal } from '../components/auth/UserModal';
 
 export const ProgressPage: React.FC = () => {
@@ -95,46 +95,12 @@ export const ProgressPage: React.FC = () => {
       {/* Progression Graphs & Analytics */}
       <ProgressionChart history={history} exercises={exercises} />
 
-      {/* Personal Records (PR) Wall */}
-      <Card className="flex-1 flex flex-col justify-between bg-[#14171A] border-[#272B30] p-4 sm:p-5 rounded-2xl min-h-0">
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-amber-400" />
-              <h3 className="text-xs sm:text-sm font-bold text-[#F5F5F5] uppercase tracking-wide">
-                Personal Records ({personalRecords.length})
-              </h3>
-            </div>
-            <Badge variant="warning">Best Lifts</Badge>
-          </div>
-
-          <div className="space-y-2">
-            {personalRecords.map((pr) => (
-              <div
-                key={pr.id}
-                className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 flex items-center justify-between"
-              >
-                <div>
-                  <div className="text-xs font-black text-[#F5F5F5]">{pr.exerciseName}</div>
-                  <div className="text-[11px] text-amber-400 font-semibold">
-                    {pr.weight} kg × {pr.reps} reps <span className="text-[#9CA3AF] font-normal">(Est. 1RM {pr.estimated1RM} kg)</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-extrabold text-[#E11D48]">{pr.weight} kg</div>
-                  <div className="text-[10px] text-[#6B7280]">{formatDateShort(pr.date)}</div>
-                </div>
-              </div>
-            ))}
-
-            {personalRecords.length === 0 && (
-              <div className="text-center py-6 text-xs text-[#9CA3AF] italic">
-                No Personal Records recorded yet. Complete a workout to log PRs!
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
+      {/* Personal Records (PR) Wall Grouped by Muscle Group */}
+      <PersonalRecordsWall
+        personalRecords={personalRecords}
+        exercises={exercises}
+        history={history}
+      />
     </div>
   );
 };

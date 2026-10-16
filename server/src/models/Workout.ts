@@ -19,10 +19,16 @@ export interface IWorkoutExercise {
   order: number;
   sets: IWorkoutSet[];
   notes?: string;
+  combinationId?: string;
+  combinationName?: string;
+  combinationType?: string;
+  stageDescription?: string;
+  stageOrder?: number;
 }
 
 export interface IWorkoutSession {
   userId: Types.ObjectId;
+  clientSessionId?: string;
   workoutPlanId?: Types.ObjectId;
   workoutName: string;
   date: Date;
@@ -97,6 +103,26 @@ const workoutExerciseSchema = new Schema<IWorkoutExercise>(
       default: '',
       trim: true,
     },
+    combinationId: {
+      type: String,
+      default: null,
+    },
+    combinationName: {
+      type: String,
+      default: null,
+    },
+    combinationType: {
+      type: String,
+      default: null,
+    },
+    stageDescription: {
+      type: String,
+      default: null,
+    },
+    stageOrder: {
+      type: Number,
+      default: null,
+    },
   },
   { _id: false }
 );
@@ -107,6 +133,11 @@ const workoutSchema = new Schema<IWorkoutDocument>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'User ID is required'],
+      index: true,
+    },
+    clientSessionId: {
+      type: String,
+      required: false,
       index: true,
     },
     workoutPlanId: {
@@ -174,6 +205,7 @@ const workoutSchema = new Schema<IWorkoutDocument>(
 // Compound indexes for user workout queries
 workoutSchema.index({ userId: 1, date: -1 });
 workoutSchema.index({ userId: 1, status: 1, date: -1 });
+workoutSchema.index({ userId: 1, clientSessionId: 1 });
 
 export const Workout: Model<IWorkoutDocument> =
   mongoose.models.Workout || mongoose.model<IWorkoutDocument>('Workout', workoutSchema);

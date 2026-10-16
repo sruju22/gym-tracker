@@ -12,13 +12,35 @@ export interface WorkoutSessionCreateResponse {
   workout: any;
 }
 
-export async function fetchWorkoutHistoryApi(): Promise<WorkoutHistoryResponse> {
+export interface FetchWorkoutHistoryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  workoutType?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export async function fetchWorkoutHistoryApi(params?: FetchWorkoutHistoryParams): Promise<WorkoutHistoryResponse> {
   const token = getStoredToken();
   if (!token) {
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/workouts/history`, {
+  let url = `${API_BASE_URL}/workouts/history`;
+  if (params) {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.limit) query.set('limit', String(params.limit));
+    if (params.search) query.set('search', params.search);
+    if (params.workoutType) query.set('workoutType', params.workoutType);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    const qs = query.toString();
+    if (qs) url += `?${qs}`;
+  }
+
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

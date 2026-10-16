@@ -16,6 +16,8 @@ import {
   Goal,
   GoalType,
   MuscleGroupConfig,
+  SavedCombination,
+  CombinationType,
 } from '../types';
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
@@ -24,7 +26,12 @@ import { getTodayDayOfWeek, isSameLocalDay } from '../utils/formatters';
 import { calculate1RM } from '../utils/oneRM';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
 import { fetchWorkoutPlan, updateWorkoutPlanApi, createWorkoutPlanApi } from '../api/workoutPlanApi';
-import { fetchWorkoutHistoryApi, createWorkoutHistoryApi, updateWorkoutHistoryApi } from '../api/workoutHistoryApi';
+import {
+  fetchWorkoutHistoryApi,
+  createWorkoutHistoryApi,
+  updateWorkoutHistoryApi,
+  deleteWorkoutHistoryApi,
+} from '../api/workoutHistoryApi';
 import { getStoredToken } from '../api/authApi';
 import {
   fetchPersonalRecordsApi,
@@ -33,11 +40,17 @@ import {
   ProgressSummaryResponse,
   VolumeTrendPoint,
 } from '../api/progressApi';
+import {
+  fetchSavedCombinationsApi,
+  createSavedCombinationApi,
+  deleteSavedCombinationApi,
+} from '../api/combinationApi';
 
 export interface UserWorkoutData {
   history: WorkoutSession[];
   personalRecords: PersonalRecord[];
   customExercises: Exercise[];
+  savedCombinations: SavedCombination[];
   weeklyPlan: WeeklySchedule;
   workoutPlanDocId?: string;
   activeSession: WorkoutSession | null;
@@ -67,6 +80,30 @@ interface WorkoutStore {
   getExercisePR: (userId: string, exerciseId: string) => PersonalRecord | undefined;
   getPreviousPerformance: (userId: string, exerciseId: string) => PreviousPerformance | null;
   getGoals: (userId: string) => Goal[];
+  getSavedCombinations: (userId: string) => SavedCombination[];
+  fetchSavedCombinations: (userId: string) => Promise<void>;
+  saveCombinationTemplate: (
+    userId: string,
+    template: Omit<SavedCombination, 'id' | 'createdAt'>
+  ) => Promise<SavedCombination>;
+  deleteCombinationTemplate: (userId: string, templateId: string) => Promise<boolean>;
+  addCombinationToWorkout: (
+    userId: string,
+    combinationData: {
+      combinationName: string;
+      combinationType: CombinationType;
+      techniqueLabel?: string;
+      rounds: number;
+      stages: Array<{
+        exercise: Exercise;
+        movementDescription?: string;
+        targetWeight?: number | null;
+        targetReps?: number | null;
+      }>;
+    }
+  ) => void;
+  removeCombinationFromWorkout: (userId: string, combinationId: string) => void;
+  addRoundToCombination: (userId: string, combinationId: string) => void;
 
   // Actions - Workout Session & Progress
   fetchHistory: (userId: string) => Promise<WorkoutSession[]>;
@@ -77,6 +114,7 @@ interface WorkoutStore {
   startEditingWorkout: (userId: string, session: WorkoutSession) => void;
   cancelEditingWorkout: (userId: string) => void;
   saveWorkoutEdits: (userId: string) => Promise<boolean>;
+  deleteWorkout: (userId: string, workoutId: string) => Promise<boolean>;
   addMuscleSectionToWorkout: (userId: string, muscleGroup: MuscleGroup) => void;
   updateSet: (userId: string, exerciseId: string, setIndex: number, weight: number | null, reps: number | null) => void;
   toggleSetCompleted: (userId: string, exerciseId: string, setIndex: number) => void;
@@ -152,6 +190,7 @@ const createDefaultUserData = (): UserWorkoutData => {
     history: [],
     personalRecords: [],
     customExercises: [],
+    savedCombinations: [],
     weeklyPlan: JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN)),
     activeSession: null,
     editingSession: null,
@@ -215,6 +254,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
         ) {
           data.weeklyPlan.wednesday = JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN.wednesday));
         }
+        if (!data.savedCombinations) {
+          data.savedCombinations = [];
+        }
         return data;
       },
 
@@ -256,6 +298,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
         if (todaySessions.length === 0) return null;
 
+        // Sort descending by completion time so latest session is evaluated first
+        todaySessions.sort(
+          (a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime()
+        );
+
         // 2. If today is a scheduled workout day, prefer matching scheduled workout name
         if (!todayConfig?.isRest && todayConfig?.name) {
           const nameMatch = todaySessions.find(
@@ -270,19 +317,44 @@ export const useWorkoutStore = create<WorkoutStore>()(
         );
         if (dayMatch) return dayMatch;
 
-        // 4. If today is a rest day or custom session completed today, return the session
+        // 4. If today is a rest day or custom session completed today, return the latest session
         return todaySessions[0];
       },
 
       getHistory: (userId: string) => {
         const userData = get().getUserData(userId);
-        return userData.history || [];
+        const history = userData.history || [];
+        return [...history].sort(
+          (a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime()
+        );
       },
 
       getPersonalRecords: (userId: string) => {
         const userData = get().getUserData(userId);
         const storedPRs = userData.personalRecords || [];
-        if (storedPRs.length > 0) return storedPRs;
+        if (storedPRs.length > 0) {
+          const prMap = new Map<string, PersonalRecord>();
+          storedPRs.forEach((pr) => {
+            const key = (pr.exerciseId || pr.exerciseName || pr.id).trim().toLowerCase();
+            const existing = prMap.get(key);
+            if (!existing) {
+              prMap.set(key, pr);
+            } else {
+              const weight = pr.weight ?? pr.value ?? 0;
+              const exWeight = existing.weight ?? existing.value ?? 0;
+              const est1RM = pr.estimated1RM ?? 0;
+              const exEst1RM = existing.estimated1RM ?? 0;
+              if (
+                weight > exWeight ||
+                est1RM > exEst1RM ||
+                (weight === exWeight && (pr.reps ?? 0) > (existing.reps ?? 0))
+              ) {
+                prMap.set(key, pr);
+              }
+            }
+          });
+          return Array.from(prMap.values());
+        }
 
         const history = userData.history || [];
         const prMap = new Map<string, PersonalRecord>();
@@ -335,6 +407,102 @@ export const useWorkoutStore = create<WorkoutStore>()(
       getGoals: (userId: string) => {
         const userData = get().getUserData(userId);
         return userData.goals || [];
+      },
+
+      getSavedCombinations: (userId: string) => {
+        const userData = get().getUserData(userId);
+        return userData.savedCombinations || [];
+      },
+
+      fetchSavedCombinations: async (userId: string) => {
+        if (!userId || userId === 'guest') return;
+        try {
+          const backendCombinations = await fetchSavedCombinationsApi();
+          if (Array.isArray(backendCombinations)) {
+            set((state) => {
+              const uData = state.getUserData(userId);
+              return {
+                userDataMap: {
+                  ...state.userDataMap,
+                  [userId]: {
+                    ...uData,
+                    savedCombinations: backendCombinations,
+                  },
+                },
+              };
+            });
+          }
+        } catch (err) {
+          console.warn('Could not fetch saved combinations from backend, using local copy:', err);
+        }
+      },
+
+      saveCombinationTemplate: async (userId: string, templateData) => {
+        let savedItem: SavedCombination = {
+          id: `template_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          userId,
+          name: templateData.name,
+          type: templateData.type,
+          techniqueLabel: templateData.techniqueLabel || 'Custom Combination',
+          rounds: templateData.rounds,
+          stages: templateData.stages,
+          createdAt: new Date().toISOString(),
+        };
+
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            const backendSaved = await createSavedCombinationApi(templateData);
+            if (backendSaved && backendSaved.id) {
+              savedItem = backendSaved;
+            }
+          } catch (err) {
+            console.warn('Could not persist combination template to backend, saved locally:', err);
+          }
+        }
+
+        set((state) => {
+          const uData = state.getUserData(userId);
+          const existing = uData.savedCombinations || [];
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...uData,
+                savedCombinations: [savedItem, ...existing.filter((x) => x.id !== savedItem.id)],
+              },
+            },
+          };
+        });
+
+        return savedItem;
+      },
+
+      deleteCombinationTemplate: async (userId: string, templateId: string) => {
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            await deleteSavedCombinationApi(templateId);
+          } catch (err) {
+            console.warn('Could not delete combination template from backend:', err);
+          }
+        }
+
+        set((state) => {
+          const uData = state.getUserData(userId);
+          const updated = (uData.savedCombinations || []).filter((c) => c.id !== templateId);
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...uData,
+                savedCombinations: updated,
+              },
+            },
+          };
+        });
+
+        return true;
       },
 
       getPreviousPerformance: (userId: string, exerciseId: string) => {
@@ -698,6 +866,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
               completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
             })),
             notes: ex.notes || '',
+            combinationId: ex.combinationId || null,
+            combinationName: ex.combinationName || null,
+            combinationType: ex.combinationType || null,
+            stageDescription: ex.stageDescription || null,
+            stageOrder: ex.stageOrder || null,
           }));
 
           const apiPayload = {
@@ -760,6 +933,41 @@ export const useWorkoutStore = create<WorkoutStore>()(
             isFinishing: false,
             saveError: err.message || 'Failed to update workout session',
           });
+          return false;
+        }
+      },
+
+      deleteWorkout: async (userId: string, workoutId: string) => {
+        try {
+          const token = getStoredToken();
+          if (userId !== 'guest' && token) {
+            await deleteWorkoutHistoryApi(workoutId);
+          }
+
+          set((state) => {
+            const uData = state.getUserData(userId);
+            const updatedHistory = (uData.history || []).filter(
+              (h) => h.id !== workoutId && (h as any)._id !== workoutId
+            );
+            return {
+              userDataMap: {
+                ...state.userDataMap,
+                [userId]: {
+                  ...uData,
+                  history: updatedHistory,
+                },
+              },
+            };
+          });
+
+          if (userId !== 'guest' && token) {
+            get().fetchBackendPRs(userId);
+            get().fetchProgressStats(userId);
+          }
+
+          return true;
+        } catch (err: any) {
+          console.error('Failed to delete workout session:', err);
           return false;
         }
       },
@@ -1069,9 +1277,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
         const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
         if (!targetSession) return;
 
-        const filtered = targetSession.exercises.filter(
-          (ex) => ex.exerciseId !== exerciseId && ex.id !== exerciseId
-        );
+        const filtered = targetSession.exercises.filter((ex) => {
+          if (ex.id === exerciseId) return false;
+          if (!exerciseId.startsWith('we_') && ex.exerciseId === exerciseId) return false;
+          return true;
+        });
 
         set((state) => ({
           userDataMap: {
@@ -1081,6 +1291,172 @@ export const useWorkoutStore = create<WorkoutStore>()(
               [sessionKey]: {
                 ...targetSession,
                 exercises: filtered,
+              },
+            },
+          },
+        }));
+      },
+
+      addCombinationToWorkout: (userId, combinationData) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const combinationId = `combo_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+
+        const currentSections: MuscleGroupConfig[] =
+          targetSession.sections && targetSession.sections.length > 0
+            ? [...targetSession.sections]
+            : targetSession.muscleGroups.map((mg) => ({
+                name: mg,
+                displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+              }));
+
+        let updatedSections: MuscleGroupConfig[] = [...currentSections];
+        let updatedMuscleGroups = [...targetSession.muscleGroups];
+
+        const newExercises: WorkoutExercise[] = combinationData.stages.map((stage, stageIdx) => {
+          const ex = stage.exercise;
+
+          if (ex.primaryMuscle === 'legs' || ex.primaryMuscle === 'glutes' || ex.primaryMuscle === 'calves') {
+            const legSec = getLegSection(ex) || 'quads';
+            const legNames: Record<string, string> = {
+              quads: 'Quads',
+              hamstrings: 'Hamstrings',
+              glutes: 'Glutes',
+              calves: 'Calves',
+            };
+            const legMg: MuscleGroup = legSec === 'glutes' ? 'glutes' : legSec === 'calves' ? 'calves' : 'legs';
+            if (!updatedSections.some((s) => isLegSubArea(s.subAreas, s.displayName) === legSec)) {
+              updatedSections = [
+                ...updatedSections,
+                { name: legMg, displayName: legNames[legSec], subAreas: [legSec as any] },
+              ];
+              if (!updatedMuscleGroups.includes(legMg)) {
+                updatedMuscleGroups = [...updatedMuscleGroups, legMg];
+              }
+            }
+          } else if (!updatedSections.some((s) => s.name === ex.primaryMuscle)) {
+            const meta = MUSCLE_GROUPS[ex.primaryMuscle];
+            const newSec = {
+              name: ex.primaryMuscle,
+              displayName: meta ? meta.name.toUpperCase() : ex.primaryMuscle.toUpperCase(),
+            };
+            updatedSections = [...updatedSections, newSec];
+            if (!updatedMuscleGroups.includes(ex.primaryMuscle)) {
+              updatedMuscleGroups = [...updatedMuscleGroups, ex.primaryMuscle];
+            }
+          }
+
+          const sets: WorkoutSet[] = Array.from({ length: combinationData.rounds || 3 }, (_, rIdx) => ({
+            id: `set_${Date.now()}_${stageIdx}_${rIdx + 1}`,
+            setNumber: rIdx + 1,
+            weight: stage.targetWeight ?? null,
+            reps: stage.targetReps ?? null,
+            completed: false,
+          }));
+
+          return {
+            id: `we_${Date.now()}_${stageIdx}_${Math.random().toString(36).substr(2, 4)}`,
+            exerciseId: ex.id,
+            exercise: ex,
+            order: targetSession.exercises.length + stageIdx + 1,
+            notes: stage.movementDescription ? `[${stage.movementDescription}]` : '',
+            combinationId,
+            combinationName: combinationData.combinationName,
+            combinationType: combinationData.combinationType,
+            stageDescription: stage.movementDescription || `Stage ${stageIdx + 1}`,
+            stageOrder: stageIdx + 1,
+            sets,
+            completed: false,
+          };
+        });
+
+        const addedSetsCount = newExercises.reduce((sum, e) => sum + e.sets.length, 0);
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                muscleGroups: updatedMuscleGroups,
+                sections: updatedSections,
+                exercises: [...targetSession.exercises, ...newExercises],
+                totalSets: targetSession.totalSets + addedSetsCount,
+              },
+            },
+          },
+        }));
+      },
+
+      removeCombinationFromWorkout: (userId, combinationId) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const removedSets = targetSession.exercises
+          .filter((ex) => ex.combinationId === combinationId)
+          .reduce((sum, e) => sum + e.sets.length, 0);
+
+        const remainingExercises = targetSession.exercises.filter(
+          (ex) => ex.combinationId !== combinationId
+        );
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: remainingExercises,
+                totalSets: Math.max(0, targetSession.totalSets - removedSets),
+              },
+            },
+          },
+        }));
+      },
+
+      addRoundToCombination: (userId, combinationId) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        let addedSetsCount = 0;
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.combinationId !== combinationId) return ex;
+
+          const lastSet = ex.sets[ex.sets.length - 1];
+          const newSetNumber = ex.sets.length + 1;
+          const newSet: WorkoutSet = {
+            id: `set_${Date.now()}_${ex.id}_${newSetNumber}`,
+            setNumber: newSetNumber,
+            weight: lastSet ? lastSet.weight : null,
+            reps: lastSet ? lastSet.reps : null,
+            completed: false,
+          };
+          addedSetsCount++;
+          return {
+            ...ex,
+            sets: [...ex.sets, newSet],
+            completed: false,
+          };
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+                totalSets: targetSession.totalSets + addedSetsCount,
               },
             },
           },
@@ -1243,9 +1619,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
               completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
             })),
             notes: ex.notes || '',
+            combinationId: ex.combinationId || null,
+            combinationName: ex.combinationName || null,
+            combinationType: ex.combinationType || null,
+            stageDescription: ex.stageDescription || null,
+            stageOrder: ex.stageOrder || null,
           }));
 
           const apiPayload = {
+            clientSessionId: activeSession.id,
             workoutName: activeSession.workoutName || 'Workout Session',
             date: activeSession.date || new Date().toISOString(),
             dayOfWeek: activeSession.dayOfWeek || 'monday',
@@ -1277,6 +1659,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const completedSession: WorkoutSession = {
             ...activeSession,
             id: mongoId,
+            clientSessionId: activeSession.id,
             status: 'completed',
             completedAt: new Date().toISOString(),
             totalVolume,
@@ -1291,6 +1674,14 @@ export const useWorkoutStore = create<WorkoutStore>()(
             })),
           };
 
+          // Filter out any existing item with the same ID or clientSessionId (idempotency guard)
+          const filteredHistory = history.filter(
+            (h) =>
+              h.id !== mongoId &&
+              h.id !== activeSession.id &&
+              (!h.clientSessionId || h.clientSessionId !== activeSession.id)
+          );
+
           // ONLY update history and clear activeSession upon successful save
           set((state) => ({
             isFinishing: false,
@@ -1299,7 +1690,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
               ...state.userDataMap,
               [userId]: {
                 ...state.getUserData(userId),
-                history: [completedSession, ...history],
+                history: [completedSession, ...filteredHistory],
                 personalRecords: updatedPRs,
                 goals: updatedGoals,
                 activeSession: null,

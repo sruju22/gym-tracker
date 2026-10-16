@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
-import { Play, Plus, Check, Dumbbell, AlertTriangle, Edit3, BookOpen } from 'lucide-react';
+import { Play, Plus, Check, AlertTriangle, Edit3, BookOpen, Eye, Coffee, Layers } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { ExerciseCard } from '../components/workout/ExerciseCard';
+import { CombinationCard } from '../components/workout/CombinationCard';
+import { CreateCombinationModal } from '../components/workout/CreateCombinationModal';
 import { CoverageIndicator } from '../components/workout/CoverageIndicator';
 import { AddExerciseSheet } from '../components/workout/AddExerciseSheet';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
@@ -11,10 +13,11 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
 import { Modal } from '../components/ui/Modal';
-import { Exercise, MuscleGroupConfig, WorkoutExercise } from '../types';
+import { MuscleGroupConfig, WorkoutExercise } from '../types';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
+import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
-import { formatDateShort } from '../utils/formatters';
+import { formatDateShort, getTodayDayOfWeek, formatDayName } from '../utils/formatters';
 
 export const WorkoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +28,11 @@ export const WorkoutPage: React.FC = () => {
   const {
     getActiveSession,
     getEditingSession,
+    getTodayCompletedWorkout,
+    getWeeklyPlan,
     startTodayWorkout,
+    startCustomWorkout,
+    startEditingWorkout,
     addExerciseToWorkout,
     addMuscleSectionToWorkout,
     toggleExerciseCompleted,
@@ -41,6 +48,12 @@ export const WorkoutPage: React.FC = () => {
   const editingSession = getEditingSession(userId);
   const isEditing = Boolean(editingSession);
   const currentSession = editingSession || activeSession;
+  const todayCompleted = isGuest ? null : getTodayCompletedWorkout(userId);
+  const weeklyPlan = getWeeklyPlan(userId);
+  const todayDay = getTodayDayOfWeek();
+  const todayConfig = (weeklyPlan && weeklyPlan[todayDay]) || DEFAULT_WORKOUT_PLAN[todayDay];
+
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -50,6 +63,10 @@ export const WorkoutPage: React.FC = () => {
   const [targetSectionForAdd, setTargetSectionForAdd] = useState<MuscleGroupConfig | undefined>(
     undefined
   );
+  const [isCombinationModalOpen, setIsCombinationModalOpen] = useState(false);
+  const [targetSectionForCombination, setTargetSectionForCombination] = useState<
+    MuscleGroupConfig | undefined
+  >(undefined);
 
   // Track explicit expansion overrides per exercise
   // By default:
@@ -193,28 +210,277 @@ export const WorkoutPage: React.FC = () => {
     }));
   };
 
-  if (!currentSession) {
-    return (
-      <div className="space-y-4">
-        <Header title="Workout Session" subtitle="No active workout" />
+  const formatCompletionTime = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  };
 
-        <Card className="text-center py-10 my-4 border-dashed border-[#272B30] bg-[#14171A]">
-          <div className="w-14 h-14 rounded-2xl bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/40 flex items-center justify-center mx-auto mb-3 shadow-sm">
-            <Dumbbell className="w-7 h-7" />
-          </div>
-          <h2 className="text-lg font-black text-[#F5F5F5] mb-1">Ready to Train?</h2>
-          <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto mb-5">
-            Launch today's scheduled workout session or create a custom workout.
-          </p>
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={() => startTodayWorkout(userId)}
+  if (!currentSession) {
+    // 1. TODAY'S SCHEDULED WORKOUT HAS BEEN COMPLETED AND SAVED
+    if (todayCompleted) {
+      const finishedTime = formatCompletionTime(todayCompleted.completedAt || todayCompleted.date);
+
+      return (
+        <div className="space-y-4 pb-12">
+          <Header title="Workout Session" subtitle="Today's Workout Completed" />
+
+          <Card className="w-full border border-[#22C55E]/40 bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
+                TODAY'S WORKOUT · {formatDayName(todayDay).toUpperCase()}
+              </span>
+              <span className="text-[10px] font-black text-[#22C55E] bg-[#22C55E]/15 px-2.5 py-1 rounded-md border border-[#22C55E]/40 uppercase tracking-wider flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                COMPLETED
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-1 flex items-center gap-2">
+                <span>{todayCompleted.workoutName || todayConfig.name}</span>
+              </h2>
+              <div className="text-xs font-bold text-[#22C55E] flex items-center gap-1.5">
+                <span>You're done for today!</span>
+                {finishedTime && (
+                  <span className="text-[#9CA3AF] font-medium">· Finished at {finishedTime}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Key Metrics */}
+            <div className="grid grid-cols-3 gap-2 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-center mb-5">
+              <div>
+                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Exercises</div>
+                <div className="text-base sm:text-lg font-black text-[#F5F5F5]">
+                  {todayCompleted.exercises.length}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Sets Done</div>
+                <div className="text-base sm:text-lg font-black text-[#F5F5F5]">
+                  {todayCompleted.totalSets}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Total Volume</div>
+                <div className="text-base sm:text-lg font-black text-[#E11D48]">
+                  {todayCompleted.totalVolume} kg
+                </div>
+              </div>
+            </div>
+
+            {/* Actions: Edit Workout & Review Details */}
+            <div className="flex items-center gap-2.5 mb-3">
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
+                onClick={() => startEditingWorkout(userId, todayCompleted)}
+                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px] border-[#272B30] hover:border-[#E11D48]/60 hover:text-[#F5F5F5]"
+              >
+                <Edit3 className="w-4 h-4 text-[#E11D48]" />
+                <span>Edit Workout</span>
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
+                onClick={() => setIsReviewOpen(true)}
+                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px] border-[#272B30] hover:border-[#272B30] hover:text-[#F5F5F5]"
+              >
+                <Eye className="w-4 h-4 text-[#9CA3AF]" />
+                <span>Review Details</span>
+              </Button>
+            </div>
+
+            {/* Clear Secondary Action: Start another workout session without overwriting */}
+            <div className="text-center pt-2.5 border-t border-[#272B30]/60">
+              <button
+                onClick={() => startCustomWorkout(userId, ['chest'])}
+                className="text-[11px] font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer"
+              >
+                + Start another workout session today
+              </button>
+            </div>
+          </Card>
+
+          {/* Review Details Modal */}
+          <Modal
+            isOpen={isReviewOpen}
+            onClose={() => setIsReviewOpen(false)}
+            title={`Today's Workout — ${(todayCompleted.workoutName || todayConfig.name).toUpperCase()}`}
           >
-            <Play className="w-5 h-5 mr-2 fill-[#FFFFFF] text-[#FFFFFF]" />
-            <span>START TODAY'S WORKOUT</span>
-          </Button>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-center">
+                <div>
+                  <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Exercises</div>
+                  <div className="text-sm font-black text-[#F5F5F5]">{todayCompleted.exercises.length}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Total Sets</div>
+                  <div className="text-sm font-black text-[#F5F5F5]">{todayCompleted.totalSets}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Volume</div>
+                  <div className="text-sm font-black text-[#E11D48]">{todayCompleted.totalVolume} kg</div>
+                </div>
+              </div>
+
+              <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                {todayCompleted.exercises.map((ex, idx) => (
+                  <div key={ex.id || idx} className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3">
+                    <div className="text-xs font-bold text-[#F5F5F5] mb-1.5 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="truncate">{ex.exercise.name}</span>
+                        {ex.stageDescription && (
+                          <span className="text-[10px] text-[#9CA3AF] font-normal">
+                            ({ex.stageDescription})
+                          </span>
+                        )}
+                      </div>
+                      {ex.combinationName && (
+                        <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30 shrink-0">
+                          {ex.combinationName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {ex.sets.map((s, sIdx) => (
+                        <span
+                          key={sIdx}
+                          className={`border px-2 py-0.5 rounded text-[11px] font-semibold ${
+                            s.completed
+                              ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
+                              : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF]'
+                          }`}
+                        >
+                          Set {s.setNumber}: {s.weight}kg × {s.reps}
+                        </span>
+                      ))}
+                    </div>
+                    {ex.notes && (
+                      <div className="mt-1.5 text-[11px] text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
+                        "{ex.notes}"
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-[#272B30]">
+                <Button
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  onClick={() => {
+                    setIsReviewOpen(false);
+                    startEditingWorkout(userId, todayCompleted);
+                  }}
+                  className="font-bold flex items-center justify-center gap-1.5 min-h-[44px]"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>Edit Workout</span>
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        </div>
+      );
+    }
+
+    // 2. DEDICATED REST DAY STATE
+    if (todayConfig.isRest) {
+      return (
+        <div className="space-y-4 pb-12">
+          <Header title="Workout Session" subtitle="Rest & Recovery Day" />
+
+          <Card className="w-full border border-[#272B30] bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
+                TODAY'S WORKOUT · {formatDayName(todayDay).toUpperCase()}
+              </span>
+              <span className="text-[10px] font-black text-[#9CA3AF] bg-[#1F2429] px-2.5 py-1 rounded-md border border-[#272B30] uppercase tracking-wider">
+                REST DAY
+              </span>
+            </div>
+
+            <div className="py-6 text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#1F2429] border border-[#272B30] flex items-center justify-center text-[#E11D48]">
+                <Coffee className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-2">
+                REST DAY
+              </h2>
+              <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-sm mx-auto leading-relaxed font-medium">
+                Recovery day. Let your muscles recover and get ready for your next session.
+              </p>
+            </div>
+
+            <div className="text-center pt-3 border-t border-[#272B30]/60">
+              <button
+                onClick={() => startCustomWorkout(userId, ['chest'])}
+                className="text-xs font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <span>+ Start an optional workout</span>
+              </button>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    // 3. NORMAL SCHEDULED WORKOUT DAY — READY TO TRAIN
+    return (
+      <div className="space-y-4 pb-12">
+        <Header title="Workout Session" subtitle="Ready to train" />
+
+        <Card className="w-full border border-[#272B30] bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
+              TODAY'S WORKOUT · {formatDayName(todayDay).toUpperCase()}
+            </span>
+          </div>
+
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-3">
+              {todayConfig.name || todayConfig.muscleGroups.map((mg) => mg.displayName).join(' + ')}
+            </h2>
+
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-6 text-xs sm:text-sm text-[#9CA3AF] font-medium">
+              {todayConfig.muscleGroups.map((mg, idx) => (
+                <React.Fragment key={idx}>
+                  {idx > 0 && <span className="text-[#6B7280] font-normal">·</span>}
+                  <span className="font-bold text-[#F5F5F5]">{mg.displayName}</span>
+                </React.Fragment>
+              ))}
+            </div>
+
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => startTodayWorkout(userId)}
+              className="font-extrabold py-3.5 sm:py-4 text-sm sm:text-base rounded-xl min-h-[48px] sm:min-h-[52px]"
+            >
+              <Play className="w-5 h-5 mr-2 fill-[#FFFFFF] text-[#FFFFFF]" />
+              <span>START TODAY'S WORKOUT</span>
+            </Button>
+
+            <div className="text-center pt-3 mt-3 border-t border-[#272B30]/60">
+              <button
+                onClick={() => startCustomWorkout(userId, ['chest'])}
+                className="text-xs font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <span>+ Start a custom workout</span>
+              </button>
+            </div>
+          </div>
         </Card>
       </div>
     );
@@ -232,6 +498,11 @@ export const WorkoutPage: React.FC = () => {
   const handleOpenAdd = (section?: MuscleGroupConfig) => {
     setTargetSectionForAdd(section);
     setIsAddSheetOpen(true);
+  };
+
+  const handleOpenCombination = (section?: MuscleGroupConfig) => {
+    setTargetSectionForCombination(section);
+    setIsCombinationModalOpen(true);
   };
 
   const activeTitle =
@@ -363,13 +634,24 @@ export const WorkoutPage: React.FC = () => {
                   </span>
                 </h2>
 
-                <button
-                  onClick={() => handleOpenAdd(sec)}
-                  className="text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Exercise</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenCombination(sec)}
+                    className="text-xs font-bold text-[#9CA3AF] hover:text-[#E11D48] flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Create a custom training combination (superset, drop set, etc.)"
+                  >
+                    <Layers className="w-3.5 h-3.5 text-[#E11D48]" />
+                    <span>+ Combination</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleOpenAdd(sec)}
+                    className="text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Exercise</span>
+                  </button>
+                </div>
               </div>
 
               {/* Sub-area Coverage Indicator */}
@@ -379,16 +661,68 @@ export const WorkoutPage: React.FC = () => {
                 subAreas={sec.subAreas}
               />
 
-              {/* Exercise Cards */}
-              {exList.map((workEx) => (
-                <ExerciseCard
-                  key={workEx.id}
-                  workoutExercise={workEx}
-                  isExpanded={isExerciseExpanded(workEx)}
-                  onToggleExpand={() => handleToggleExpand(workEx.id, workEx)}
-                  onDone={() => handleExerciseDone(workEx.id)}
-                />
-              ))}
+              {/* Exercise Cards & Combination Groups */}
+              {(() => {
+                const groupedItems: Array<
+                  | { type: 'single'; exercise: WorkoutExercise }
+                  | {
+                      type: 'combination';
+                      combinationId: string;
+                      combinationName: string;
+                      combinationType?: any;
+                      exercises: WorkoutExercise[];
+                    }
+                > = [];
+
+                exList.forEach((workEx) => {
+                  if (workEx.combinationId) {
+                    const lastGroup = groupedItems[groupedItems.length - 1];
+                    if (
+                      lastGroup &&
+                      lastGroup.type === 'combination' &&
+                      lastGroup.combinationId === workEx.combinationId
+                    ) {
+                      lastGroup.exercises.push(workEx);
+                    } else {
+                      groupedItems.push({
+                        type: 'combination',
+                        combinationId: workEx.combinationId,
+                        combinationName: workEx.combinationName || 'Custom Combination',
+                        combinationType: workEx.combinationType,
+                        exercises: [workEx],
+                      });
+                    }
+                  } else {
+                    groupedItems.push({
+                      type: 'single',
+                      exercise: workEx,
+                    });
+                  }
+                });
+
+                return groupedItems.map((item) => {
+                  if (item.type === 'combination') {
+                    return (
+                      <CombinationCard
+                        key={item.combinationId}
+                        combinationId={item.combinationId}
+                        combinationName={item.combinationName}
+                        combinationType={item.combinationType}
+                        exercises={item.exercises}
+                      />
+                    );
+                  }
+                  return (
+                    <ExerciseCard
+                      key={item.exercise.id}
+                      workoutExercise={item.exercise}
+                      isExpanded={isExerciseExpanded(item.exercise)}
+                      onToggleExpand={() => handleToggleExpand(item.exercise.id, item.exercise)}
+                      onDone={() => handleExerciseDone(item.exercise.id)}
+                    />
+                  );
+                });
+              })()}
             </div>
           );
         })}
@@ -449,8 +783,16 @@ export const WorkoutPage: React.FC = () => {
         </div>
       )}
 
-      {/* Actions to Add New Muscle Section or Browse Exercise Library */}
-      <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {/* Actions to Add New Muscle Section, Create Combination or Browse Exercise Library */}
+      <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <button
+          onClick={() => handleOpenCombination()}
+          className="bg-[#14171A] hover:bg-[#1B1F23] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+        >
+          <Layers className="w-4 h-4 text-[#E11D48]" />
+          <span>Create Combination</span>
+        </button>
+
         <button
           onClick={() => setIsAddSectionModalOpen(true)}
           className="bg-[#14171A] hover:bg-[#1B1F23] border border-dashed border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
@@ -469,6 +811,12 @@ export const WorkoutPage: React.FC = () => {
       </div>
 
       {/* Modals */}
+      <CreateCombinationModal
+        isOpen={isCombinationModalOpen}
+        onClose={() => setIsCombinationModalOpen(false)}
+        preferredMuscleGroup={targetSectionForCombination?.name}
+      />
+
       <AddExerciseSheet
         isOpen={isAddSheetOpen}
         onClose={() => setIsAddSheetOpen(false)}

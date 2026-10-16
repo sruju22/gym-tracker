@@ -38,22 +38,49 @@ export const getWorkouts = async (req: AuthenticatedRequest, res: Response): Pro
       return;
     }
 
-    const { status, limit } = req.query;
+    const { status, limit, page, search, workoutType, startDate, endDate } = req.query;
     const filter: Record<string, any> = { userId: req.user._id };
 
     if (status && typeof status === 'string') {
       filter.status = status;
     }
 
-    let query = Workout.find(filter).sort({ date: -1 });
+    if (workoutType && typeof workoutType === 'string' && workoutType !== 'all') {
+      filter.workoutName = { $regex: `^${workoutType.trim()}$`, $options: 'i' };
+    }
 
-    if (limit && !isNaN(Number(limit))) {
-      query = query.limit(Number(limit));
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      filter.$or = [
+        { workoutName: searchRegex },
+        { 'exercises.exerciseName': searchRegex },
+        { muscleGroups: searchRegex },
+      ];
+    }
+
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) filter.date.$gte = new Date(startDate as string);
+      if (endDate) filter.date.$lte = new Date(endDate as string);
+    }
+
+    const totalCount = await Workout.countDocuments(filter);
+
+    let query = Workout.find(filter).sort({ date: -1, completedAt: -1, createdAt: -1 });
+
+    const pageNum = page && !isNaN(Number(page)) ? Math.max(1, Number(page)) : 1;
+    const limitNum = limit && !isNaN(Number(limit)) ? Number(limit) : 0;
+
+    if (limitNum > 0) {
+      query = query.skip((pageNum - 1) * limitNum).limit(limitNum);
     }
 
     const workouts = await query;
     res.status(200).json({
       count: workouts.length,
+      totalCount,
+      page: pageNum,
+      totalPages: limitNum > 0 ? Math.ceil(totalCount / limitNum) : 1,
       workouts,
     });
   } catch (error: any) {
@@ -112,6 +139,7 @@ export const createWorkout = async (req: AuthenticatedRequest, res: Response): P
     }
 
     const {
+      clientSessionId,
       workoutPlanId,
       workoutName,
       date,
@@ -130,11 +158,29 @@ export const createWorkout = async (req: AuthenticatedRequest, res: Response): P
       return;
     }
 
+    // IDEMPOTENCY GUARD: Prevent duplicate document creation from rapid clicks or retries
+    if (clientSessionId && typeof clientSessionId === 'string' && clientSessionId.trim()) {
+      const existingWorkout = await Workout.findOne({
+        userId: req.user._id,
+        clientSessionId: clientSessionId.trim(),
+      });
+
+      if (existingWorkout) {
+        res.status(200).json({
+          message: 'Workout session already saved',
+          workout: existingWorkout,
+          deduplicated: true,
+        });
+        return;
+      }
+    }
+
     const { totalVolume, totalSets } = calculateWorkoutTotals(exercises || []);
 
     // SECURITY: Always assign userId from authenticated JWT payload (req.user._id)
     const newWorkout = await Workout.create({
       userId: req.user._id,
+      clientSessionId: clientSessionId ? String(clientSessionId).trim() : undefined,
       workoutPlanId: workoutPlanId || undefined,
       workoutName: workoutName.trim(),
       date: date ? new Date(date) : new Date(),
