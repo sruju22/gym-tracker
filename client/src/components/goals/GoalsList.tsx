@@ -11,10 +11,10 @@ import { ConfirmDeleteModal } from '../ui/ConfirmDeleteModal';
 
 export const GoalsList: React.FC = () => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
   const { getGoals, addGoal, updateGoal, deleteGoal, updateCurrentWeight } = useWorkoutStore();
-  const goals = getGoals(userId);
+  const goals = currentUser ? getGoals(userId) : [];
 
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);

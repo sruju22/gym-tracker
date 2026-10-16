@@ -27,7 +27,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 }) => {
   const { exercise, sets, notes, completed } = workoutExercise;
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
   const {
     updateSet,
@@ -141,7 +141,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         </div>
 
         <div className="text-[10px] font-extrabold text-[#E11D48] bg-[#E11D48]/10 border border-[#E11D48]/30 px-2.5 py-1 rounded-lg shrink-0">
-          Start
+          Expand
         </div>
       </div>
     );
@@ -190,16 +190,21 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               {completed && <Check className="w-4 h-4 text-[#22C55E] stroke-[3] shrink-0" />}
               <span className="truncate min-w-0">{exercise.name}</span>
             </h3>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                removeExerciseFromWorkout(userId, workoutExercise.id);
-              }}
-              className="p-1 text-[#6B7280] hover:text-[#EF4444] transition-colors cursor-pointer"
-              title="Remove exercise"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-[10px] font-bold text-[#6B7280] hover:text-[#9CA3AF] transition-colors py-0.5 px-1.5 rounded bg-[#1B1F23] border border-[#272B30]">
+                Collapse
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeExerciseFromWorkout(userId, workoutExercise.id);
+                }}
+                className="p-1 text-[#6B7280] hover:text-[#EF4444] transition-colors cursor-pointer"
+                title="Remove exercise"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-1 mt-1">

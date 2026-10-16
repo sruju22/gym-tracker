@@ -7,6 +7,7 @@ import {
   registerUser,
   getMe,
 } from '../api/authApi';
+import { useWorkoutStore } from './workoutStore';
 
 interface AuthState {
   currentUser: User | null;
@@ -114,6 +115,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isLoading: false,
       error: null,
     });
+    // Invalidate/reset in-memory session states so no private active session leaks
+    useWorkoutStore.getState().handleUserLogout();
   },
 
   clearError: () => {

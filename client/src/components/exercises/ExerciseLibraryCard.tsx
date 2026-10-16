@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Dumbbell } from 'lucide-react';
+import { Plus, Dumbbell, Check } from 'lucide-react';
 import { Exercise } from '../../types';
 import { Badge } from '../ui/Badge';
 import { MUSCLE_GROUPS, getMuscleAreaName } from '../../data/muscleGroups';
@@ -8,12 +8,14 @@ interface ExerciseLibraryCardProps {
   exercise: Exercise;
   onSelectDetail: (exercise: Exercise) => void;
   onAddToWorkout?: (exercise: Exercise) => void;
+  isInWorkout?: boolean;
 }
 
 export const ExerciseLibraryCard: React.FC<ExerciseLibraryCardProps> = ({
   exercise,
   onSelectDetail,
   onAddToWorkout,
+  isInWorkout = false,
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -50,16 +52,28 @@ export const ExerciseLibraryCard: React.FC<ExerciseLibraryCardProps> = ({
           </div>
 
           {onAddToWorkout && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToWorkout(exercise);
-              }}
-              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#E11D48] text-[#FFFFFF] flex items-center justify-center shadow-md shadow-[#E11D48]/30 active:scale-90 transition-transform font-black text-xs cursor-pointer"
-              title="Add to today's workout"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-            </button>
+            isInWorkout ? (
+              <div
+                className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-[#22C55E]/20 border border-[#22C55E]/40 text-[#22C55E] text-[10px] font-black flex items-center gap-1 backdrop-blur-xs select-none"
+                title="Already in current workout"
+              >
+                <Check className="w-3 h-3 stroke-[3]" />
+                <span>Added</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToWorkout(exercise);
+                }}
+                className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-[#E11D48] hover:bg-[#F43F5E] text-[#FFFFFF] flex items-center gap-1 shadow-md shadow-[#E11D48]/30 active:scale-90 transition-all font-black text-[10px] cursor-pointer"
+                title="Add to Current Workout"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Add</span>
+              </button>
+            )
           )}
         </div>
 

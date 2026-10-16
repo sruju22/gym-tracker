@@ -14,7 +14,7 @@ interface WorkoutSummaryProps {
 export const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
   const { getActiveSession, getPersonalRecords, finishWorkout, isFinishing, saveError } = useWorkoutStore();
   const [localError, setLocalError] = React.useState<string | null>(null);

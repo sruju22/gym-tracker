@@ -22,8 +22,10 @@ import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getTodayDayOfWeek, isSameLocalDay } from '../utils/formatters';
 import { calculate1RM } from '../utils/oneRM';
+import { getLegSection, isLegSubArea } from '../utils/legSection';
 import { fetchWorkoutPlan, updateWorkoutPlanApi, createWorkoutPlanApi } from '../api/workoutPlanApi';
 import { fetchWorkoutHistoryApi, createWorkoutHistoryApi, updateWorkoutHistoryApi } from '../api/workoutHistoryApi';
+import { getStoredToken } from '../api/authApi';
 import {
   fetchPersonalRecordsApi,
   fetchProgressSummaryApi,
@@ -141,121 +143,28 @@ interface WorkoutStore {
   updateWeeklyPlan: (userId: string, newPlan: WeeklySchedule) => Promise<void>;
   resetWeeklyPlan: (userId: string) => Promise<void>;
   updateUserSettings: (newSettings: Partial<UserSettings>) => void;
+  handleUserLogout: () => void;
 }
 
-// Initial mock data structure for Srujan
+// Clean default user data structure (never pre-populates with another account's history)
 const createDefaultUserData = (): UserWorkoutData => {
-  const sampleBenchEx = INITIAL_EXERCISES[0] || {
-    id: 'ex_bench_press',
-    name: 'Flat Barbell Bench Press',
-    primaryMuscle: 'chest',
-    secondaryMuscles: ['triceps', 'shoulders'],
-    muscleAreaEmphasis: ['mid_chest'],
-    equipment: 'barbell',
-    exerciseType: 'compound',
-    difficulty: 'intermediate',
-    instructions: ['Lie on bench', 'Lower bar to chest', 'Press up'],
-    imageUrl: '/exercises/flat-barbell-bench-press/0.jpg',
-    tags: ['chest', 'barbell'],
-    isCustom: false,
-  };
-
-  const sampleLatRaiseEx = INITIAL_EXERCISES.find((e) => e.name.toLowerCase().includes('lateral raise')) || {
-    id: 'ex_lateral_raise',
-    name: 'Dumbbell Lateral Raise',
-    primaryMuscle: 'shoulders',
-    secondaryMuscles: [],
-    muscleAreaEmphasis: ['side_delts'],
-    equipment: 'dumbbell',
-    exerciseType: 'isolation',
-    difficulty: 'beginner',
-    instructions: ['Raise dumbbells laterally to shoulder level'],
-    imageUrl: '/exercises/dumbbell-lateral-raise/0.jpg',
-    tags: ['shoulders', 'dumbbell'],
-    isCustom: false,
-  };
-
   return {
-    history: [
-      {
-        id: 'hist_1',
-        workoutName: 'Push A',
-        date: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
-        dayOfWeek: 'monday',
-        muscleGroups: ['chest', 'shoulders', 'triceps'],
-        status: 'completed',
-        totalVolume: 4250,
-        totalSets: 6,
-        exercises: [
-          {
-            id: 'hex_1',
-            exerciseId: sampleBenchEx.id,
-            exercise: sampleBenchEx,
-            order: 1,
-            notes: 'Strong bench session',
-            sets: [
-              { id: 'hs_1', setNumber: 1, weight: 70, reps: 10, completed: true },
-              { id: 'hs_2', setNumber: 2, weight: 75, reps: 8, completed: true },
-              { id: 'hs_3', setNumber: 3, weight: 75, reps: 5, completed: true },
-            ],
-          },
-          {
-            id: 'hex_2',
-            exerciseId: sampleLatRaiseEx.id,
-            exercise: sampleLatRaiseEx,
-            order: 2,
-            notes: 'Strict form',
-            sets: [
-              { id: 'hs_4', setNumber: 1, weight: 12, reps: 12, completed: true },
-              { id: 'hs_5', setNumber: 2, weight: 14, reps: 10, completed: true },
-              { id: 'hs_6', setNumber: 3, weight: 14, reps: 10, completed: true },
-            ],
-          },
-        ],
-      },
-    ],
+    history: [],
     personalRecords: [],
     customExercises: [],
     weeklyPlan: JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN)),
     activeSession: null,
     editingSession: null,
     editingOriginalSession: null,
-    currentWeight: 66,
-    goals: [
-      {
-        id: 'goal_1',
-        title: 'Target Body Weight',
-        type: 'body_weight',
-        startValue: 66,
-        currentValue: 66,
-        targetValue: 72,
-        unit: 'kg',
-        createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'goal_2',
-        title: 'Bench Press Target',
-        type: 'exercise_strength',
-        exerciseId: sampleBenchEx.id,
-        exerciseName: sampleBenchEx.name,
-        startValue: 75,
-        currentValue: 75,
-        targetValue: 100,
-        unit: 'kg',
-        createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ],
+    currentWeight: 70,
+    goals: [],
   };
 };
 
 export const useWorkoutStore = create<WorkoutStore>()(
   persist(
     (set, get) => ({
-      userDataMap: {
-        user_srujan: createDefaultUserData(),
-      },
+      userDataMap: {},
       settings: {
         weightUnit: 'kg',
         theme: 'dark',
@@ -265,30 +174,40 @@ export const useWorkoutStore = create<WorkoutStore>()(
       isFinishing: false,
       saveError: null,
 
+      handleUserLogout: () => {
+        set((state) => {
+          const updatedMap = { ...state.userDataMap };
+          if (updatedMap['guest']) {
+            updatedMap['guest'] = {
+              ...updatedMap['guest'],
+              activeSession: null,
+              editingSession: null,
+              editingOriginalSession: null,
+            };
+          }
+          return {
+            userDataMap: updatedMap,
+            isFinishing: false,
+            saveError: null,
+          };
+        });
+      },
+
       // Selectors with auto-fallback for newly created users
       getUserData: (userId: string) => {
+        const targetId = userId || 'guest';
         const { userDataMap } = get();
-        if (!userDataMap[userId]) {
-          const newDefault: UserWorkoutData = {
-            history: [],
-            personalRecords: [],
-            customExercises: [],
-            weeklyPlan: JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN)),
-            activeSession: null,
-            editingSession: null,
-            editingOriginalSession: null,
-            goals: [],
-            currentWeight: 70,
-          };
+        if (!userDataMap[targetId]) {
+          const newDefault = createDefaultUserData();
           set((state) => ({
             userDataMap: {
               ...state.userDataMap,
-              [userId]: newDefault,
+              [targetId]: newDefault,
             },
           }));
           return newDefault;
         }
-        const data = userDataMap[userId];
+        const data = userDataMap[targetId];
         if (
           data.weeklyPlan?.wednesday &&
           data.weeklyPlan.wednesday.name === 'Legs' &&
@@ -320,6 +239,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       getTodayCompletedWorkout: (userId: string) => {
+        // Unauthenticated or guest visitors NEVER have a completed workout card
+        if (!userId || userId === 'guest') return null;
         const userData = get().getUserData(userId);
         const history = userData.history || [];
         const todayDay = getTodayDayOfWeek();
@@ -458,6 +379,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       // Workout Session Actions
       fetchHistory: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) {
+          return get().getHistory(userId);
+        }
         try {
           const data = await fetchWorkoutHistoryApi();
           if (data && Array.isArray(data.workouts)) {
@@ -524,6 +448,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       fetchBackendPRs: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) {
+          return get().getPersonalRecords(userId);
+        }
         try {
           const res = await fetchPersonalRecordsApi();
           if (res && Array.isArray(res.personalRecords)) {
@@ -545,6 +472,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       fetchProgressStats: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) {
+          return;
+        }
         try {
           const [summaryRes, trendRes] = await Promise.all([
             fetchProgressSummaryApi(),
@@ -781,7 +711,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
             totalSets: totalCompletedSets,
           };
 
-          await updateWorkoutHistoryApi(editingSession.id, apiPayload);
+          const token = getStoredToken();
+          if (userId !== 'guest' && token) {
+            await updateWorkoutHistoryApi(editingSession.id, apiPayload);
+          }
 
           const updatedSession: WorkoutSession = {
             ...editingSession,
@@ -1073,17 +1006,35 @@ export const useWorkoutStore = create<WorkoutStore>()(
           })),
         };
 
-        const currentSections = targetSession.sections && targetSession.sections.length > 0
+        const currentSections: MuscleGroupConfig[] = targetSession.sections && targetSession.sections.length > 0
           ? [...targetSession.sections]
           : targetSession.muscleGroups.map((mg) => ({
               name: mg,
               displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
             }));
 
-        let updatedSections = currentSections;
+        let updatedSections: MuscleGroupConfig[] = currentSections;
         let updatedMuscleGroups = targetSession.muscleGroups;
 
-        if (!currentSections.some((s) => s.name === exercise.primaryMuscle)) {
+        if (exercise.primaryMuscle === 'legs' || exercise.primaryMuscle === 'glutes' || exercise.primaryMuscle === 'calves') {
+          const legSec = getLegSection(exercise) || 'quads';
+          const legNames: Record<string, string> = {
+            quads: 'Quads',
+            hamstrings: 'Hamstrings',
+            glutes: 'Glutes',
+            calves: 'Calves',
+          };
+          const legMg: MuscleGroup = legSec === 'glutes' ? 'glutes' : legSec === 'calves' ? 'calves' : 'legs';
+          if (!currentSections.some((s) => isLegSubArea(s.subAreas, s.displayName) === legSec)) {
+            updatedSections = [
+              ...currentSections,
+              { name: legMg, displayName: legNames[legSec], subAreas: [legSec as any] },
+            ];
+            if (!updatedMuscleGroups.includes(legMg)) {
+              updatedMuscleGroups = [...updatedMuscleGroups, legMg];
+            }
+          }
+        } else if (!currentSections.some((s) => s.name === exercise.primaryMuscle)) {
           const meta = MUSCLE_GROUPS[exercise.primaryMuscle];
           const newSec = {
             name: exercise.primaryMuscle,
@@ -1312,9 +1263,16 @@ export const useWorkoutStore = create<WorkoutStore>()(
             workoutPlanId: userData.workoutPlanDocId || undefined,
           };
 
-          // Await API persistence before updating state!
-          const res = await createWorkoutHistoryApi(apiPayload);
-          const mongoId = res && res.workout && res.workout._id ? res.workout._id : activeSession.id;
+          let mongoId = activeSession.id;
+          const token = getStoredToken();
+
+          // Await API persistence only if authenticated user
+          if (userId !== 'guest' && token) {
+            const res = await createWorkoutHistoryApi(apiPayload);
+            if (res && res.workout && res.workout._id) {
+              mongoId = res.workout._id;
+            }
+          }
 
           const completedSession: WorkoutSession = {
             ...activeSession,
@@ -1333,7 +1291,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             })),
           };
 
-          // ONLY update history and clear activeSession upon successful backend save
+          // ONLY update history and clear activeSession upon successful save
           set((state) => ({
             isFinishing: false,
             saveError: null,
@@ -1349,8 +1307,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
             },
           }));
 
-          get().fetchBackendPRs(userId);
-          get().fetchProgressStats(userId);
+          if (userId !== 'guest' && token) {
+            get().fetchBackendPRs(userId);
+            get().fetchProgressStats(userId);
+          }
 
           return true;
         } catch (error: any) {
@@ -1551,6 +1511,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       // Weekly Plan Actions
       fetchWeeklyPlan: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) {
+          return get().getWeeklyPlan(userId);
+        }
         try {
           const res = await fetchWorkoutPlan();
           if (res && res.plan) {
@@ -1584,6 +1547,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
             },
           },
         }));
+
+        if (!userId || userId === 'guest' || !getStoredToken()) {
+          return;
+        }
 
         const userData = get().getUserData(userId);
         const docId = userData.workoutPlanDocId;
@@ -1630,7 +1597,14 @@ export const useWorkoutStore = create<WorkoutStore>()(
         set((state) => ({ settings: { ...state.settings, ...newSettings } })),
     }),
     {
-      name: 'gym-tracker-store-v3',
+      name: 'gym-tracker-store-v4',
+      onRehydrateStorage: () => (state) => {
+        if (state && state.userDataMap) {
+          if ('user_srujan' in state.userDataMap) {
+            delete state.userDataMap['user_srujan'];
+          }
+        }
+      },
     }
   )
 );

@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import mongoose from 'mongoose';
 import Workout from '../models/Workout';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
@@ -73,6 +74,12 @@ export const getWorkoutById = async (req: AuthenticatedRequest, res: Response): 
     }
 
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(404).json({ error: 'Workout session not found' });
+      return;
+    }
+
     const workout = await Workout.findById(id);
 
     if (!workout) {
@@ -165,6 +172,12 @@ export const updateWorkout = async (req: AuthenticatedRequest, res: Response): P
     }
 
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(404).json({ error: 'Workout session not found' });
+      return;
+    }
+
     const workout = await Workout.findById(id);
 
     if (!workout) {
@@ -232,6 +245,12 @@ export const deleteWorkout = async (req: AuthenticatedRequest, res: Response): P
     }
 
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(404).json({ error: 'Workout session not found' });
+      return;
+    }
+
     const workout = await Workout.findById(id);
 
     if (!workout) {

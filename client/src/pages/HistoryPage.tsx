@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Edit3 } from 'lucide-react';
+import { ChevronRight, Edit3, Lock, LogIn } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
@@ -9,16 +9,47 @@ import { useAuthStore } from '../store/authStore';
 import { formatDateShort, formatDayName } from '../utils/formatters';
 import { WorkoutSession } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { UserModal } from '../components/auth/UserModal';
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const { getHistory, startEditingWorkout } = useWorkoutStore();
-  const history = getHistory(userId);
-
   const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(null);
+
+  if (!currentUser) {
+    return (
+      <div className="space-y-4 pb-12">
+        <Header title="Workout History" subtitle="Your Past Workouts" />
+        <div className="text-center py-12 px-5 border border-[#272B30] rounded-2xl bg-[#14171A] space-y-3">
+          <div className="w-12 h-12 rounded-full bg-[#1F2429] border border-[#272B30] flex items-center justify-center mx-auto text-[#6B7280]">
+            <Lock className="w-6 h-6 stroke-[2]" />
+          </div>
+          <h3 className="text-base font-bold text-[#F5F5F5]">Sign in to View Workout History</h3>
+          <p className="text-xs text-[#9CA3AF] max-w-sm mx-auto leading-relaxed">
+            Your workout history, completed sets, and volume metrics are securely linked to your account.
+          </p>
+          <div className="pt-2">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="gap-2 mx-auto font-bold px-6"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Sign In or Register</span>
+            </Button>
+          </div>
+        </div>
+        <UserModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      </div>
+    );
+  }
+
+  const userId = currentUser.id;
+  const history = getHistory(userId);
 
   return (
     <div className="space-y-3 pb-12">

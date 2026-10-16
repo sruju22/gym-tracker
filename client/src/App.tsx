@@ -40,11 +40,12 @@ export function App() {
   }, [restoreAuth]);
 
   useEffect(() => {
-    const id = currentUser?.id || 'user_srujan';
-    fetchWeeklyPlan(id);
-    fetchHistory(id);
-    fetchBackendPRs(id);
-    fetchProgressStats(id);
+    if (currentUser?.id) {
+      fetchWeeklyPlan(currentUser.id);
+      fetchHistory(currentUser.id);
+      fetchBackendPRs(currentUser.id);
+      fetchProgressStats(currentUser.id);
+    }
   }, [currentUser?.id, fetchWeeklyPlan, fetchHistory, fetchBackendPRs, fetchProgressStats]);
 
   return <RouterProvider router={router} />;

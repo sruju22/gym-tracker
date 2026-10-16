@@ -4,10 +4,11 @@ import { useAuthStore } from '../../store/authStore';
 
 export const QuickStatsRow: React.FC = () => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
-
   const { getHistory } = useWorkoutStore();
-  const history = getHistory(userId);
+
+  if (!currentUser) return null;
+
+  const history = getHistory(currentUser.id);
 
   const totalVolume = history.reduce((acc, h) => acc + h.totalVolume, 0);
   const totalSets = history.reduce((acc, h) => acc + h.totalSets, 0);

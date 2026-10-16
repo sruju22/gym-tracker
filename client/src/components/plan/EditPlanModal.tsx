@@ -24,7 +24,7 @@ const DAYS_OF_WEEK: { id: DayOfWeek; shortLabel: string }[] = [
 
 export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose }) => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
   const { getWeeklyPlan, updateWeeklyPlan, resetWeeklyPlan } = useWorkoutStore();
 

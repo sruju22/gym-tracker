@@ -12,11 +12,12 @@ interface WeeklyOverviewProps {
 
 export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }) => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
   const { getWeeklyPlan, getHistory } = useWorkoutStore();
   const weeklyPlan = getWeeklyPlan(userId);
-  const history = getHistory(userId);
+  // Security guard: Only load workout completion history for an authenticated account
+  const history = currentUser ? getHistory(userId) : [];
 
   const [, setTick] = useState(0);
 

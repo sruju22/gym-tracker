@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import mongoose from 'mongoose';
 import WorkoutPlan from '../models/WorkoutPlan';
 import { DEFAULT_WORKOUT_PLAN } from '../data/defaultWorkoutPlan';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
@@ -44,6 +45,12 @@ export const getWorkoutPlanById = async (req: AuthenticatedRequest, res: Respons
     }
 
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(404).json({ error: 'Workout plan not found' });
+      return;
+    }
+
     const plan = await WorkoutPlan.findById(id);
 
     if (!plan) {
@@ -120,6 +127,12 @@ export const updateWorkoutPlan = async (req: AuthenticatedRequest, res: Response
     }
 
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(404).json({ error: 'Workout plan not found' });
+      return;
+    }
+
     const plan = await WorkoutPlan.findById(id);
 
     if (!plan) {

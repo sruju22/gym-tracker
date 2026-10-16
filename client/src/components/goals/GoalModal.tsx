@@ -27,7 +27,7 @@ interface GoalModalProps {
 
 export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onSave }) => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
   const { getExercises } = useWorkoutStore();
   const exercises = getExercises(userId);
 

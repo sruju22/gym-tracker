@@ -18,15 +18,17 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
   subAreas,
 }) => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
-  const { getActiveSession } = useWorkoutStore();
+  const { getActiveSession, getEditingSession } = useWorkoutStore();
   const activeSession = getActiveSession(userId);
+  const editingSession = getEditingSession(userId);
+  const currentSession = editingSession || activeSession;
 
-  if (!activeSession) return null;
+  if (!currentSession) return null;
 
-  const currentExercises = activeSession.exercises.map((e) => e.exercise);
-  const coverage = calculateMuscleCoverage(muscleGroup, currentExercises, subAreas);
+  // Pass currentSession.exercises directly to calculateMuscleCoverage so only valid recorded sets qualify
+  const coverage = calculateMuscleCoverage(muscleGroup, currentSession.exercises, subAreas);
 
   const displayTitle = sectionTitle || muscleGroup;
 
@@ -46,7 +48,7 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
         {coverage.areas.map((item) => (
           <div
             key={item.area}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
               item.covered
                 ? 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/40 font-extrabold'
                 : 'bg-[#14171A] text-[#6B7280] border-[#272B30]'

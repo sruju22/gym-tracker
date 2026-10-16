@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { UserModal } from '../auth/UserModal';
+import { User } from 'lucide-react';
 
 interface HeaderProps {
   title?: string;
@@ -16,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { currentUser } = useAuthStore();
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
-  const initialLetter = currentUser ? currentUser.name.charAt(0).toUpperCase() : 'U';
+  const initialLetter = currentUser ? currentUser.name.charAt(0).toUpperCase() : null;
 
   return (
     <>
@@ -25,10 +26,10 @@ export const Header: React.FC<HeaderProps> = ({
           {showGreeting ? (
             <div className="min-w-0">
               <div className="text-[11px] sm:text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
-                Welcome back
+                {currentUser ? 'Welcome back' : 'Welcome to GymTracker'}
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-[#E11D48] tracking-tight leading-tight truncate">
-                {currentUser?.name || 'Athlete'}
+                {currentUser?.name || 'Guest Athlete'}
               </h1>
             </div>
           ) : (
@@ -42,11 +43,15 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={() => setIsUserModalOpen(true)}
-            className="w-9 h-9 rounded-full bg-[#E11D48] text-[#FFFFFF] flex items-center justify-center text-xs font-black shadow-sm shadow-[#E11D48]/20 active:scale-95 transition-transform flex-shrink-0 ml-3 border border-[#F43F5E] cursor-pointer"
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shadow-sm active:scale-95 transition-transform flex-shrink-0 ml-3 border cursor-pointer ${
+              currentUser
+                ? 'bg-[#E11D48] text-[#FFFFFF] shadow-[#E11D48]/20 border-[#F43F5E]'
+                : 'bg-[#1F2429] text-[#9CA3AF] hover:text-[#F5F5F5] border-[#272B30]'
+            }`}
             aria-label="User Profile"
-            title="User Profile & Accounts"
+            title={currentUser ? `${currentUser.name} (Signed In)` : 'Not Signed In — Click to Sign In'}
           >
-            {initialLetter}
+            {currentUser ? initialLetter : <User className="w-4 h-4" />}
           </button>
         </div>
       </header>

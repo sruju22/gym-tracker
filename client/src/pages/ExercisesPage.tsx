@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout/Header';
 import { ExerciseFilter } from '../components/exercises/ExerciseFilter';
 import { ExerciseLibraryCard } from '../components/exercises/ExerciseLibraryCard';
@@ -11,22 +12,26 @@ import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { Exercise, MuscleGroup, Equipment, ExerciseType } from '../types';
 import { matchExerciseSearch, scoreExerciseSearch } from '../utils/search';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft, Dumbbell } from 'lucide-react';
 
 export const ExercisesPage: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
   const {
     getExercises,
     addExerciseToWorkout,
     getActiveSession,
+    getEditingSession,
     updateCustomExercise,
     deleteCustomExercise,
   } = useWorkoutStore();
 
   const exercises = getExercises(userId);
   const activeSession = getActiveSession(userId);
+  const editingSession = getEditingSession(userId);
+  const currentSession = editingSession || activeSession;
 
   const [search, setSearch] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | 'all'>('all');
@@ -84,6 +89,40 @@ export const ExercisesPage: React.FC = () => {
 
   return (
     <div className="space-y-3 max-w-full overflow-x-hidden pb-12">
+      {/* Mid-Workout Active Session Banner */}
+      {currentSession && (
+        <div className="bg-[#14171A] border border-[#E11D48]/40 rounded-2xl p-3.5 sm:p-4 shadow-lg flex items-center justify-between gap-3 animate-fade-in">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/40 flex items-center justify-center shrink-0">
+              <Dumbbell className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-black text-[#F5F5F5] truncate">
+                  {currentSession.workoutName || (editingSession ? 'Editing Workout' : 'Active Workout')}
+                </span>
+                <span className="text-[10px] font-black text-[#E11D48] bg-[#E11D48]/15 px-2 py-0.5 rounded-md border border-[#E11D48]/30 shrink-0">
+                  {currentSession.exercises.length} EXERCISES
+                </span>
+              </div>
+              <p className="text-[11px] text-[#9CA3AF] truncate mt-0.5">
+                Workout in progress • Tap "+ Add" on any exercise to add it
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate('/workout')}
+            className="font-black shrink-0 flex items-center gap-1.5 min-h-[38px] px-3.5 shadow-sm shadow-[#E11D48]/30"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Workout</span>
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <Header
           title="Exercise Library"
@@ -122,8 +161,11 @@ export const ExercisesPage: React.FC = () => {
             key={ex.id}
             exercise={ex}
             onSelectDetail={handleOpenDetail}
+            isInWorkout={
+              currentSession ? currentSession.exercises.some((e) => e.exerciseId === ex.id) : false
+            }
             onAddToWorkout={
-              activeSession ? (exercise) => addExerciseToWorkout(userId, exercise) : undefined
+              currentSession ? (exercise) => addExerciseToWorkout(userId, exercise) : undefined
             }
           />
         ))}
@@ -143,8 +185,13 @@ export const ExercisesPage: React.FC = () => {
         exercise={selectedExercise}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
+        isInWorkout={
+          currentSession && selectedExercise
+            ? currentSession.exercises.some((e) => e.exerciseId === selectedExercise.id)
+            : false
+        }
         onAddToWorkout={
-          activeSession ? (exercise) => addExerciseToWorkout(userId, exercise) : undefined
+          currentSession ? (exercise) => addExerciseToWorkout(userId, exercise) : undefined
         }
         onEditCustom={handleStartEdit}
         onDeleteCustom={handleStartDelete}
@@ -182,7 +229,7 @@ export const ExercisesPage: React.FC = () => {
         isOpen={isAddCustomOpen}
         onClose={() => setIsAddCustomOpen(false)}
         onSelectExercise={(ex) => {
-          if (activeSession) addExerciseToWorkout(userId, ex);
+          if (currentSession) addExerciseToWorkout(userId, ex);
         }}
       />
     </div>

@@ -8,11 +8,14 @@ import { getTodayDayOfWeek, formatDayName } from '../../utils/formatters';
 import { DEFAULT_WORKOUT_PLAN } from '../../data/workoutPlan';
 import { useNavigate } from 'react-router-dom';
 import { Check, Edit3, Eye, Coffee } from 'lucide-react';
+import { UserModal } from '../auth/UserModal';
 
 export const TodayCard: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const isGuest = !currentUser;
+  const userId = currentUser?.id || 'guest';
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const {
     getWeeklyPlan,
@@ -50,7 +53,8 @@ export const TodayCard: React.FC = () => {
 
   const weeklyPlan = getWeeklyPlan(userId);
   const activeSession = getActiveSession(userId);
-  const todayCompleted = getTodayCompletedWorkout(userId);
+  // Security guard: Guests NEVER have a completed workout record
+  const todayCompleted = isGuest ? null : getTodayCompletedWorkout(userId);
 
   const today = getTodayDayOfWeek();
   const todayConfig = (weeklyPlan && weeklyPlan[today]) || DEFAULT_WORKOUT_PLAN[today];
@@ -343,7 +347,21 @@ export const TodayCard: React.FC = () => {
         >
           <span>START WORKOUT</span>
         </Button>
+
+        {isGuest && (
+          <div className="mt-3.5 pt-3 border-t border-[#272B30]/60 flex items-center justify-between text-[11px] text-[#9CA3AF]">
+            <span>Guest session · Workouts won't sync to cloud</span>
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="font-bold text-[#E11D48] hover:text-[#F43F5E] transition-colors cursor-pointer"
+            >
+              Sign In
+            </button>
+          </div>
+        )}
       </div>
+
+      <UserModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </Card>
   );
 };

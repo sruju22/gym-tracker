@@ -6,10 +6,11 @@ import { formatDateShort } from '../../utils/formatters';
 
 export const RecentWorkout: React.FC = () => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
-
   const { getHistory } = useWorkoutStore();
-  const history = getHistory(userId);
+
+  if (!currentUser) return null;
+
+  const history = getHistory(currentUser.id);
   const lastWorkout = history[0];
 
   if (!lastWorkout) return null;

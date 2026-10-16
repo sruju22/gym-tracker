@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, BookOpen } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { SearchBar } from '../ui/SearchBar';
 import { FilterChip } from '../ui/FilterChip';
@@ -19,6 +19,7 @@ interface AddExerciseSheetProps {
   targetMuscleGroup?: MuscleGroup;
   targetSubAreas?: MuscleArea[];
   targetSectionName?: string;
+  onBrowseLibrary?: () => void;
 }
 
 export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
@@ -28,9 +29,10 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
   targetMuscleGroup,
   targetSubAreas,
   targetSectionName,
+  onBrowseLibrary,
 }) => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
 
   const { getExercises, addCustomExercise } = useWorkoutStore();
   const exercises = getExercises(userId);
@@ -170,6 +172,17 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
               </div>
             </div>
           </button>
+
+          {onBrowseLibrary && (
+            <button
+              type="button"
+              onClick={onBrowseLibrary}
+              className="w-full bg-[#14171A] hover:bg-[#1B1F23] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold text-[#9CA3AF] hover:text-[#F5F5F5] transition-colors cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#E11D48]" />
+              <span>Browse Full Exercise Library</span>
+            </button>
+          )}
 
           {/* Exercises List */}
           <div className="space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">

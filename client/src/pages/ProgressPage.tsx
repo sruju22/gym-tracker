@@ -1,19 +1,52 @@
-import React from 'react';
-import { Award } from 'lucide-react';
+import React, { useState } from 'react';
+import { Award, Lock, LogIn } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { formatDateShort, formatVolume } from '../utils/formatters';
 import { GoalsList } from '../components/goals/GoalsList';
 import { ProgressionChart } from '../components/progress/ProgressionChart';
+import { UserModal } from '../components/auth/UserModal';
 
 export const ProgressPage: React.FC = () => {
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const { getUserData, getHistory, getPersonalRecords, getExercises } = useWorkoutStore();
+
+  if (!currentUser) {
+    return (
+      <div className="w-full max-w-full min-w-0 flex-1 flex flex-col space-y-4 sm:space-y-5 pb-16">
+        <Header title="Progress & Stats" subtitle="Personal Records, Analytics & Goals" />
+        <div className="text-center py-12 px-5 border border-[#272B30] rounded-2xl bg-[#14171A] space-y-3">
+          <div className="w-12 h-12 rounded-full bg-[#1F2429] border border-[#272B30] flex items-center justify-center mx-auto text-[#6B7280]">
+            <Lock className="w-6 h-6 stroke-[2]" />
+          </div>
+          <h3 className="text-base font-bold text-[#F5F5F5]">Sign in to Track Progress & Records</h3>
+          <p className="text-xs text-[#9CA3AF] max-w-sm mx-auto leading-relaxed">
+            Personal records, strength progression charts, volume trends, and fitness goals are securely linked to your personal account.
+          </p>
+          <div className="pt-2">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="gap-2 mx-auto font-bold px-6"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Sign In or Register</span>
+            </Button>
+          </div>
+        </div>
+        <UserModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      </div>
+    );
+  }
+
+  const userId = currentUser.id;
   const userData = getUserData(userId);
   const history = getHistory(userId);
   const personalRecords = getPersonalRecords(userId);

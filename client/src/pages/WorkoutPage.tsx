@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
-import { Play, Plus, Check, Dumbbell, AlertTriangle, Edit3 } from 'lucide-react';
+import { Play, Plus, Check, Dumbbell, AlertTriangle, Edit3, BookOpen } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { ExerciseCard } from '../components/workout/ExerciseCard';
@@ -11,7 +11,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
 import { Modal } from '../components/ui/Modal';
-import { Exercise, MuscleGroupConfig } from '../types';
+import { Exercise, MuscleGroupConfig, WorkoutExercise } from '../types';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
 import { formatDateShort } from '../utils/formatters';
@@ -19,7 +19,8 @@ import { formatDateShort } from '../utils/formatters';
 export const WorkoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
-  const userId = currentUser?.id || 'user_srujan';
+  const userId = currentUser?.id || 'guest';
+  const isGuest = !currentUser;
 
   const {
     getActiveSession,
@@ -27,6 +28,7 @@ export const WorkoutPage: React.FC = () => {
     startTodayWorkout,
     addExerciseToWorkout,
     addMuscleSectionToWorkout,
+    toggleExerciseCompleted,
     cancelWorkout,
     cancelEditingWorkout,
     saveWorkoutEdits,
@@ -45,30 +47,31 @@ export const WorkoutPage: React.FC = () => {
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
-  const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [targetSectionForAdd, setTargetSectionForAdd] = useState<MuscleGroupConfig | undefined>(
     undefined
   );
 
-  // Auto-focus on first incomplete exercise
-  useEffect(() => {
-    if (currentSession && currentSession.exercises.length > 0) {
-      const exists = currentSession.exercises.some((ex) => ex.id === activeExerciseId);
-      if (!activeExerciseId) {
-        const firstIncomplete = currentSession.exercises.find((ex) => !ex.completed);
-        if (firstIncomplete) {
-          setActiveExerciseId(firstIncomplete.id);
-        }
-      } else if (!exists) {
-        const firstIncomplete = currentSession.exercises.find((ex) => !ex.completed);
-        setActiveExerciseId(firstIncomplete ? firstIncomplete.id : null);
-      }
-    } else if (currentSession && currentSession.exercises.length === 0) {
-      if (activeExerciseId !== null) {
-        setActiveExerciseId(null);
-      }
+  // Track explicit expansion overrides per exercise
+  // By default:
+  // - uncompleted exercises (and newly added exercises) are automatically EXPANDED
+  // - completed exercises default to collapsed into their compact summary row
+  // User can click any card header to expand or collapse it
+  const [expandedOverrides, setExpandedOverrides] = useState<Record<string, boolean>>({});
+
+  const isExerciseExpanded = (workEx: WorkoutExercise) => {
+    if (expandedOverrides[workEx.id] !== undefined) {
+      return expandedOverrides[workEx.id];
     }
-  }, [currentSession, activeExerciseId]);
+    return !workEx.completed;
+  };
+
+  const handleToggleExpand = (id: string, workEx: WorkoutExercise) => {
+    const currentlyExpanded = isExerciseExpanded(workEx);
+    setExpandedOverrides((prev) => ({
+      ...prev,
+      [id]: !currentlyExpanded,
+    }));
+  };
 
   // Track meaningful unsaved changes
   const hasUnsavedChanges = useMemo(() => {
@@ -101,6 +104,8 @@ export const WorkoutPage: React.FC = () => {
       ({ currentLocation, nextLocation }: any) => {
         if (!hasUnsavedChanges) return false;
         if (currentLocation.pathname === nextLocation.pathname) return false;
+        // Mid-workout exercise library access is supported without losing progress
+        if (nextLocation.pathname === '/exercises') return false;
         return true;
       },
       [hasUnsavedChanges]
@@ -181,25 +186,11 @@ export const WorkoutPage: React.FC = () => {
   };
 
   const handleExerciseDone = (currentExId: string) => {
-    if (!currentSession) return;
-    const currentIdx = currentSession.exercises.findIndex(
-      (ex) => ex.id === currentExId || ex.exerciseId === currentExId
-    );
-
-    const remainingInorder = currentSession.exercises
-      .slice(currentIdx + 1)
-      .find((ex) => !ex.completed && ex.id !== currentExId);
-
-    const firstIncomplete = currentSession.exercises.find(
-      (ex) => !ex.completed && ex.id !== currentExId
-    );
-
-    const nextTarget = remainingInorder || firstIncomplete;
-    if (nextTarget) {
-      setActiveExerciseId(nextTarget.id);
-    } else {
-      setActiveExerciseId(null);
-    }
+    toggleExerciseCompleted(userId, currentExId);
+    setExpandedOverrides((prev) => ({
+      ...prev,
+      [currentExId]: false,
+    }));
   };
 
   if (!currentSession) {
@@ -266,6 +257,14 @@ export const WorkoutPage: React.FC = () => {
           <span className="text-[#9CA3AF] font-medium">
             {formatDateShort(editingSession.date)}
           </span>
+        </div>
+      )}
+
+      {/* Guest Mode Banner */}
+      {isGuest && (
+        <div className="bg-[#14171A] border border-[#272B30] rounded-xl px-3.5 py-2 flex items-center justify-between text-[11px] text-[#9CA3AF]">
+          <span>Guest Mode · Progress saved on this device only</span>
+          <span className="text-[#E11D48] font-bold">Not Synced</span>
         </div>
       )}
 
@@ -385,10 +384,8 @@ export const WorkoutPage: React.FC = () => {
                 <ExerciseCard
                   key={workEx.id}
                   workoutExercise={workEx}
-                  isExpanded={activeExerciseId === workEx.id}
-                  onToggleExpand={() =>
-                    setActiveExerciseId(activeExerciseId === workEx.id ? null : workEx.id)
-                  }
+                  isExpanded={isExerciseExpanded(workEx)}
+                  onToggleExpand={() => handleToggleExpand(workEx.id, workEx)}
                   onDone={() => handleExerciseDone(workEx.id)}
                 />
               ))}
@@ -452,14 +449,22 @@ export const WorkoutPage: React.FC = () => {
         </div>
       )}
 
-      {/* Action to Add New Muscle / Workout Section */}
-      <div className="pt-2">
+      {/* Actions to Add New Muscle Section or Browse Exercise Library */}
+      <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
         <button
           onClick={() => setIsAddSectionModalOpen(true)}
-          className="w-full bg-[#14171A] hover:bg-[#1B1F23] border border-dashed border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-4 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          className="bg-[#14171A] hover:bg-[#1B1F23] border border-dashed border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
         >
           <Plus className="w-4 h-4 text-[#E11D48]" />
           <span>Add Muscle Group</span>
+        </button>
+
+        <button
+          onClick={() => navigate('/exercises')}
+          className="bg-[#14171A] hover:bg-[#1B1F23] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+        >
+          <BookOpen className="w-4 h-4 text-[#E11D48]" />
+          <span>Browse Exercise Library</span>
         </button>
       </div>
 
@@ -471,6 +476,10 @@ export const WorkoutPage: React.FC = () => {
         targetMuscleGroup={targetSectionForAdd?.name}
         targetSubAreas={targetSectionForAdd?.subAreas}
         targetSectionName={targetSectionForAdd?.displayName}
+        onBrowseLibrary={() => {
+          setIsAddSheetOpen(false);
+          navigate('/exercises');
+        }}
       />
 
       <WorkoutSummary

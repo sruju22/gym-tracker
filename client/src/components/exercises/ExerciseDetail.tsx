@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, BookOpen, Edit2, Trash2 } from 'lucide-react';
+import { Plus, BookOpen, Edit2, Trash2, Check } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -11,6 +11,7 @@ interface ExerciseDetailProps {
   isOpen: boolean;
   onClose: () => void;
   onAddToWorkout?: (exercise: Exercise) => void;
+  isInWorkout?: boolean;
   onEditCustom?: (exercise: Exercise) => void;
   onDeleteCustom?: (exercise: Exercise) => void;
 }
@@ -20,6 +21,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   isOpen,
   onClose,
   onAddToWorkout,
+  isInWorkout = false,
   onEditCustom,
   onDeleteCustom,
 }) => {
@@ -167,16 +169,26 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
         {/* Add to Workout Button */}
         {onAddToWorkout && (
           <Button
-            variant="primary"
+            variant={isInWorkout ? 'secondary' : 'primary'}
             size="lg"
             fullWidth
+            disabled={isInWorkout}
             onClick={() => {
               onAddToWorkout(exercise);
-              onClose();
             }}
+            className="font-bold flex items-center justify-center gap-2"
           >
-            <Plus className="w-4 h-4 mr-1.5 stroke-[3]" />
-            <span>Add to Today's Workout</span>
+            {isInWorkout ? (
+              <>
+                <Check className="w-4 h-4 stroke-[3] text-[#22C55E]" />
+                <span className="text-[#22C55E]">Added to Current Workout</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Add to Current Workout</span>
+              </>
+            )}
           </Button>
         )}
       </div>
