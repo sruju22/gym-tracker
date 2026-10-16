@@ -18,7 +18,9 @@ import {
   MuscleGroupConfig,
   SavedCombination,
   CombinationType,
+  WorkoutSetStage,
 } from '../types';
+import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
@@ -104,6 +106,30 @@ interface WorkoutStore {
   ) => void;
   removeCombinationFromWorkout: (userId: string, combinationId: string) => void;
   addRoundToCombination: (userId: string, combinationId: string) => void;
+  updateCombinationStage: (
+    userId: string,
+    exerciseId: string,
+    setIndex: number,
+    stageIndex: number,
+    weight: number | null,
+    reps: number | null
+  ) => void;
+  toggleCombinationStageCompleted: (
+    userId: string,
+    exerciseId: string,
+    setIndex: number,
+    stageIndex: number
+  ) => void;
+  toggleCombinationSetCompleted: (
+    userId: string,
+    exerciseId: string,
+    setIndex: number
+  ) => void;
+  removeSetFromCombination: (
+    userId: string,
+    exerciseId: string,
+    setIndex: number
+  ) => void;
 
   // Actions - Workout Session & Progress
   fetchHistory: (userId: string) => Promise<WorkoutSession[]>;
@@ -272,11 +298,17 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       getActiveSession: (userId: string) => {
         const userData = get().getUserData(userId);
+        if (userData.activeSession && userData.activeSession.exercises) {
+          userData.activeSession.exercises = normalizeCombinationExercises(userData.activeSession.exercises);
+        }
         return userData.activeSession;
       },
 
       getEditingSession: (userId: string) => {
         const userData = get().getUserData(userId);
+        if (userData.editingSession && userData.editingSession.exercises) {
+          userData.editingSession.exercises = normalizeCombinationExercises(userData.editingSession.exercises);
+        }
         return userData.editingSession || null;
       },
 
@@ -324,7 +356,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
       getHistory: (userId: string) => {
         const userData = get().getUserData(userId);
         const history = userData.history || [];
-        return [...history].sort(
+        const normalized = history.map((session) => ({
+          ...session,
+          exercises: normalizeCombinationExercises(session.exercises || []),
+        }));
+        return [...normalized].sort(
           (a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime()
         );
       },
@@ -758,6 +794,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       startEditingWorkout: (userId: string, session: WorkoutSession) => {
         const cloned: WorkoutSession = JSON.parse(JSON.stringify(session));
+        if (cloned.exercises) {
+          cloned.exercises = normalizeCombinationExercises(cloned.exercises);
+        }
         if (!cloned.sections || cloned.sections.length === 0) {
           cloned.sections = cloned.muscleGroups.map((mg) => ({
             name: mg,
@@ -808,44 +847,86 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const updatedPRs: PersonalRecord[] = [...personalRecords];
 
           editingSession.exercises.forEach((ex) => {
-            const completedSets = ex.sets.filter(
-              (s) => s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
-            );
+            ex.sets.forEach((s) => {
+              if (Array.isArray(s.stages) && s.stages.length > 0) {
+                let setHasCompletedStage = false;
+                s.stages.forEach((st) => {
+                  if (st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0) {
+                    const weight = st.weight!;
+                    const reps = st.reps!;
+                    totalVolume += weight * reps;
+                    setHasCompletedStage = true;
 
-            completedSets.forEach((s) => {
-              const weight = s.weight!;
-              const reps = s.reps!;
-              totalVolume += weight * reps;
-              totalCompletedSets++;
+                    const est1RM = calculate1RM(weight, reps);
+                    const prIndex = updatedPRs.findIndex((p) => p.exerciseId === st.exerciseId);
+                    const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-              const est1RM = calculate1RM(weight, reps);
-              const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
-              const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+                    const isNewPR =
+                      !existingPR ||
+                      weight > existingPR.weight ||
+                      est1RM > existingPR.estimated1RM ||
+                      (weight === existingPR.weight && reps > existingPR.reps);
 
-              const isNewPR =
-                !existingPR ||
-                weight > existingPR.weight ||
-                est1RM > existingPR.estimated1RM ||
-                (weight === existingPR.weight && reps > existingPR.reps);
+                    if (isNewPR) {
+                      const prRecord: PersonalRecord = {
+                        id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                        exerciseId: st.exerciseId,
+                        exerciseName: st.exerciseName,
+                        type: 'max_weight',
+                        value: weight,
+                        weight,
+                        reps,
+                        estimated1RM: est1RM,
+                        date: editingSession.date || new Date().toISOString(),
+                        details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                      };
 
-              if (isNewPR) {
-                const prRecord: PersonalRecord = {
-                  id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-                  exerciseId: ex.exerciseId,
-                  exerciseName: ex.exercise.name,
-                  type: 'max_weight',
-                  value: weight,
-                  weight,
-                  reps,
-                  estimated1RM: est1RM,
-                  date: editingSession.date || new Date().toISOString(),
-                  details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
-                };
+                      if (prIndex >= 0) {
+                        updatedPRs[prIndex] = prRecord;
+                      } else {
+                        updatedPRs.push(prRecord);
+                      }
+                    }
+                  }
+                });
+                if (s.completed || setHasCompletedStage) {
+                  totalCompletedSets++;
+                }
+              } else if (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) {
+                const weight = s.weight!;
+                const reps = s.reps!;
+                totalVolume += weight * reps;
+                totalCompletedSets++;
 
-                if (prIndex >= 0) {
-                  updatedPRs[prIndex] = prRecord;
-                } else {
-                  updatedPRs.push(prRecord);
+                const est1RM = calculate1RM(weight, reps);
+                const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
+                const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+
+                const isNewPR =
+                  !existingPR ||
+                  weight > existingPR.weight ||
+                  est1RM > existingPR.estimated1RM ||
+                  (weight === existingPR.weight && reps > existingPR.reps);
+
+                if (isNewPR) {
+                  const prRecord: PersonalRecord = {
+                    id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                    exerciseId: ex.exerciseId,
+                    exerciseName: ex.exercise.name,
+                    type: 'max_weight',
+                    value: weight,
+                    weight,
+                    reps,
+                    estimated1RM: est1RM,
+                    date: editingSession.date || new Date().toISOString(),
+                    details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                  };
+
+                  if (prIndex >= 0) {
+                    updatedPRs[prIndex] = prRecord;
+                  } else {
+                    updatedPRs.push(prRecord);
+                  }
                 }
               }
             });
@@ -863,12 +944,29 @@ export const useWorkoutStore = create<WorkoutStore>()(
               setNumber: s.setNumber,
               weight: s.weight,
               reps: s.reps,
-              completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
+              completed: Boolean(
+                (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
+                (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+              ),
+              stages: Array.isArray(s.stages) && s.stages.length > 0
+                ? s.stages.map((st) => ({
+                    stageOrder: st.stageOrder,
+                    exerciseId: st.exerciseId,
+                    exerciseName: st.exerciseName,
+                    movementDescription: st.movementDescription || null,
+                    targetWeight: st.targetWeight ?? null,
+                    targetReps: st.targetReps ?? null,
+                    weight: st.weight,
+                    reps: st.reps,
+                    completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                  }))
+                : undefined,
             })),
             notes: ex.notes || '',
             combinationId: ex.combinationId || null,
             combinationName: ex.combinationName || null,
             combinationType: ex.combinationType || null,
+            techniqueLabel: ex.techniqueLabel || null,
             stageDescription: ex.stageDescription || null,
             stageOrder: ex.stageOrder || null,
           }));
@@ -898,7 +996,16 @@ export const useWorkoutStore = create<WorkoutStore>()(
               ...ex,
               sets: ex.sets.map((s) => ({
                 ...s,
-                completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
+                completed: Boolean(
+                  (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
+                  (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+                ),
+                stages: Array.isArray(s.stages) && s.stages.length > 0
+                  ? s.stages.map((st) => ({
+                      ...st,
+                      completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                    }))
+                  : undefined,
               })),
             })),
           };
@@ -1316,9 +1423,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
         let updatedSections: MuscleGroupConfig[] = [...currentSections];
         let updatedMuscleGroups = [...targetSession.muscleGroups];
 
-        const newExercises: WorkoutExercise[] = combinationData.stages.map((stage, stageIdx) => {
+        // Ensure all component exercises' muscle groups are present in sections
+        combinationData.stages.forEach((stage) => {
           const ex = stage.exercise;
-
           if (ex.primaryMuscle === 'legs' || ex.primaryMuscle === 'glutes' || ex.primaryMuscle === 'calves') {
             const legSec = getLegSection(ex) || 'quads';
             const legNames: Record<string, string> = {
@@ -1348,32 +1455,51 @@ export const useWorkoutStore = create<WorkoutStore>()(
               updatedMuscleGroups = [...updatedMuscleGroups, ex.primaryMuscle];
             }
           }
+        });
 
-          const sets: WorkoutSet[] = Array.from({ length: combinationData.rounds || 3 }, (_, rIdx) => ({
-            id: `set_${Date.now()}_${stageIdx}_${rIdx + 1}`,
-            setNumber: rIdx + 1,
+        const roundsCount = Math.max(1, combinationData.rounds || 3);
+
+        // Sets contain stages: each set has the full list of configured stages
+        const sets: WorkoutSet[] = Array.from({ length: roundsCount }, (_, rIdx) => {
+          const setNumber = rIdx + 1;
+          const stages: WorkoutSetStage[] = combinationData.stages.map((stage, stIdx) => ({
+            id: `stage_${Date.now()}_${setNumber}_${stIdx + 1}`,
+            stageOrder: stIdx + 1,
+            exerciseId: stage.exercise.id,
+            exerciseName: stage.exercise.name,
+            movementDescription: stage.movementDescription || undefined,
+            targetWeight: stage.targetWeight ?? null,
+            targetReps: stage.targetReps ?? null,
             weight: stage.targetWeight ?? null,
             reps: stage.targetReps ?? null,
             completed: false,
           }));
 
           return {
-            id: `we_${Date.now()}_${stageIdx}_${Math.random().toString(36).substr(2, 4)}`,
-            exerciseId: ex.id,
-            exercise: ex,
-            order: targetSession.exercises.length + stageIdx + 1,
-            notes: stage.movementDescription ? `[${stage.movementDescription}]` : '',
-            combinationId,
-            combinationName: combinationData.combinationName,
-            combinationType: combinationData.combinationType,
-            stageDescription: stage.movementDescription || `Stage ${stageIdx + 1}`,
-            stageOrder: stageIdx + 1,
-            sets,
+            id: `set_${Date.now()}_${setNumber}_${Math.random().toString(36).substr(2, 4)}`,
+            setNumber,
+            weight: null,
+            reps: null,
             completed: false,
+            stages,
           };
         });
 
-        const addedSetsCount = newExercises.reduce((sum, e) => sum + e.sets.length, 0);
+        const primaryExercise = combinationData.stages[0]?.exercise || INITIAL_EXERCISES[0];
+
+        const comboExercise: WorkoutExercise = {
+          id: `we_${combinationId}`,
+          exerciseId: primaryExercise.id,
+          exercise: primaryExercise,
+          order: targetSession.exercises.length + 1,
+          notes: '',
+          combinationId,
+          combinationName: combinationData.combinationName,
+          combinationType: combinationData.combinationType,
+          techniqueLabel: combinationData.techniqueLabel,
+          sets,
+          completed: false,
+        };
 
         set((state) => ({
           userDataMap: {
@@ -1384,8 +1510,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 ...targetSession,
                 muscleGroups: updatedMuscleGroups,
                 sections: updatedSections,
-                exercises: [...targetSession.exercises, ...newExercises],
-                totalSets: targetSession.totalSets + addedSetsCount,
+                exercises: [...targetSession.exercises, comboExercise],
+                totalSets: targetSession.totalSets + sets.length,
               },
             },
           },
@@ -1398,12 +1524,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
         const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
         if (!targetSession) return;
 
-        const removedSets = targetSession.exercises
-          .filter((ex) => ex.combinationId === combinationId)
-          .reduce((sum, e) => sum + e.sets.length, 0);
+        const removedExercise = targetSession.exercises.find(
+          (ex) => ex.combinationId === combinationId || ex.id === combinationId
+        );
+        const removedSetsCount = removedExercise ? removedExercise.sets.length : 0;
 
         const remainingExercises = targetSession.exercises.filter(
-          (ex) => ex.combinationId !== combinationId
+          (ex) => ex.combinationId !== combinationId && ex.id !== combinationId
         );
 
         set((state) => ({
@@ -1414,7 +1541,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
               [sessionKey]: {
                 ...targetSession,
                 exercises: remainingExercises,
-                totalSets: Math.max(0, targetSession.totalSets - removedSets),
+                totalSets: Math.max(0, targetSession.totalSets - removedSetsCount),
               },
             },
           },
@@ -1429,18 +1556,34 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
         let addedSetsCount = 0;
         const updatedExercises = targetSession.exercises.map((ex) => {
-          if (ex.combinationId !== combinationId) return ex;
+          if (ex.combinationId !== combinationId && ex.id !== combinationId) return ex;
 
           const lastSet = ex.sets[ex.sets.length - 1];
           const newSetNumber = ex.sets.length + 1;
-          const newSet: WorkoutSet = {
-            id: `set_${Date.now()}_${ex.id}_${newSetNumber}`,
-            setNumber: newSetNumber,
-            weight: lastSet ? lastSet.weight : null,
-            reps: lastSet ? lastSet.reps : null,
+
+          const newStages: WorkoutSetStage[] = (lastSet?.stages || []).map((st, idx) => ({
+            id: `stage_${Date.now()}_${newSetNumber}_${idx + 1}`,
+            stageOrder: st.stageOrder,
+            exerciseId: st.exerciseId,
+            exerciseName: st.exerciseName,
+            movementDescription: st.movementDescription,
+            targetWeight: st.targetWeight ?? null,
+            targetReps: st.targetReps ?? null,
+            weight: st.weight ?? st.targetWeight ?? null,
+            reps: st.reps ?? st.targetReps ?? null,
             completed: false,
+          }));
+
+          const newSet: WorkoutSet = {
+            id: `set_${Date.now()}_${newSetNumber}_${Math.random().toString(36).substr(2, 4)}`,
+            setNumber: newSetNumber,
+            weight: null,
+            reps: null,
+            completed: false,
+            stages: newStages,
           };
           addedSetsCount++;
+
           return {
             ...ex,
             sets: [...ex.sets, newSet],
@@ -1457,6 +1600,195 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 ...targetSession,
                 exercises: updatedExercises,
                 totalSets: targetSession.totalSets + addedSetsCount,
+              },
+            },
+          },
+        }));
+      },
+
+      updateCombinationStage: (userId, exerciseId, setIndex, stageIndex, weight, reps) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.id !== exerciseId && ex.combinationId !== exerciseId) return ex;
+
+          const updatedSets = ex.sets.map((s, sIdx) => {
+            if (sIdx !== setIndex || !s.stages) return s;
+
+            const updatedStages = s.stages.map((st, stIdx) => {
+              if (stIdx !== stageIndex) return st;
+              return {
+                ...st,
+                weight,
+                reps,
+              };
+            });
+
+            return {
+              ...s,
+              stages: updatedStages,
+            };
+          });
+
+          return {
+            ...ex,
+            sets: updatedSets,
+          };
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+              },
+            },
+          },
+        }));
+      },
+
+      toggleCombinationStageCompleted: (userId, exerciseId, setIndex, stageIndex) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.id !== exerciseId && ex.combinationId !== exerciseId) return ex;
+
+          const updatedSets = ex.sets.map((s, sIdx) => {
+            if (sIdx !== setIndex || !s.stages) return s;
+
+            const updatedStages = s.stages.map((st, stIdx) => {
+              if (stIdx !== stageIndex) return st;
+              const nextCompleted = !st.completed;
+              return {
+                ...st,
+                completed: nextCompleted,
+                weight: nextCompleted && (st.weight === null || st.weight <= 0) ? (st.targetWeight ?? 0) : st.weight,
+                reps: nextCompleted && (st.reps === null || st.reps <= 0) ? (st.targetReps ?? 10) : st.reps,
+              };
+            });
+
+            const allStagesDone = updatedStages.length > 0 && updatedStages.every((st) => st.completed);
+
+            return {
+              ...s,
+              completed: allStagesDone,
+              stages: updatedStages,
+            };
+          });
+
+          const allSetsDone = updatedSets.length > 0 && updatedSets.every((s) => s.completed);
+
+          return {
+            ...ex,
+            completed: allSetsDone,
+            sets: updatedSets,
+          };
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+              },
+            },
+          },
+        }));
+      },
+
+      toggleCombinationSetCompleted: (userId, exerciseId, setIndex) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.id !== exerciseId && ex.combinationId !== exerciseId) return ex;
+
+          const updatedSets = ex.sets.map((s, sIdx) => {
+            if (sIdx !== setIndex || !s.stages) return s;
+
+            const targetComplete = !s.completed;
+            const updatedStages = s.stages.map((st) => ({
+              ...st,
+              completed: targetComplete,
+              weight: targetComplete && (st.weight === null || st.weight <= 0) ? (st.targetWeight ?? 0) : st.weight,
+              reps: targetComplete && (st.reps === null || st.reps <= 0) ? (st.targetReps ?? 10) : st.reps,
+            }));
+
+            return {
+              ...s,
+              completed: targetComplete,
+              stages: updatedStages,
+            };
+          });
+
+          const allSetsDone = updatedSets.length > 0 && updatedSets.every((s) => s.completed);
+
+          return {
+            ...ex,
+            completed: allSetsDone,
+            sets: updatedSets,
+          };
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+              },
+            },
+          },
+        }));
+      },
+
+      removeSetFromCombination: (userId, exerciseId, setIndex) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.id !== exerciseId && ex.combinationId !== exerciseId) return ex;
+          if (ex.sets.length <= 1) return ex;
+
+          const filteredSets = ex.sets.filter((_, idx) => idx !== setIndex);
+          const renumberedSets = filteredSets.map((s, idx) => ({
+            ...s,
+            setNumber: idx + 1,
+          }));
+
+          return {
+            ...ex,
+            sets: renumberedSets,
+          };
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+                totalSets: Math.max(0, targetSession.totalSets - 1),
               },
             },
           },
@@ -1547,59 +1879,113 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const updatedGoals: Goal[] = [...goals];
 
           activeSession.exercises.forEach((ex) => {
-            const completedSets = ex.sets.filter(
-              (s) => s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
-            );
+            ex.sets.forEach((s) => {
+              if (Array.isArray(s.stages) && s.stages.length > 0) {
+                let setHasCompletedStage = false;
+                s.stages.forEach((st) => {
+                  if (st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0) {
+                    const weight = st.weight!;
+                    const reps = st.reps!;
+                    totalVolume += weight * reps;
+                    setHasCompletedStage = true;
 
-            completedSets.forEach((s) => {
-              const weight = s.weight!;
-              const reps = s.reps!;
-              totalVolume += weight * reps;
-              totalCompletedSets++;
+                    const est1RM = calculate1RM(weight, reps);
+                    const prIndex = updatedPRs.findIndex((p) => p.exerciseId === st.exerciseId);
+                    const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-              const est1RM = calculate1RM(weight, reps);
+                    const isNewPR =
+                      !existingPR ||
+                      weight > existingPR.weight ||
+                      est1RM > existingPR.estimated1RM ||
+                      (weight === existingPR.weight && reps > existingPR.reps);
 
-              // Check existing PR for this exercise
-              const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
-              const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+                    if (isNewPR) {
+                      const prRecord: PersonalRecord = {
+                        id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                        exerciseId: st.exerciseId,
+                        exerciseName: st.exerciseName,
+                        type: 'max_weight',
+                        value: weight,
+                        weight,
+                        reps,
+                        estimated1RM: est1RM,
+                        date: new Date().toISOString(),
+                        details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                      };
 
-              const isNewPR =
-                !existingPR ||
-                weight > existingPR.weight ||
-                est1RM > existingPR.estimated1RM ||
-                (weight === existingPR.weight && reps > existingPR.reps);
+                      if (prIndex >= 0) {
+                        updatedPRs[prIndex] = prRecord;
+                      } else {
+                        updatedPRs.push(prRecord);
+                      }
 
-              if (isNewPR) {
-                const prRecord: PersonalRecord = {
-                  id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-                  exerciseId: ex.exerciseId,
-                  exerciseName: ex.exercise.name,
-                  type: 'max_weight',
-                  value: weight,
-                  weight,
-                  reps,
-                  estimated1RM: est1RM,
-                  date: new Date().toISOString(),
-                  details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
-                };
+                      if (!newPRsInSession.some((p) => p.exerciseId === st.exerciseId)) {
+                        newPRsInSession.push(prRecord);
+                      }
 
-                if (prIndex >= 0) {
-                  updatedPRs[prIndex] = prRecord;
-                } else {
-                  updatedPRs.push(prRecord);
-                }
-
-                if (!newPRsInSession.some((p) => p.exerciseId === ex.exerciseId)) {
-                  newPRsInSession.push(prRecord);
-                }
-
-                // Update strength goal for this exercise if present
-                updatedGoals.forEach((g) => {
-                  if (g.type === 'exercise_strength' && g.exerciseId === ex.exerciseId) {
-                    g.currentValue = Math.max(g.currentValue, weight);
-                    g.updatedAt = new Date().toISOString();
+                      // Update strength goal for this exercise if present
+                      updatedGoals.forEach((g) => {
+                        if (g.type === 'exercise_strength' && g.exerciseId === st.exerciseId) {
+                          g.currentValue = Math.max(g.currentValue, weight);
+                          g.updatedAt = new Date().toISOString();
+                        }
+                      });
+                    }
                   }
                 });
+                if (s.completed || setHasCompletedStage) {
+                  totalCompletedSets++;
+                }
+              } else if (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) {
+                const weight = s.weight!;
+                const reps = s.reps!;
+                totalVolume += weight * reps;
+                totalCompletedSets++;
+
+                const est1RM = calculate1RM(weight, reps);
+
+                // Check existing PR for this exercise
+                const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
+                const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+
+                const isNewPR =
+                  !existingPR ||
+                  weight > existingPR.weight ||
+                  est1RM > existingPR.estimated1RM ||
+                  (weight === existingPR.weight && reps > existingPR.reps);
+
+                if (isNewPR) {
+                  const prRecord: PersonalRecord = {
+                    id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                    exerciseId: ex.exerciseId,
+                    exerciseName: ex.exercise.name,
+                    type: 'max_weight',
+                    value: weight,
+                    weight,
+                    reps,
+                    estimated1RM: est1RM,
+                    date: new Date().toISOString(),
+                    details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                  };
+
+                  if (prIndex >= 0) {
+                    updatedPRs[prIndex] = prRecord;
+                  } else {
+                    updatedPRs.push(prRecord);
+                  }
+
+                  if (!newPRsInSession.some((p) => p.exerciseId === ex.exerciseId)) {
+                    newPRsInSession.push(prRecord);
+                  }
+
+                  // Update strength goal for this exercise if present
+                  updatedGoals.forEach((g) => {
+                    if (g.type === 'exercise_strength' && g.exerciseId === ex.exerciseId) {
+                      g.currentValue = Math.max(g.currentValue, weight);
+                      g.updatedAt = new Date().toISOString();
+                    }
+                  });
+                }
               }
             });
           });
@@ -1616,12 +2002,29 @@ export const useWorkoutStore = create<WorkoutStore>()(
               setNumber: s.setNumber,
               weight: s.weight,
               reps: s.reps,
-              completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
+              completed: Boolean(
+                (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
+                (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+              ),
+              stages: Array.isArray(s.stages) && s.stages.length > 0
+                ? s.stages.map((st) => ({
+                    stageOrder: st.stageOrder,
+                    exerciseId: st.exerciseId,
+                    exerciseName: st.exerciseName,
+                    movementDescription: st.movementDescription || null,
+                    targetWeight: st.targetWeight ?? null,
+                    targetReps: st.targetReps ?? null,
+                    weight: st.weight,
+                    reps: st.reps,
+                    completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                  }))
+                : undefined,
             })),
             notes: ex.notes || '',
             combinationId: ex.combinationId || null,
             combinationName: ex.combinationName || null,
             combinationType: ex.combinationType || null,
+            techniqueLabel: ex.techniqueLabel || null,
             stageDescription: ex.stageDescription || null,
             stageOrder: ex.stageOrder || null,
           }));
@@ -1669,7 +2072,16 @@ export const useWorkoutStore = create<WorkoutStore>()(
               ...ex,
               sets: ex.sets.map((s) => ({
                 ...s,
-                completed: Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0),
+                completed: Boolean(
+                  (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
+                  (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+                ),
+                stages: Array.isArray(s.stages) && s.stages.length > 0
+                  ? s.stages.map((st) => ({
+                      ...st,
+                      completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                    }))
+                  : undefined,
               })),
             })),
           };

@@ -5,29 +5,31 @@ import {
   Trash2,
   Plus,
   Check,
-  Dumbbell,
+  X,
 } from 'lucide-react';
 import { WorkoutExercise, CombinationType } from '../../types';
 import { Card } from '../ui/Card';
-import { SetRow } from './SetRow';
-import { ExerciseImageModal } from './ExerciseImageModal';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
+import { normalizeCombinationExercises } from '../../utils/combinationNormalizer';
 
 interface CombinationCardProps {
-  combinationId: string;
-  combinationName: string;
+  workoutExercise?: WorkoutExercise;
+  // Backward compatibility props:
+  combinationId?: string;
+  combinationName?: string;
   combinationType?: CombinationType;
-  exercises: WorkoutExercise[];
+  exercises?: WorkoutExercise[];
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }
 
 export const CombinationCard: React.FC<CombinationCardProps> = ({
-  combinationId,
-  combinationName,
-  combinationType: _combinationType,
-  exercises,
+  workoutExercise,
+  combinationId: legacyComboId,
+  combinationName: legacyComboName,
+  combinationType: _legacyComboType,
+  exercises: legacyExercises,
   isExpanded,
   onToggleExpand,
 }) => {
@@ -35,36 +37,63 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
   const userId = currentUser?.id || 'guest';
 
   const {
-    updateSet,
-    toggleSetCompleted,
-    removeSetFromExercise,
+    updateCombinationStage,
+    toggleCombinationStageCompleted,
+    toggleCombinationSetCompleted,
     addRoundToCombination,
+    removeSetFromCombination,
     removeCombinationFromWorkout,
-    getPreviousPerformance,
   } = useWorkoutStore();
 
   const [internalExpanded, setInternalExpanded] = useState<boolean>(true);
-  const [selectedImgExercise, setSelectedImgExercise] = useState<any | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // Resolve the single WorkoutExercise container (normalizing legacy multi-exercise array if passed)
+  const workEx: WorkoutExercise | null = React.useMemo(() => {
+    if (workoutExercise) {
+      if (workoutExercise.sets && workoutExercise.sets.some((s) => Array.isArray(s.stages) && s.stages.length > 0)) {
+        return workoutExercise;
+      }
+      const normalized = normalizeCombinationExercises([workoutExercise]);
+      return normalized[0] || workoutExercise;
+    }
+    if (legacyExercises && legacyExercises.length > 0) {
+      const normalized = normalizeCombinationExercises(legacyExercises);
+      return normalized[0] || null;
+    }
+    return null;
+  }, [workoutExercise, legacyExercises]);
+
+  if (!workEx) return null;
+
+  const combinationId = workEx.combinationId || legacyComboId || workEx.id;
+  const combinationName = workEx.combinationName || legacyComboName || 'Custom Combination';
+  const techniqueLabel = workEx.techniqueLabel || 'COMBINATION';
 
   const cardExpanded = isExpanded !== undefined ? isExpanded : internalExpanded;
   const toggleExpand = onToggleExpand || (() => setInternalExpanded(!internalExpanded));
 
-  // Determine overall completion status
-  const allSets = exercises.flatMap((e) => e.sets);
-  const completedSets = allSets.filter(
-    (s) => s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
-  );
-  const isAllCompleted = allSets.length > 0 && allSets.every((s) => s.completed);
+  // Determine stage count and completed sets
+  const sets = workEx.sets || [];
+  const stageCount = sets[0]?.stages?.length || 0;
 
-  // Compute total volume for this combination
-  const comboVolume = completedSets.reduce(
-    (acc, s) => acc + (s.weight || 0) * (s.reps || 0),
-    0
-  );
+  // Calculate completed volume
+  let comboVolume = 0;
 
-  // Derive round count (max sets among component exercises)
-  const roundCount = Math.max(...exercises.map((e) => e.sets.length), 0);
+  sets.forEach((set) => {
+    if (set.stages && set.stages.length > 0) {
+      set.stages.forEach((st) => {
+        if (st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0) {
+          comboVolume += st.weight * st.reps;
+        }
+      });
+    } else if (set.completed && set.weight !== null && set.weight > 0 && set.reps !== null && set.reps > 0) {
+      comboVolume += set.weight * set.reps;
+    }
+  });
+
+  const isAllCompleted =
+    sets.length > 0 && sets.every((s) => s.completed || (s.stages && s.stages.length > 0 && s.stages.every((st) => st.completed)));
 
   // Collapsed Completed View
   if (!cardExpanded && isAllCompleted) {
@@ -79,13 +108,13 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-black text-[#F5F5F5] flex items-center gap-1.5 min-w-0">
-              <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30">
-                COMBINATION
+              <span className="text-[9px] font-black uppercase text-[#22C55E] bg-[#22C55E]/15 px-1.5 py-0.2 rounded border border-[#22C55E]/30">
+                {techniqueLabel}
               </span>
               <span className="truncate min-w-0">{combinationName}</span>
             </div>
             <div className="text-[11px] text-[#22C55E] font-bold truncate mt-0.5">
-              {exercises.length} stages • {roundCount} rounds • {comboVolume} kg
+              {sets.length} sets • {stageCount} stages • {comboVolume} kg
             </div>
           </div>
         </div>
@@ -111,12 +140,12 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
           <div className="min-w-0 flex-1">
             <div className="text-xs font-black text-[#F5F5F5] flex items-center gap-1.5 min-w-0">
               <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30">
-                COMBINATION
+                {techniqueLabel}
               </span>
               <span className="truncate min-w-0">{combinationName}</span>
             </div>
             <div className="text-[11px] text-[#9CA3AF] truncate mt-0.5">
-              {exercises.map((e) => e.exercise.name).join(' → ')}
+              {sets.length} sets • {stageCount} stages {comboVolume > 0 ? `• ${comboVolume} kg` : ''}
             </div>
           </div>
         </div>
@@ -128,7 +157,7 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
     );
   }
 
-  // Expanded Active View
+  // Expanded Active View: Sets contain stages!
   return (
     <>
       <Card
@@ -150,18 +179,20 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[9px] font-black uppercase tracking-wider text-[#E11D48] bg-[#E11D48]/15 border border-[#E11D48]/30 px-1.5 py-0.2 rounded">
-                  COMBINATION
+                  {techniqueLabel}
                 </span>
                 <h3 className="text-sm sm:text-base font-black text-[#F5F5F5] truncate leading-tight">
                   {combinationName}
                 </h3>
               </div>
-              <div className="text-[11px] text-[#9CA3AF] mt-0.5 flex items-center gap-1.5">
+              <div className="text-[11px] text-[#9CA3AF] mt-0.5 flex items-center gap-1.5 flex-wrap">
                 <span>
-                  {exercises.length} {exercises.length === 1 ? 'stage' : 'stages'}
+                  {sets.length} {sets.length === 1 ? 'set' : 'sets'}
                 </span>
                 <span>•</span>
-                <span>{roundCount} rounds</span>
+                <span>
+                  {stageCount} {stageCount === 1 ? 'stage' : 'stages'}
+                </span>
                 {comboVolume > 0 && (
                   <>
                     <span>•</span>
@@ -190,94 +221,186 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
           </div>
         </div>
 
-        {/* Component Exercises / Stages List */}
-        <div className="space-y-4">
-          {exercises.map((workEx, exIdx) => {
-            const prevPerf = getPreviousPerformance(userId, workEx.exercise.id);
+        {/* PARENT ROWS/CARDS: Sets contain stages */}
+        <div className="space-y-3">
+          {sets.map((set, setIdx) => {
+            const isSetCompleted =
+              set.completed || (set.stages && set.stages.length > 0 && set.stages.every((st) => st.completed));
 
             return (
               <div
-                key={workEx.id}
-                className="bg-[#1B1F23]/80 border border-[#272B30] rounded-xl p-3 space-y-2.5"
+                key={set.id || `set_${setIdx}`}
+                className={`rounded-xl border p-3 transition-colors ${
+                  isSetCompleted
+                    ? 'bg-[#181C20] border-[#22C55E]/40'
+                    : 'bg-[#1B1F23]/90 border-[#272B30]'
+                }`}
               >
-                {/* Stage Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0 pr-2">
-                    <span className="text-[10px] font-black uppercase text-[#9CA3AF] bg-[#14171A] border border-[#272B30] px-2 py-0.5 rounded shrink-0">
-                      Stage {exIdx + 1}
+                {/* Set Parent Header */}
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#272B30]/60">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#F5F5F5]">
+                      SET {set.setNumber}
                     </span>
-                    <h4 className="text-xs font-bold text-[#F5F5F5] truncate">
-                      {workEx.exercise.name}
-                    </h4>
-                  </div>
-
-                  {workEx.stageDescription && (
-                    <span className="text-[10px] font-bold text-[#E11D48] bg-[#E11D48]/10 px-2 py-0.5 rounded border border-[#E11D48]/20 shrink-0 truncate max-w-[140px]">
-                      {workEx.stageDescription}
-                    </span>
-                  )}
-                </div>
-
-                {/* Exercise Info & Image Thumbnail */}
-                <div className="flex items-center gap-2.5 bg-[#14171A] border border-[#272B30]/60 rounded-lg p-2">
-                  <div
-                    onClick={() => setSelectedImgExercise(workEx.exercise)}
-                    className="w-10 h-10 rounded-lg overflow-hidden bg-[#1B1F23] flex-shrink-0 border border-[#272B30] cursor-pointer group relative"
-                    title="Tap to view demonstration"
-                  >
-                    {workEx.exercise.imageUrl ? (
-                      <img
-                        src={workEx.exercise.imageUrl}
-                        alt={workEx.exercise.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
+                    {isSetCompleted ? (
+                      <span className="text-[10px] font-bold text-[#22C55E] bg-[#22C55E]/15 border border-[#22C55E]/30 px-1.5 py-0.2 rounded">
+                        Done
+                      </span>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#6B7280]">
-                        <Dumbbell className="w-4 h-4 opacity-40" />
-                      </div>
+                      <span className="text-[10px] text-[#6B7280]">
+                        {set.stages?.filter((s) => s.completed).length || 0}/{set.stages?.length || 0} completed
+                      </span>
                     )}
                   </div>
 
-                  <div className="min-w-0 flex-1 text-[11px] text-[#9CA3AF]">
-                    <div className="truncate capitalize font-semibold text-[#F5F5F5]">
-                      {workEx.exercise.primaryMuscle}
-                    </div>
-                    <div className="text-[10px] text-[#6B7280]">
-                      {workEx.exercise.equipment || 'Standard Equipment'}
-                    </div>
+                  <div className="flex items-center gap-1.5">
+                    {/* Completing a set means completing all required movements within that set */}
+                    <button
+                      type="button"
+                      onClick={() => toggleCombinationSetCompleted(userId, workEx.id, setIdx)}
+                      className={`text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                        isSetCompleted
+                          ? 'bg-[#22C55E] text-[#0B0D0F] border-[#22C55E] hover:bg-[#16A34A]'
+                          : 'bg-[#14171A] text-[#9CA3AF] border-[#272B30] hover:border-[#22C55E]/50 hover:text-[#22C55E]'
+                      }`}
+                      title={isSetCompleted ? 'Mark set incomplete' : 'Mark all stages in this set complete'}
+                    >
+                      <Check className={`w-3.5 h-3.5 ${isSetCompleted ? 'stroke-[3]' : 'text-[#6B7280]'}`} />
+                      <span>{isSetCompleted ? 'Completed' : 'Complete Set'}</span>
+                    </button>
+
+                    {sets.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSetFromCombination(userId, workEx.id, setIdx)}
+                        className="p-1 text-[#6B7280] hover:text-[#EF4444] transition-colors cursor-pointer"
+                        title="Remove this set"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-
-                  {prevPerf && (
-                    <div className="text-right shrink-0 text-[10px] text-[#6B7280]">
-                      <div>Best: <span className="text-[#F5F5F5] font-bold">{prevPerf.bestWeight}kg</span></div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Set Header */}
-                <div className="flex items-center justify-between text-[10px] font-bold text-[#6B7280] uppercase px-2">
-                  <span className="w-7 text-center">Set</span>
-                  <span className="w-18 hidden sm:block">Previous</span>
-                  <span className="flex-1 text-center">Weight</span>
-                  <span className="w-3"></span>
-                  <span className="flex-1 text-center">Reps</span>
-                  <span className="w-11 text-center">Done</span>
-                </div>
+                {/* NESTED STAGES inside this set */}
+                <div className="space-y-2">
+                  {(set.stages || []).map((stage, stageIdx) => {
+                    const isStageCompleted = stage.completed;
 
-                {/* Sets List */}
-                <div className="space-y-1">
-                  {workEx.sets.map((set, sIdx) => (
-                    <SetRow
-                      key={set.id}
-                      set={set}
-                      prevSet={prevPerf?.sets[sIdx]}
-                      onUpdate={(w, r) => updateSet(userId, workEx.id, sIdx, w, r)}
-                      onToggleComplete={() => toggleSetCompleted(userId, workEx.id, sIdx)}
-                      onRemove={() => removeSetFromExercise(userId, workEx.id, sIdx)}
-                      canRemove={workEx.sets.length > 1}
-                    />
-                  ))}
+                    return (
+                      <div
+                        key={stage.id || `st_${setIdx}_${stageIdx}`}
+                        className={`rounded-lg p-2.5 border transition-all ${
+                          isStageCompleted
+                            ? 'bg-[#14171A] border-[#22C55E]/30'
+                            : 'bg-[#14171A]/70 border-[#272B30]/70'
+                        }`}
+                      >
+                        {/* Stage Identification & Target Hint */}
+                        <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-[10px] font-bold text-[#9CA3AF] bg-[#1B1F23] border border-[#272B30] px-1.5 py-0.2 rounded shrink-0">
+                              Stage {stage.stageOrder || stageIdx + 1}
+                            </span>
+                            <span className="text-xs font-bold text-[#F5F5F5] truncate">
+                              {stage.exerciseName}
+                            </span>
+                            {stage.movementDescription && (
+                              <span className="text-[10px] font-bold text-[#E11D48] bg-[#E11D48]/10 border border-[#E11D48]/25 px-1.5 py-0.2 rounded shrink-0 truncate max-w-[150px]">
+                                {stage.movementDescription}
+                              </span>
+                            )}
+                          </div>
+
+                          {(stage.targetWeight !== null || stage.targetReps !== null) && (
+                            <span className="text-[10px] text-[#6B7280] shrink-0">
+                              Target:{' '}
+                              {stage.targetWeight !== null && stage.targetWeight !== undefined
+                                ? `${stage.targetWeight}kg × `
+                                : ''}
+                              {stage.targetReps ?? 10} reps
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Stage Performance Inputs: Weight, Reps, and Individual Done Check */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {/* Weight Input */}
+                            <div className="flex-1 min-w-[70px]">
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  step="any"
+                                  placeholder={stage.targetWeight ? String(stage.targetWeight) : '0'}
+                                  value={stage.weight !== null && stage.weight !== undefined ? stage.weight : ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? null : parseFloat(e.target.value);
+                                    updateCombinationStage(
+                                      userId,
+                                      workEx.id,
+                                      setIdx,
+                                      stageIdx,
+                                      isNaN(val as number) ? null : val,
+                                      stage.reps
+                                    );
+                                  }}
+                                  className="w-full bg-[#1B1F23] border border-[#272B30] focus:border-[#E11D48] focus:ring-1 focus:ring-[#E11D48] text-xs font-bold text-[#F5F5F5] text-center rounded-lg py-1.5 px-2 outline-none transition-colors"
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280] pointer-events-none">
+                                  kg
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className="text-xs font-bold text-[#6B7280]">×</span>
+
+                            {/* Reps Input */}
+                            <div className="flex-1 min-w-[70px]">
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  placeholder={stage.targetReps ? String(stage.targetReps) : '0'}
+                                  value={stage.reps !== null && stage.reps !== undefined ? stage.reps : ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? null : parseInt(e.target.value, 10);
+                                    updateCombinationStage(
+                                      userId,
+                                      workEx.id,
+                                      setIdx,
+                                      stageIdx,
+                                      stage.weight,
+                                      isNaN(val as number) ? null : val
+                                    );
+                                  }}
+                                  className="w-full bg-[#1B1F23] border border-[#272B30] focus:border-[#E11D48] focus:ring-1 focus:ring-[#E11D48] text-xs font-bold text-[#F5F5F5] text-center rounded-lg py-1.5 px-2 outline-none transition-colors"
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280] pointer-events-none">
+                                  reps
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Stage Complete Checkmark Button */}
+                          <button
+                            type="button"
+                            onClick={() => toggleCombinationStageCompleted(userId, workEx.id, setIdx, stageIdx)}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all cursor-pointer ${
+                              isStageCompleted
+                                ? 'bg-[#22C55E] text-[#0B0D0F] border-[#22C55E]'
+                                : 'bg-[#1B1F23] text-[#6B7280] border-[#272B30] hover:border-[#22C55E]/50 hover:text-[#22C55E]'
+                            }`}
+                            title={isStageCompleted ? 'Mark stage incomplete' : 'Complete stage'}
+                          >
+                            <Check className={`w-4 h-4 ${isStageCompleted ? 'stroke-[3]' : ''}`} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -292,43 +415,35 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
             className="text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] flex items-center gap-1.5 cursor-pointer bg-[#E11D48]/10 hover:bg-[#E11D48]/15 px-3 py-1.5 rounded-lg border border-[#E11D48]/30 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Round to All</span>
+            <span>Add Set</span>
           </button>
 
           <button
             type="button"
             onClick={toggleExpand}
-            className="text-xs font-bold text-[#9CA3AF] hover:text-[#F5F5F5] cursor-pointer px-2 py-1"
+            className="text-xs font-bold text-[#9CA3AF] hover:text-[#F5F5F5] flex items-center gap-1 cursor-pointer bg-[#1B1F23] hover:bg-[#272B30] px-3 py-1.5 rounded-lg border border-[#272B30] transition-colors"
           >
-            Collapse
+            <span>Done</span>
+            <ChevronUp className="w-3.5 h-3.5" />
           </button>
         </div>
       </Card>
 
-      {/* Exercise Demonstration Modal */}
-      {selectedImgExercise && (
-        <ExerciseImageModal
-          isOpen={Boolean(selectedImgExercise)}
-          onClose={() => setSelectedImgExercise(null)}
-          exercise={selectedImgExercise}
-        />
-      )}
-
       {/* Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B0D0F]/80 backdrop-blur-sm">
-          <div className="bg-[#14171A] border border-[#272B30] rounded-2xl p-5 max-w-sm w-full space-y-3 shadow-xl">
-            <h4 className="text-sm font-black text-[#F5F5F5]">Remove Combination?</h4>
-            <p className="text-xs text-[#9CA3AF]">
-              Are you sure you want to remove <span className="font-bold text-[#F5F5F5]">"{combinationName}"</span> and all its component exercises from this workout?
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+          <div className="bg-[#14171A] border border-[#272B30] rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-xl">
+            <h4 className="text-sm font-bold text-[#F5F5F5]">Remove Combination</h4>
+            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+              Are you sure you want to remove <span className="text-[#F5F5F5] font-bold">{combinationName}</span> and all its logged sets from this workout session?
             </p>
-            <div className="flex gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setIsDeleteConfirmOpen(false)}
-                className="flex-1 py-2 rounded-xl text-xs font-bold text-[#9CA3AF] bg-[#1B1F23] hover:bg-[#272B30] cursor-pointer"
+                className="text-xs font-bold text-[#9CA3AF] hover:text-[#F5F5F5] px-3 py-2 rounded-lg border border-[#272B30] bg-[#1B1F23] cursor-pointer"
               >
-                Keep
+                Cancel
               </button>
               <button
                 type="button"
@@ -336,7 +451,7 @@ export const CombinationCard: React.FC<CombinationCardProps> = ({
                   removeCombinationFromWorkout(userId, combinationId);
                   setIsDeleteConfirmOpen(false);
                 }}
-                className="flex-1 py-2 rounded-xl text-xs font-black text-white bg-[#EF4444] hover:bg-[#DC2626] cursor-pointer"
+                className="text-xs font-bold text-white bg-[#EF4444] hover:bg-[#DC2626] px-3 py-2 rounded-lg cursor-pointer transition-colors shadow-sm"
               >
                 Remove
               </button>

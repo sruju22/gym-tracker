@@ -18,6 +18,7 @@ import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
 import { formatDateShort, getTodayDayOfWeek, formatDayName } from '../utils/formatters';
+import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 
 export const WorkoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -333,44 +334,75 @@ export const WorkoutPage: React.FC = () => {
               </div>
 
               <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
-                {todayCompleted.exercises.map((ex, idx) => (
-                  <div key={ex.id || idx} className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3">
-                    <div className="text-xs font-bold text-[#F5F5F5] mb-1.5 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="truncate">{ex.exercise.name}</span>
-                        {ex.stageDescription && (
-                          <span className="text-[10px] text-[#9CA3AF] font-normal">
-                            ({ex.stageDescription})
+                {normalizeCombinationExercises(todayCompleted.exercises).map((ex, idx) => {
+                  const hasNestedStages = ex.sets && ex.sets.some((s) => s.stages && s.stages.length > 0);
+
+                  return (
+                    <div key={ex.id || idx} className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3">
+                      <div className="text-xs font-bold text-[#F5F5F5] mb-1.5 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="truncate">{ex.combinationName || ex.exercise.name}</span>
+                          {ex.stageDescription && (
+                            <span className="text-[10px] text-[#9CA3AF] font-normal">
+                              ({ex.stageDescription})
+                            </span>
+                          )}
+                        </div>
+                        {ex.combinationName && (
+                          <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30 shrink-0">
+                            {ex.techniqueLabel || 'COMBINATION'}
                           </span>
                         )}
                       </div>
-                      {ex.combinationName && (
-                        <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30 shrink-0">
-                          {ex.combinationName}
-                        </span>
+
+                      {hasNestedStages ? (
+                        <div className="space-y-1.5 mt-2">
+                          {ex.sets.map((s) => (
+                            <div key={s.id || s.setNumber} className="bg-[#14171A] border border-[#272B30] rounded-lg p-2">
+                              <div className="text-[11px] font-black text-[#F5F5F5] mb-1">
+                                Set {s.setNumber} {s.completed ? <span className="text-[#22C55E]">✓</span> : ''}
+                              </div>
+                              <div className="space-y-1 pl-1">
+                                {(s.stages || []).map((st, stIdx) => (
+                                  <div key={st.id || stIdx} className="flex items-center justify-between text-[11px]">
+                                    <span className="text-[#9CA3AF] truncate mr-2">
+                                      Stage {st.stageOrder || stIdx + 1}: {st.exerciseName}{' '}
+                                      {st.movementDescription ? `[${st.movementDescription}]` : ''}
+                                    </span>
+                                    <span className={st.completed ? 'text-[#22C55E] font-bold shrink-0' : 'text-[#6B7280] shrink-0'}>
+                                      {st.weight ?? 0}kg × {st.reps ?? 0}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {ex.sets.map((s, sIdx) => (
+                            <span
+                              key={sIdx}
+                              className={`border px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                s.completed
+                                  ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
+                                  : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF]'
+                              }`}
+                            >
+                              Set {s.setNumber}: {s.weight}kg × {s.reps}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {ex.notes && (
+                        <div className="mt-1.5 text-[11px] text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
+                          "{ex.notes}"
+                        </div>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                      {ex.sets.map((s, sIdx) => (
-                        <span
-                          key={sIdx}
-                          className={`border px-2 py-0.5 rounded text-[11px] font-semibold ${
-                            s.completed
-                              ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
-                              : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF]'
-                          }`}
-                        >
-                          Set {s.setNumber}: {s.weight}kg × {s.reps}
-                        </span>
-                      ))}
-                    </div>
-                    {ex.notes && (
-                      <div className="mt-1.5 text-[11px] text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
-                        "{ex.notes}"
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="pt-2 border-t border-[#272B30]">
@@ -662,67 +694,28 @@ export const WorkoutPage: React.FC = () => {
               />
 
               {/* Exercise Cards & Combination Groups */}
-              {(() => {
-                const groupedItems: Array<
-                  | { type: 'single'; exercise: WorkoutExercise }
-                  | {
-                      type: 'combination';
-                      combinationId: string;
-                      combinationName: string;
-                      combinationType?: any;
-                      exercises: WorkoutExercise[];
-                    }
-                > = [];
-
-                exList.forEach((workEx) => {
-                  if (workEx.combinationId) {
-                    const lastGroup = groupedItems[groupedItems.length - 1];
-                    if (
-                      lastGroup &&
-                      lastGroup.type === 'combination' &&
-                      lastGroup.combinationId === workEx.combinationId
-                    ) {
-                      lastGroup.exercises.push(workEx);
-                    } else {
-                      groupedItems.push({
-                        type: 'combination',
-                        combinationId: workEx.combinationId,
-                        combinationName: workEx.combinationName || 'Custom Combination',
-                        combinationType: workEx.combinationType,
-                        exercises: [workEx],
-                      });
-                    }
-                  } else {
-                    groupedItems.push({
-                      type: 'single',
-                      exercise: workEx,
-                    });
-                  }
-                });
-
-                return groupedItems.map((item) => {
-                  if (item.type === 'combination') {
-                    return (
-                      <CombinationCard
-                        key={item.combinationId}
-                        combinationId={item.combinationId}
-                        combinationName={item.combinationName}
-                        combinationType={item.combinationType}
-                        exercises={item.exercises}
-                      />
-                    );
-                  }
+              {normalizeCombinationExercises(exList).map((workEx) => {
+                if (
+                  workEx.combinationId ||
+                  (workEx.sets && workEx.sets.some((s) => Array.isArray(s.stages) && s.stages.length > 0))
+                ) {
                   return (
-                    <ExerciseCard
-                      key={item.exercise.id}
-                      workoutExercise={item.exercise}
-                      isExpanded={isExerciseExpanded(item.exercise)}
-                      onToggleExpand={() => handleToggleExpand(item.exercise.id, item.exercise)}
-                      onDone={() => handleExerciseDone(item.exercise.id)}
+                    <CombinationCard
+                      key={workEx.combinationId || workEx.id}
+                      workoutExercise={workEx}
                     />
                   );
-                });
-              })()}
+                }
+                return (
+                  <ExerciseCard
+                    key={workEx.id}
+                    workoutExercise={workEx}
+                    isExpanded={isExerciseExpanded(workEx)}
+                    onToggleExpand={() => handleToggleExpand(workEx.id, workEx)}
+                    onDone={() => handleExerciseDone(workEx.id)}
+                  />
+                );
+              })}
             </div>
           );
         })}

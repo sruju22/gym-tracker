@@ -14,9 +14,14 @@ import { getLegSection, isLegSubArea } from './legSection';
 export function hasValidRecordedSet(item: WorkoutExercise | Exercise): boolean {
   if ('sets' in item && Array.isArray((item as WorkoutExercise).sets)) {
     const workoutEx = item as WorkoutExercise;
-    return workoutEx.sets.some(
-      (s) => Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0)
-    );
+    return workoutEx.sets.some((s) => {
+      if (Array.isArray(s.stages) && s.stages.length > 0) {
+        return s.stages.some(
+          (st) => Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0)
+        );
+      }
+      return Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0);
+    });
   }
   // Plain Exercise without sets array (e.g. from static library / planning utils)
   return true;

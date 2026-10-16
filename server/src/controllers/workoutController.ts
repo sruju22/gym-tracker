@@ -14,7 +14,18 @@ const calculateWorkoutTotals = (exercises: any[]) => {
     exercises.forEach((ex) => {
       if (Array.isArray(ex.sets)) {
         ex.sets.forEach((s: any) => {
-          if (s.completed && s.weight && s.reps) {
+          if (Array.isArray(s.stages) && s.stages.length > 0) {
+            let setHasCompletedStage = false;
+            s.stages.forEach((st: any) => {
+              if (st.completed && st.weight && st.reps) {
+                totalVolume += Number(st.weight) * Number(st.reps);
+                setHasCompletedStage = true;
+              }
+            });
+            if (s.completed || setHasCompletedStage) {
+              totalSets++;
+            }
+          } else if (s.completed && s.weight && s.reps) {
             totalVolume += Number(s.weight) * Number(s.reps);
             totalSets++;
           }

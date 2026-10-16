@@ -1,11 +1,25 @@
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 
+export interface IWorkoutSetStage {
+  id?: string;
+  stageOrder: number;
+  exerciseId: string;
+  exerciseName: string;
+  movementDescription?: string;
+  targetWeight?: number | null;
+  targetReps?: number | null;
+  weight: number | null;
+  reps: number | null;
+  completed: boolean;
+}
+
 export interface IWorkoutSet {
   id?: string;
   setNumber: number;
   weight: number | null;
   reps: number | null;
   completed: boolean;
+  stages?: IWorkoutSetStage[];
 }
 
 export interface IWorkoutExercise {
@@ -22,6 +36,7 @@ export interface IWorkoutExercise {
   combinationId?: string;
   combinationName?: string;
   combinationType?: string;
+  techniqueLabel?: string;
   stageDescription?: string;
   stageOrder?: number;
 }
@@ -48,6 +63,52 @@ export interface IWorkoutSession {
 
 export interface IWorkoutDocument extends IWorkoutSession, Document {}
 
+const workoutSetStageSchema = new Schema<IWorkoutSetStage>(
+  {
+    stageOrder: {
+      type: Number,
+      required: true,
+      default: 1,
+    },
+    exerciseId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    exerciseName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    movementDescription: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    targetWeight: {
+      type: Number,
+      default: null,
+    },
+    targetReps: {
+      type: Number,
+      default: null,
+    },
+    weight: {
+      type: Number,
+      default: null,
+    },
+    reps: {
+      type: Number,
+      default: null,
+    },
+    completed: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { _id: false }
+);
+
 const workoutSetSchema = new Schema<IWorkoutSet>(
   {
     setNumber: {
@@ -66,6 +127,10 @@ const workoutSetSchema = new Schema<IWorkoutSet>(
     completed: {
       type: Boolean,
       default: false,
+    },
+    stages: {
+      type: [workoutSetStageSchema],
+      default: undefined,
     },
   },
   { _id: false }
@@ -112,6 +177,10 @@ const workoutExerciseSchema = new Schema<IWorkoutExercise>(
       default: null,
     },
     combinationType: {
+      type: String,
+      default: null,
+    },
+    techniqueLabel: {
       type: String,
       default: null,
     },

@@ -52,12 +52,26 @@ export interface Exercise {
 }
 
 // ===== Workout Types =====
+export interface WorkoutSetStage {
+  id: string;
+  stageOrder: number;
+  exerciseId: string;
+  exerciseName: string;
+  movementDescription?: string;
+  targetWeight?: number | null;
+  targetReps?: number | null;
+  weight: number | null;
+  reps: number | null;
+  completed: boolean;
+}
+
 export interface WorkoutSet {
   id: string;
   setNumber: number;
   weight: number | null;
   reps: number | null;
   completed: boolean;
+  stages?: WorkoutSetStage[];
 }
 
 export interface WorkoutExercise {
@@ -72,6 +86,7 @@ export interface WorkoutExercise {
   combinationId?: string;
   combinationName?: string;
   combinationType?: CombinationType;
+  techniqueLabel?: string;
   stageDescription?: string;
   stageOrder?: number;
 }

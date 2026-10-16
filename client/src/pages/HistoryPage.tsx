@@ -23,6 +23,7 @@ import { formatDateShort, formatDayName } from '../utils/formatters';
 import { WorkoutSession } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { UserModal } from '../components/auth/UserModal';
+import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 
 type DateRangeFilter = 'all' | 'week' | 'month' | '3months';
 
@@ -461,54 +462,83 @@ export const HistoryPage: React.FC = () => {
 
             {/* Exercises & Sets Breakdown */}
             <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-              {selectedSession.exercises.map((ex, exIdx) => (
-                <div
-                  key={ex.id || exIdx}
-                  className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3"
-                >
-                  <div className="text-xs font-bold text-[#F5F5F5] mb-1.5 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="truncate">{ex.exercise?.name || (ex as any).exerciseName || 'Exercise'}</span>
-                      {ex.stageDescription && (
-                        <span className="text-[10px] text-[#9CA3AF] font-normal">
-                          ({ex.stageDescription})
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {ex.combinationName && (
-                        <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30">
-                          {ex.combinationName}
-                        </span>
-                      )}
-                      <span className="text-[10px] font-semibold text-[#9CA3AF]">
-                        {ex.sets.length} sets
-                      </span>
-                    </div>
-                  </div>
+              {normalizeCombinationExercises(selectedSession.exercises).map((ex, exIdx) => {
+                const hasNestedStages = ex.sets && ex.sets.some((s) => s.stages && s.stages.length > 0);
 
-                  <div className="flex flex-wrap gap-1">
-                    {ex.sets.map((s, idx) => (
-                      <span
-                        key={idx}
-                        className={`border px-2 py-0.5 rounded text-[11px] font-semibold ${
-                          s.completed
-                            ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
-                            : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF]'
-                        }`}
-                      >
-                        Set {s.setNumber}: {s.weight ?? 0}kg × {s.reps ?? 0}
-                      </span>
-                    ))}
-                  </div>
-
-                  {ex.notes && (
-                    <div className="mt-1.5 text-[11px] text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
-                      "{ex.notes}"
+                return (
+                  <div
+                    key={ex.id || exIdx}
+                    className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3"
+                  >
+                    <div className="text-xs font-bold text-[#F5F5F5] mb-1.5 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="truncate">{ex.combinationName || ex.exercise?.name || (ex as any).exerciseName || 'Exercise'}</span>
+                        {ex.stageDescription && (
+                          <span className="text-[10px] text-[#9CA3AF] font-normal">
+                            ({ex.stageDescription})
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {ex.combinationName && (
+                          <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30">
+                            {ex.techniqueLabel || 'COMBINATION'}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-semibold text-[#9CA3AF]">
+                          {ex.sets.length} sets
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {hasNestedStages ? (
+                      <div className="space-y-1.5 mt-2">
+                        {ex.sets.map((s) => (
+                          <div key={s.id || s.setNumber} className="bg-[#14171A] border border-[#272B30] rounded-lg p-2">
+                            <div className="text-[11px] font-black text-[#F5F5F5] mb-1">
+                              Set {s.setNumber} {s.completed ? <span className="text-[#22C55E]">✓</span> : ''}
+                            </div>
+                            <div className="space-y-1 pl-1">
+                              {(s.stages || []).map((st, stIdx) => (
+                                <div key={st.id || stIdx} className="flex items-center justify-between text-[11px]">
+                                  <span className="text-[#9CA3AF] truncate mr-2">
+                                    Stage {st.stageOrder || stIdx + 1}: {st.exerciseName}{' '}
+                                    {st.movementDescription ? `[${st.movementDescription}]` : ''}
+                                  </span>
+                                  <span className={st.completed ? 'text-[#22C55E] font-bold shrink-0' : 'text-[#6B7280] shrink-0'}>
+                                    {st.weight ?? 0}kg × {st.reps ?? 0}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {ex.sets.map((s, idx) => (
+                          <span
+                            key={idx}
+                            className={`border px-2 py-0.5 rounded text-[11px] font-semibold ${
+                              s.completed
+                                ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
+                                : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF]'
+                            }`}
+                          >
+                            Set {s.setNumber}: {s.weight ?? 0}kg × {s.reps ?? 0}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {ex.notes && (
+                      <div className="mt-1.5 text-[11px] text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
+                        "{ex.notes}"
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Actions: Edit Workout & Delete Workout */}
