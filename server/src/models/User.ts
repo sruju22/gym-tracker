@@ -3,7 +3,10 @@ import mongoose, { Document, Schema, Model } from 'mongoose';
 export interface IUser {
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
+  googleId?: string;
+  authProvider?: 'local' | 'google';
+  avatarUrl?: string;
   onboardingCompleted?: boolean;
   fitnessGoal?: string;
   experienceLevel?: string;
@@ -39,7 +42,24 @@ const userSchema = new Schema<IUserDocument>(
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function (this: any) {
+        return !this.googleId && this.authProvider !== 'google';
+      },
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
     },
     onboardingCompleted: {
       type: Boolean,

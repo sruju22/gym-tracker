@@ -214,6 +214,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  authProvider?: 'local' | 'google';
+  googleLinked?: boolean;
+  avatarUrl?: string;
   onboardingCompleted?: boolean;
   fitnessGoal?: string;
   experienceLevel?: string;

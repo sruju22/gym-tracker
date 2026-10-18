@@ -106,6 +106,42 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
   return handleResponse<AuthResponse>(response, 'Failed to log in');
 }
 
+export async function loginWithGoogle(
+  credential: string
+): Promise<AuthResponse & { isNewUser?: boolean }> {
+  const response = await fetchWithDbFailover('/auth/google', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ credential }),
+  });
+
+  return handleResponse<AuthResponse & { isNewUser?: boolean }>(
+    response,
+    'Google authentication failed'
+  );
+}
+
+export async function linkGoogleAccount(
+  token: string,
+  credential: string
+): Promise<{ message: string; user: User }> {
+  const response = await fetchWithDbFailover('/auth/google/link', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ credential }),
+  });
+
+  return handleResponse<{ message: string; user: User }>(
+    response,
+    'Failed to link Google account'
+  );
+}
+
 export async function getMe(token: string): Promise<{ user: User }> {
   const response = await fetchWithDbFailover('/auth/me', {
     method: 'GET',

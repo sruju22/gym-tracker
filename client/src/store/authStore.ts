@@ -5,6 +5,8 @@ import {
   setStoredToken,
   loginUser,
   registerUser,
+  loginWithGoogle,
+  linkGoogleAccount,
   getMe,
   updateUserProfile,
 } from '../api/authApi';
@@ -20,6 +22,8 @@ interface AuthState {
   // Actions
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
+  linkGoogle: (credential: string) => Promise<void>;
   logout: () => void;
   restoreAuth: () => Promise<void>;
   clearError: () => void;
@@ -177,6 +181,58 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         isLoading: false,
         error: err.message || 'Failed to register account',
+      });
+      throw err;
+    }
+  },
+
+  loginWithGoogle: async (credential: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await loginWithGoogle(credential);
+      setStoredToken(data.token);
+      setCachedProfile(data.user);
+      set({
+        currentUser: data.user,
+        token: data.token,
+        isLoading: false,
+        error: null,
+      });
+
+      // Synchronize canonical weight and unit into workoutStore
+      if (data.user.currentWeight) {
+        useWorkoutStore.getState().updateCurrentWeight(data.user.id, data.user.currentWeight);
+      }
+      if (data.user.weightUnit) {
+        useWorkoutStore.getState().updateUserSettings({ weightUnit: data.user.weightUnit });
+      }
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err.message || 'Google sign in failed',
+      });
+      throw err;
+    }
+  },
+
+  linkGoogle: async (credential: string) => {
+    const { token, currentUser } = get();
+    if (!token || !currentUser) {
+      throw new Error('Not authenticated');
+    }
+    set({ isLoading: true, error: null });
+    try {
+      const res = await linkGoogleAccount(token, credential);
+      setCachedProfile(res.user);
+      set({
+        currentUser: res.user,
+        isLoading: false,
+        error: null,
+      });
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err.message || 'Failed to link Google account',
       });
       throw err;
     }
