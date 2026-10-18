@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Link2,
+  ChevronRight,
 } from 'lucide-react';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { GoogleSignInButton } from './GoogleSignInButton';
@@ -148,16 +149,16 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
           : 'User Account'
       }
     >
-      <div className="flex justify-center pt-0.5 pb-2.5">
-        <GymTrackieLogo variant="compact" height={30} />
+      <div className="flex justify-center pb-2">
+        <GymTrackieLogo variant="compact" height={26} />
       </div>
 
       {mode === 'view' && (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {displayError && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-xs text-red-400 font-medium flex items-start gap-2.5">
+            <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-xs text-red-400 font-medium flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <div className="flex-1">
+              <div className="flex-1 leading-snug">
                 <span>{displayError}</span>
               </div>
             </div>
@@ -165,53 +166,54 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
 
           {currentUser ? (
             <>
-              <div className="flex items-center gap-4 bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)]">
+              {/* Authenticated User Overview */}
+              <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border-subtle)]">
                 {currentUser.avatarUrl ? (
                   <img
                     src={currentUser.avatarUrl}
                     alt={currentUser.name}
-                    className="w-14 h-14 rounded-full object-cover border border-[var(--border-subtle)] shrink-0 shadow-md"
+                    className="w-11 h-11 rounded-full object-cover border border-[var(--border-subtle)] shrink-0 shadow-sm"
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-xl font-black shadow-md shadow-red-500/25 shrink-0 border border-red-400">
+                  <div className="w-11 h-11 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-base font-black shadow-sm shrink-0 border border-red-400">
                     {currentUser.name.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black text-[var(--text-main)] truncate">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-black text-[var(--text-main)] truncate">
                       {currentUser.name}
                     </h3>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)]">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)]">
                       Active
                     </span>
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
+                  <p className="text-xs text-[var(--text-secondary)] truncate">
                     {currentUser.email}
                   </p>
-                  <div className="flex items-center gap-1 mt-1 text-[11px] text-[var(--text-muted)]">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[var(--success)]" />
-                    <span>Authenticated via MongoDB Atlas</span>
+                  <div className="flex items-center gap-1 mt-0.5 text-[10px] text-[var(--text-muted)]">
+                    <ShieldCheck className="w-3 h-3 text-[var(--success)]" />
+                    <span>MongoDB Atlas Sync Active</span>
                   </div>
                 </div>
               </div>
 
               {currentUser.googleLinked ? (
-                <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs">
-                  <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs">
+                  <div className="flex items-center gap-2 text-emerald-400 font-semibold text-[11px]">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Google Account Linked</span>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/15 px-2 py-0.5 rounded">
+                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/15 px-1.5 py-0.5 rounded">
                     Connected
                   </span>
                 </div>
               ) : (
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-2">
-                  <div className="text-xs font-bold text-[var(--text-main)]">Link Google Account</div>
-                  <p className="text-[11px] text-[var(--text-secondary)]">
-                    Connect your Google account for quick, passwordless 1-tap sign-in.
-                  </p>
+                <div className="px-3 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-[var(--text-main)]">Link Google Account</div>
+                    <span className="text-[10px] text-[var(--text-muted)]">1-tap sign-in</span>
+                  </div>
                   <GoogleSignInButton
                     mode="link"
                     text="continue_with"
@@ -225,107 +227,134 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
               )}
             </>
           ) : (
-            <div className="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] text-center space-y-1.5">
-              <User className="w-7 h-7 text-[var(--text-muted)] mx-auto opacity-60" />
-              <div className="text-sm font-bold text-[var(--text-main)]">Guest Mode</div>
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                Sign in or create an account to sync your workout history, plans, and personal records securely to MongoDB.
-              </p>
+            /* Compact Guest Mode Card */
+            <div className="bg-[var(--bg-card)] px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0 text-[var(--text-muted)]">
+                <User className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-[var(--text-main)]">Guest Mode</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
+                    Local only
+                  </span>
+                </div>
+                <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
+                  Sign in to save workouts & PRs to MongoDB Atlas
+                </p>
+              </div>
             </div>
           )}
 
-          <div className="space-y-2 pt-1">
-            <Button
-              variant="secondary"
-              fullWidth
-              onClick={goToSettings}
-              className="justify-start gap-3"
-            >
-              <Settings className="w-4 h-4 text-[var(--primary)]" />
-              <span>Preferences, Goals & Themes</span>
-            </Button>
-
-            {currentUser ? (
-              <>
-                <Button
-                  variant="outline"
-                  fullWidth
-                  onClick={handleOpenLogin}
-                  className="justify-start gap-3 border-dashed"
-                >
-                  <LogIn className="w-4 h-4 text-[var(--primary)]" />
-                  <span>Switch Account / Sign In</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  fullWidth
-                  onClick={handleOpenSignup}
-                  className="justify-start gap-3 border-dashed"
-                >
-                  <UserPlus className="w-4 h-4 text-[var(--primary)]" />
-                  <span>Register New Account</span>
-                </Button>
-
-                <Button
-                  variant="danger"
-                  fullWidth
-                  onClick={() => {
-                    logout();
-                    setMode('view');
-                  }}
-                  className="justify-start gap-3 mt-3"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign Out</span>
-                </Button>
-              </>
-            ) : (
-              <div className="space-y-2.5 pt-1">
-                {/* Official Google Identity Button */}
-                <GoogleSignInButton
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  text="continue_with"
-                />
-
-                <div className="relative flex items-center justify-center my-2">
-                  <div className="border-t border-[var(--border-subtle)] w-full" />
-                  <span className="bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider absolute">
-                    or with password
-                  </span>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="secondary" onClick={handleOpenLogin} fullWidth className="gap-2">
-                    <LogIn className="w-4 h-4" />
-                    Sign In
-                  </Button>
-                  <Button variant="primary" onClick={handleOpenSignup} fullWidth className="gap-2">
-                    <UserPlus className="w-4 h-4" />
-                    Create Account
-                  </Button>
-                </div>
+          {/* Preferences, Goals & Themes — Compact Row with Chevron */}
+          <button
+            type="button"
+            onClick={goToSettings}
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] active:bg-[var(--bg-card-subtle)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[44px]"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
+                <Settings className="w-3.5 h-3.5" />
               </div>
-            )}
-          </div>
+              <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                Preferences, Goals & Themes
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+          </button>
+
+          {currentUser ? (
+            <div className="space-y-2 pt-0.5">
+              <Button
+                variant="outline"
+                fullWidth
+                onClick={handleOpenLogin}
+                className="justify-start gap-2.5 border-dashed h-10 min-h-[40px] text-xs font-bold"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[var(--primary)]" />
+                <span>Switch Account / Sign In</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                fullWidth
+                onClick={handleOpenSignup}
+                className="justify-start gap-2.5 border-dashed h-10 min-h-[40px] text-xs font-bold"
+              >
+                <UserPlus className="w-3.5 h-3.5 text-[var(--primary)]" />
+                <span>Register New Account</span>
+              </Button>
+
+              <Button
+                variant="danger"
+                fullWidth
+                onClick={() => {
+                  logout();
+                  setMode('view');
+                }}
+                className="justify-start gap-2.5 h-10 min-h-[40px] text-xs font-bold mt-2"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2 pt-0.5">
+              {/* Official Google Identity Services Button */}
+              <GoogleSignInButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                text="continue_with"
+              />
+
+              {/* Subtle Refined Divider */}
+              <div className="relative flex items-center justify-center my-1.5">
+                <div className="w-full border-t border-[var(--border-subtle)]" />
+                <span className="absolute bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest select-none">
+                  or with password
+                </span>
+              </div>
+
+              {/* Balanced, Equal-Height Action Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={handleOpenLogin}
+                  fullWidth
+                  className="gap-1.5 text-xs sm:text-sm h-11 min-h-[44px] rounded-xl font-bold"
+                >
+                  <LogIn className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Sign In</span>
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleOpenSignup}
+                  fullWidth
+                  className="gap-1.5 text-xs sm:text-sm h-11 min-h-[44px] rounded-xl font-bold"
+                >
+                  <UserPlus className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Create Account</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {mode === 'login' && (
-        <div className="space-y-3.5">
+        <div className="space-y-3">
           {displayError && (
-            <div className="text-xs text-[var(--danger)] bg-[var(--danger-subtle)] p-3 rounded-xl border border-[var(--danger-border)] leading-relaxed">
+            <div className="text-xs text-[var(--danger)] bg-[var(--danger-subtle)] p-2.5 rounded-xl border border-[var(--danger-border)] leading-snug">
               {displayError}
             </div>
           )}
 
           {pendingGoogleCredential && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 text-xs flex items-start gap-2.5">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 text-xs flex items-start gap-2">
               <Link2 className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
               <div>
                 <div className="font-bold">Link Your Google Account</div>
-                <div className="text-[11px] text-amber-300/80 mt-0.5 leading-relaxed">
+                <div className="text-[11px] text-amber-300/80 mt-0.5 leading-snug">
                   Enter your password once to confirm identity. We will link your Google account so you can use 1-tap sign-in next time!
                 </div>
               </div>
@@ -341,15 +370,15 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
               />
 
               <div className="relative flex items-center justify-center my-1.5">
-                <div className="border-t border-[var(--border-subtle)] w-full" />
-                <span className="bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider absolute">
+                <div className="w-full border-t border-[var(--border-subtle)]" />
+                <span className="absolute bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest select-none">
                   or with password
                 </span>
               </div>
             </>
           )}
 
-          <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+          <form onSubmit={handleLoginSubmit} className="space-y-3">
             <Input
               label="Email Address"
               type="email"
@@ -369,7 +398,7 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
               autoFocus={!!pendingGoogleCredential}
             />
 
-            <div className="flex gap-2 pt-1.5">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <Button
                 type="button"
                 variant="secondary"
@@ -379,19 +408,26 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
                 }}
                 fullWidth
                 disabled={isLoading}
+                className="h-11 min-h-[44px] text-xs sm:text-sm font-bold"
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" fullWidth disabled={isLoading}>
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                disabled={isLoading}
+                className="h-11 min-h-[44px] text-xs sm:text-sm font-bold"
+              >
                 {isLoading
                   ? 'Signing In...'
                   : pendingGoogleCredential
-                  ? 'Sign In & Link Google'
+                  ? 'Sign In & Link'
                   : 'Sign In'}
               </Button>
             </div>
 
-            <div className="text-center pt-1.5">
+            <div className="text-center pt-1">
               <button
                 type="button"
                 onClick={handleOpenSignup}
@@ -405,9 +441,9 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
       )}
 
       {mode === 'signup' && (
-        <div className="space-y-3.5">
+        <div className="space-y-3">
           {displayError && (
-            <div className="text-xs text-[var(--danger)] bg-[var(--danger-subtle)] p-3 rounded-xl border border-[var(--danger-border)] leading-relaxed">
+            <div className="text-xs text-[var(--danger)] bg-[var(--danger-subtle)] p-2.5 rounded-xl border border-[var(--danger-border)] leading-snug">
               {displayError}
             </div>
           )}
@@ -419,13 +455,13 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
           />
 
           <div className="relative flex items-center justify-center my-1.5">
-            <div className="border-t border-[var(--border-subtle)] w-full" />
-            <span className="bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider absolute">
+            <div className="w-full border-t border-[var(--border-subtle)]" />
+            <span className="absolute bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest select-none">
               or with email
             </span>
           </div>
 
-          <form onSubmit={handleSignupSubmit} className="space-y-3.5">
+          <form onSubmit={handleSignupSubmit} className="space-y-3">
             <Input
               label="Full Name"
               placeholder="e.g. Srujan Kumar"
@@ -452,22 +488,29 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
               required
             />
 
-            <div className="flex gap-2 pt-1.5">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => setMode('view')}
                 fullWidth
                 disabled={isLoading}
+                className="h-11 min-h-[44px] text-xs sm:text-sm font-bold"
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" fullWidth disabled={isLoading}>
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                disabled={isLoading}
+                className="h-11 min-h-[44px] text-xs sm:text-sm font-bold"
+              >
+                {isLoading ? 'Creating...' : 'Create Account'}
               </Button>
             </div>
 
-            <div className="text-center pt-1.5">
+            <div className="text-center pt-1">
               <button
                 type="button"
                 onClick={handleOpenLogin}

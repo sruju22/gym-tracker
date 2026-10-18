@@ -41,8 +41,8 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="w-10 h-1 bg-[var(--border-strong)] rounded-full mx-auto my-2.5 sm:hidden" />
 
         {title && (
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-subtle)]">
-            <h3 className="text-base font-extrabold text-[var(--text-main)] tracking-tight">{title}</h3>
+          <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-[var(--border-subtle)]">
+            <h3 className="text-sm sm:text-base font-extrabold text-[var(--text-main)] tracking-tight">{title}</h3>
             <button
               onClick={onClose}
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-lg transition-colors cursor-pointer"
@@ -52,7 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        <div className="p-5 overflow-y-auto flex-1 safe-bottom no-scrollbar">
+        <div className="px-4 py-3 sm:p-5 overflow-y-auto flex-1 safe-bottom no-scrollbar">
           {children}
         </div>
       </div>
