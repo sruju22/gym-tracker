@@ -91,21 +91,21 @@ export const ExercisesPage: React.FC = () => {
     <div className="space-y-3 max-w-full overflow-x-hidden pb-12">
       {/* Mid-Workout Active Session Banner */}
       {currentSession && (
-        <div className="bg-[#14171A] border border-[#E11D48]/40 rounded-2xl p-3.5 sm:p-4 shadow-lg flex items-center justify-between gap-3 animate-fade-in">
+        <div className="bg-[var(--bg-surface)] border border-[var(--primary-border)] rounded-2xl p-3.5 sm:p-4 shadow-lg flex items-center justify-between gap-3 animate-fade-in">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/40 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)] flex items-center justify-center shrink-0">
               <Dumbbell className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-black text-[#F5F5F5] truncate">
+                <span className="text-xs sm:text-sm font-black text-[var(--text-main)] truncate">
                   {currentSession.workoutName || (editingSession ? 'Editing Workout' : 'Active Workout')}
                 </span>
-                <span className="text-[10px] font-black text-[#E11D48] bg-[#E11D48]/15 px-2 py-0.5 rounded-md border border-[#E11D48]/30 shrink-0">
+                <span className="text-[10px] font-black text-[var(--primary)] bg-[var(--primary-subtle)] px-2 py-0.5 rounded-md border border-[var(--primary-border)] shrink-0">
                   {currentSession.exercises.length} EXERCISES
                 </span>
               </div>
-              <p className="text-[11px] text-[#9CA3AF] truncate mt-0.5">
+              <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
                 Workout in progress • Tap "+ Add" on any exercise to add it
               </p>
             </div>
@@ -115,7 +115,7 @@ export const ExercisesPage: React.FC = () => {
             variant="primary"
             size="sm"
             onClick={() => navigate('/workout')}
-            className="font-black shrink-0 flex items-center gap-1.5 min-h-[38px] px-3.5 shadow-sm shadow-[#E11D48]/30"
+            className="font-black shrink-0 flex items-center gap-1.5 min-h-[38px] px-3.5"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Workout</span>
@@ -155,7 +155,7 @@ export const ExercisesPage: React.FC = () => {
       />
 
       {/* Visual Exercise Cards Grid */}
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {filteredExercises.map((ex) => (
           <ExerciseLibraryCard
             key={ex.id}
@@ -172,8 +172,8 @@ export const ExercisesPage: React.FC = () => {
       </div>
 
       {filteredExercises.length === 0 && (
-        <div className="text-center py-10 border border-dashed border-[#272B30] rounded-2xl bg-[#14171A]">
-          <p className="text-xs font-semibold text-[#9CA3AF] mb-2">No exercises match your filter</p>
+        <div className="text-center py-10 border border-dashed border-[var(--border-subtle)] rounded-2xl bg-[var(--bg-surface)]">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">No exercises match your filter</p>
           <Button variant="secondary" size="sm" onClick={() => setIsAddCustomOpen(true)}>
             + Create Custom Exercise
           </Button>

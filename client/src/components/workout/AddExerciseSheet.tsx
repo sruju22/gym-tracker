@@ -140,7 +140,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
           {/* Sub-area / Muscle Head filter chips */}
           {selectedMuscle !== 'all' && MUSCLE_GROUPS[selectedMuscle]?.areas && (
-            <div className="flex gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar border-t border-[#272B30]">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar border-t border-[var(--border-subtle)]">
               <FilterChip
                 label="All Target Areas"
                 active={selectedSubArea === 'all'}
@@ -160,15 +160,15 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
           {/* Action to trigger Create Custom Exercise */}
           <button
             onClick={() => setShowCreateCustom(true)}
-            className="w-full bg-[#1B1F23] hover:bg-[#23282D] border border-[#272B30] rounded-xl p-3 flex items-center justify-between text-left transition-colors cursor-pointer"
+            className="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] rounded-xl p-3 flex items-center justify-between text-left transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-[#E11D48] text-[#FFFFFF] flex items-center justify-center font-black">
+              <div className="w-7 h-7 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center font-black">
                 +
               </div>
               <div>
-                <div className="text-xs font-bold text-[#F5F5F5]">Create Custom Exercise</div>
-                <div className="text-[11px] text-[#9CA3AF]">Add to your personal library</div>
+                <div className="text-xs font-bold text-[var(--text-main)]">Create Custom Exercise</div>
+                <div className="text-[11px] text-[var(--text-secondary)]">Add to your personal library</div>
               </div>
             </div>
           </button>
@@ -177,9 +177,9 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
             <button
               type="button"
               onClick={onBrowseLibrary}
-              className="w-full bg-[#14171A] hover:bg-[#1B1F23] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold text-[#9CA3AF] hover:text-[#F5F5F5] transition-colors cursor-pointer"
+              className="w-full bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
             >
-              <BookOpen className="w-3.5 h-3.5 text-[#E11D48]" />
+              <BookOpen className="w-3.5 h-3.5 text-[var(--primary)]" />
               <span>Browse Full Exercise Library</span>
             </button>
           )}
@@ -194,7 +194,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
                     onSelectExercise(ex);
                     onClose();
                   }}
-                  className="bg-[#14171A] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
+                  className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-3">
                     {!imgErrors[ex.id] ? (
@@ -202,29 +202,29 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
                         src={ex.imageUrl}
                         alt={ex.name}
                         loading="lazy"
-                        className="w-10 h-10 rounded-lg object-cover bg-[#1B1F23] border border-[#272B30]"
+                        className="w-10 h-10 rounded-lg object-cover bg-[var(--bg-card)] border border-[var(--border-subtle)]"
                         onError={() => setImgErrors((prev) => ({ ...prev, [ex.id]: true }))}
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-[#1B1F23] border border-[#272B30] flex items-center justify-center text-[#6B7280]">
+                      <div className="w-10 h-10 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
                         <Dumbbell className="w-4 h-4 opacity-40" />
                       </div>
                     )}
                     <div>
-                      <div className="text-xs font-bold text-[#F5F5F5]">{ex.name}</div>
-                      <div className="text-[11px] text-[#9CA3AF] capitalize">
+                      <div className="text-xs font-bold text-[var(--text-main)]">{ex.name}</div>
+                      <div className="text-[11px] text-[var(--text-secondary)] capitalize">
                         {ex.primaryMuscle} • {ex.muscleAreaEmphasis.map((area) => getMuscleAreaName(area)).join(', ')} • {ex.equipmentName || ex.equipment}
                       </div>
                     </div>
                   </div>
 
-                  <div className="w-7 h-7 rounded-full bg-[#1B1F23] border border-[#272B30] text-[#E11D48] flex items-center justify-center font-black text-xs">
+                  <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--primary)] flex items-center justify-center font-black text-xs">
                     +
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-xs text-[#9CA3AF] py-6 text-center font-medium">
+              <div className="text-xs text-[var(--text-secondary)] py-6 text-center font-medium">
                 No matching exercises found for this muscle section.
               </div>
             )}
@@ -234,11 +234,11 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
         /* Create Custom Exercise Form */
         <form onSubmit={handleCreateCustomSubmit} className="space-y-3">
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-xs font-bold text-[#F5F5F5] uppercase">New Custom Exercise</h4>
+            <h4 className="text-xs font-bold text-[var(--text-main)] uppercase">New Custom Exercise</h4>
             <button
               type="button"
               onClick={() => setShowCreateCustom(false)}
-              className="text-xs text-[#E11D48] font-semibold hover:text-[#F43F5E]"
+              className="text-xs text-[var(--primary)] font-semibold hover:opacity-80"
             >
               Back to Library
             </button>
@@ -253,7 +253,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
           />
 
           <div>
-            <label className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+            <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
               Muscle Group
             </label>
             <select
@@ -266,7 +266,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
                   setCustomArea(info.areas[0].id);
                 }
               }}
-              className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#E11D48]"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
             >
               {Object.values(MUSCLE_GROUPS).map((mg) => (
                 <option key={mg.id} value={mg.id}>
@@ -277,13 +277,13 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+            <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
               Muscle Area Emphasis
             </label>
             <select
               value={customArea}
               onChange={(e) => setCustomArea(e.target.value as MuscleArea)}
-              className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#E11D48]"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
             >
               {(MUSCLE_GROUPS[customMuscle]?.areas || []).map((a) => (
                 <option key={a.id} value={a.id}>
@@ -295,13 +295,13 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+              <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
                 Equipment
               </label>
               <select
                 value={customEquipment}
                 onChange={(e) => setCustomEquipment(e.target.value as Equipment)}
-                className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#E11D48]"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
               >
                 <option value="barbell">Barbell</option>
                 <option value="dumbbell">Dumbbell</option>
@@ -313,13 +313,13 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+              <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
                 Exercise Type
               </label>
               <select
                 value={customType}
                 onChange={(e) => setCustomType(e.target.value as ExerciseType)}
-                className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#E11D48]"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
               >
                 <option value="compound">Compound</option>
                 <option value="isolation">Isolation</option>

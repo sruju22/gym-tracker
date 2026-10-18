@@ -4,7 +4,27 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>GymTracker — Workout Assistant</title>
+    <title>GymTrackie — Fitness & Workout Tracking</title>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('gymtrackie-theme');
+          var mode = saved ? JSON.parse(saved) : 'dark';
+          var resolved = mode;
+          if (mode === 'system') {
+            resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.classList.remove('dark', 'light');
+          document.documentElement.classList.add(resolved);
+          document.documentElement.setAttribute('data-theme', resolved);
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

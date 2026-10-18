@@ -4,7 +4,7 @@ import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { DayOfWeek } from '../../types';
 import { getTodayDayOfWeek, formatDayName, parseLocalDate } from '../../utils/formatters';
-import { Edit2 } from 'lucide-react';
+import { Edit2, Calendar } from 'lucide-react';
 
 interface WeeklyOverviewProps {
   onOpenEditPlan?: () => void;
@@ -16,12 +16,10 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
 
   const { getWeeklyPlan, getHistory } = useWorkoutStore();
   const weeklyPlan = getWeeklyPlan(userId);
-  // Security guard: Only load workout completion history for an authenticated account
   const history = currentUser ? getHistory(userId) : [];
 
   const [, setTick] = useState(0);
 
-  // Periodically refresh to stay accurate across midnight / date boundaries
   useEffect(() => {
     const timer = setInterval(() => {
       setTick((t) => t + 1);
@@ -44,12 +42,11 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
   }, []);
 
   const today = getTodayDayOfWeek();
-
   const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
   const getStartAndEndOfWeek = () => {
     const now = new Date();
-    const dayIndex = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const dayIndex = now.getDay();
     const diffToMonday = (dayIndex + 6) % 7;
 
     const monday = new Date(now);
@@ -64,7 +61,6 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
   };
 
   const { startOfWeek, endOfWeek } = getStartAndEndOfWeek();
-
   const dayNames: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const completedDays = new Set<string>();
 
@@ -79,15 +75,16 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
   });
 
   return (
-    <Card className="w-full flex-1 flex flex-col min-h-0 p-4 sm:p-5 rounded-2xl border border-[#272B30] bg-[#14171A]">
-      <div className="flex items-center justify-between mb-2 sm:mb-3">
-        <h3 className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
-          WEEKLY SCHEDULE
-        </h3>
+    <Card className="w-full p-4 sm:p-5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-colors">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">
+          <Calendar className="w-3.5 h-3.5 text-[var(--primary)]" />
+          <span>WEEKLY TRAINING SCHEDULE</span>
+        </div>
         {onOpenEditPlan && (
           <button
             onClick={onOpenEditPlan}
-            className="flex items-center gap-1 text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] transition-colors cursor-pointer"
+            className="flex items-center gap-1 text-xs font-bold text-[var(--primary)] hover:underline transition-colors cursor-pointer"
           >
             <Edit2 className="w-3.5 h-3.5" />
             <span>Customize Plan</span>
@@ -95,7 +92,7 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
         )}
       </div>
 
-      <div className="flex-1 flex flex-col justify-evenly divide-y divide-[#272B30] min-h-0">
+      <div className="flex flex-col divide-y divide-[var(--border-subtle)]">
         {days.map((day) => {
           const config = weeklyPlan[day];
           const isToday = day === today;
@@ -105,31 +102,39 @@ export const WeeklyOverview: React.FC<WeeklyOverviewProps> = ({ onOpenEditPlan }
             <div
               key={day}
               className={`flex items-center justify-between py-2 px-2.5 rounded-xl transition-colors ${
-                isToday ? 'bg-[#E11D48]/10 border border-[#E11D48]/30 text-[#F5F5F5] font-bold' : ''
+                isToday
+                  ? 'bg-[var(--primary-subtle)] border border-[var(--primary-border)] font-bold'
+                  : ''
               }`}
             >
-              <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <span
-                  className={`text-sm sm:text-base ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 ${
                     isCompleted
-                      ? 'text-[#22C55E] font-extrabold' // Green reserved for SUCCESS/COMPLETED
+                      ? 'bg-[var(--success-subtle)] text-[var(--success)] border border-[var(--success-border)] font-black'
                       : isToday
-                      ? 'text-[#E11D48] font-bold'
-                      : 'text-[#6B7280]'
+                      ? 'bg-[var(--primary)] text-white font-black'
+                      : 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
                   }`}
                 >
-                  {isCompleted ? '✓' : isToday ? '●' : '○'}
+                  {isCompleted ? '✓' : isToday ? '•' : ''}
                 </span>
-                <span className={`text-xs sm:text-sm capitalize ${isToday ? 'font-bold text-[#F5F5F5]' : 'text-[#9CA3AF] font-medium'}`}>
+                <span
+                  className={`text-xs sm:text-sm capitalize truncate ${
+                    isToday ? 'font-black text-[var(--text-main)]' : 'text-[var(--text-secondary)] font-medium'
+                  }`}
+                >
                   {formatDayName(day)}
                 </span>
               </div>
 
-              <div className="text-xs sm:text-sm text-[#9CA3AF] font-medium">
+              <div className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium text-right truncate ml-2">
                 {config.isRest ? (
-                  <span className="text-[#6B7280] font-normal">{config.name || 'Rest'}</span>
+                  <span className="text-[var(--text-muted)] font-normal">{config.name || 'Rest'}</span>
                 ) : (
-                  <span>{config.name || config.muscleGroups.map((m) => m.displayName).join(' + ')}</span>
+                  <span className={isToday ? 'font-bold text-[var(--text-main)]' : ''}>
+                    {config.name || config.muscleGroups.map((m) => m.displayName).join(' + ')}
+                  </span>
                 )}
               </div>
             </div>

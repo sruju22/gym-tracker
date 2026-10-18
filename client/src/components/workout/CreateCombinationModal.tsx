@@ -476,7 +476,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#9CA3AF] font-medium">
+                <p className="text-xs text-[var(--text-secondary)] font-medium">
                   What are you planning to do?
                 </p>
               </div>
@@ -484,7 +484,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
               {savedTemplates.length > 0 && (
                 <button
                   onClick={() => setScreen('saved')}
-                  className="text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] flex items-center gap-1 cursor-pointer bg-[#E11D48]/10 px-2.5 py-1 rounded-lg border border-[#E11D48]/30 transition-colors"
+                  className="text-xs font-bold text-[var(--primary)] hover:opacity-80 flex items-center gap-1 cursor-pointer bg-[var(--primary-subtle)] px-2.5 py-1 rounded-lg border border-[var(--primary-border)] transition-colors"
                 >
                   <Bookmark className="w-3.5 h-3.5" />
                   <span>Saved ({savedTemplates.length})</span>
@@ -497,104 +497,104 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
               {/* Option 1: Combine Exercises */}
               <button
                 onClick={() => handleSelectOption('combine_exercises')}
-                className="w-full text-left p-3.5 rounded-xl bg-[#1B1F23] hover:bg-[#272B30] border border-[#272B30] hover:border-[#E11D48]/60 transition-all cursor-pointer group flex items-start justify-between"
+                className="w-full text-left p-3.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--primary)] transition-all cursor-pointer group flex items-start justify-between"
               >
                 <div className="flex items-start gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#E11D48]/15 border border-[#E11D48]/40 text-[#E11D48] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--primary-subtle)] border border-[var(--primary-border)] text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
                     <Layers className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-[#F5F5F5] group-hover:text-[#E11D48] transition-colors">
+                    <h3 className="text-sm font-black text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors">
                       Combine Exercises
                     </h3>
-                    <p className="text-xs text-[#9CA3AF] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
                       Combine two or more exercises in a chosen order.
                     </p>
-                    <div className="text-[10px] font-bold text-[#6B7280] mt-1 flex items-center gap-1">
-                      <span className="text-[#9CA3AF]">e.g.</span>
+                    <div className="text-[10px] font-bold text-[var(--text-muted)] mt-1 flex items-center gap-1">
+                      <span className="text-[var(--text-secondary)]">e.g.</span>
                       <span>Curl → Hammer Curl → Reverse Curl</span>
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#E11D48] shrink-0 mt-1 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] shrink-0 mt-1 transition-colors" />
               </button>
 
               {/* Option 2: Combine Movements */}
               <button
                 onClick={() => handleSelectOption('combine_movements')}
-                className="w-full text-left p-3.5 rounded-xl bg-[#1B1F23] hover:bg-[#272B30] border border-[#272B30] hover:border-[#E11D48]/60 transition-all cursor-pointer group flex items-start justify-between"
+                className="w-full text-left p-3.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--primary)] transition-all cursor-pointer group flex items-start justify-between"
               >
                 <div className="flex items-start gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#E11D48]/15 border border-[#E11D48]/40 text-[#E11D48] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--primary-subtle)] border border-[var(--primary-border)] text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
                     <Shuffle className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-[#F5F5F5] group-hover:text-[#E11D48] transition-colors">
+                    <h3 className="text-sm font-black text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors">
                       Combine Movements
                     </h3>
-                    <p className="text-xs text-[#9CA3AF] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
                       Define multiple stages within the same exercise or equipment setup.
                     </p>
-                    <div className="text-[10px] font-bold text-[#6B7280] mt-1 flex items-center gap-1">
-                      <span className="text-[#9CA3AF]">e.g.</span>
+                    <div className="text-[10px] font-bold text-[var(--text-muted)] mt-1 flex items-center gap-1">
+                      <span className="text-[var(--text-secondary)]">e.g.</span>
                       <span>Partial Reps → Full Reps</span>
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#E11D48] shrink-0 mt-1 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] shrink-0 mt-1 transition-colors" />
               </button>
 
               {/* Option 3: Change Weights */}
               <button
                 onClick={() => handleSelectOption('change_weights')}
-                className="w-full text-left p-3.5 rounded-xl bg-[#1B1F23] hover:bg-[#272B30] border border-[#272B30] hover:border-[#E11D48]/60 transition-all cursor-pointer group flex items-start justify-between"
+                className="w-full text-left p-3.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--primary)] transition-all cursor-pointer group flex items-start justify-between"
               >
                 <div className="flex items-start gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#E11D48]/15 border border-[#E11D48]/40 text-[#E11D48] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--primary-subtle)] border border-[var(--primary-border)] text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
                     <TrendingDown className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-[#F5F5F5] group-hover:text-[#E11D48] transition-colors">
+                    <h3 className="text-sm font-black text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors">
                       Change Weights
                     </h3>
-                    <p className="text-xs text-[#9CA3AF] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
                       Define stages with individual weight and repetition targets.
                     </p>
-                    <div className="text-[10px] font-bold text-[#6B7280] mt-1 flex items-center gap-1">
-                      <span className="text-[#9CA3AF]">e.g.</span>
+                    <div className="text-[10px] font-bold text-[var(--text-muted)] mt-1 flex items-center gap-1">
+                      <span className="text-[var(--text-secondary)]">e.g.</span>
                       <span>Heavy Weight → Reduce Weight → Continue</span>
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#E11D48] shrink-0 mt-1 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] shrink-0 mt-1 transition-colors" />
               </button>
 
               {/* Option 4: Build My Own */}
               <button
                 onClick={() => handleSelectOption('build_own')}
-                className="w-full text-left p-3.5 rounded-xl bg-[#1B1F23] hover:bg-[#272B30] border border-[#272B30] hover:border-[#E11D48]/60 transition-all cursor-pointer group flex items-start justify-between"
+                className="w-full text-left p-3.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--primary)] transition-all cursor-pointer group flex items-start justify-between"
               >
                 <div className="flex items-start gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#E11D48]/15 border border-[#E11D48]/40 text-[#E11D48] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--primary-subtle)] border border-[var(--primary-border)] text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-[#F5F5F5] group-hover:text-[#E11D48] transition-colors">
+                    <h3 className="text-sm font-black text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors">
                       Build My Own
                     </h3>
-                    <p className="text-xs text-[#9CA3AF] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
                       Start with a blank builder where you can create any custom sequence.
                     </p>
-                    <div className="text-[10px] font-bold text-[#6B7280] mt-1">
+                    <div className="text-[10px] font-bold text-[var(--text-muted)] mt-1">
                       Blank sequence with exercises, movement & weight stages
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#E11D48] shrink-0 mt-1 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] shrink-0 mt-1 transition-colors" />
               </button>
             </div>
 
-            <div className="pt-2 border-t border-[#272B30] flex justify-end">
+            <div className="pt-2 border-t border-[var(--border-subtle)] flex justify-end">
               <Button variant="secondary" size="sm" onClick={handleClose}>
                 Cancel
               </Button>
@@ -608,31 +608,31 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
         {screen === 'builder' && (
           <div className="space-y-4">
             {/* Header Navigation & Rounds Selector */}
-            <div className="flex items-center justify-between border-b border-[#272B30] pb-2.5">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
               <button
                 onClick={() => setScreen('options')}
-                className="text-xs font-bold text-[#9CA3AF] hover:text-[#F5F5F5] flex items-center gap-1 cursor-pointer transition-colors"
+                className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Change Type</span>
               </button>
 
-              <div className="flex items-center gap-2 bg-[#1B1F23] border border-[#272B30] px-2.5 py-1 rounded-xl">
-                <span className="text-[11px] font-bold text-[#9CA3AF]">Rounds:</span>
+              <div className="flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] px-2.5 py-1 rounded-xl">
+                <span className="text-[11px] font-bold text-[var(--text-secondary)]">Rounds:</span>
                 <button
                   type="button"
                   onClick={() => setRounds((r) => Math.max(1, r - 1))}
-                  className="w-5 h-5 rounded bg-[#14171A] text-[#F5F5F5] hover:text-[#E11D48] text-xs font-black flex items-center justify-center cursor-pointer"
+                  className="w-5 h-5 rounded bg-[var(--bg-surface)] text-[var(--text-main)] hover:text-[var(--primary)] text-xs font-black flex items-center justify-center cursor-pointer"
                 >
                   -
                 </button>
-                <span className="text-xs font-black text-[#E11D48] w-4 text-center">
+                <span className="text-xs font-black text-[var(--primary)] w-4 text-center">
                   {rounds}
                 </span>
                 <button
                   type="button"
                   onClick={() => setRounds((r) => Math.min(10, r + 1))}
-                  className="w-5 h-5 rounded bg-[#14171A] text-[#F5F5F5] hover:text-[#E11D48] text-xs font-black flex items-center justify-center cursor-pointer"
+                  className="w-5 h-5 rounded bg-[var(--bg-surface)] text-[var(--text-main)] hover:text-[var(--primary)] text-xs font-black flex items-center justify-center cursor-pointer"
                 >
                   +
                 </button>
@@ -644,21 +644,21 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
               {stages.map((stage, idx) => (
                 <div
                   key={stage.id}
-                  className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 space-y-2.5"
+                  className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 space-y-2.5"
                 >
                   {/* Stage Top Bar */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 border border-[#E11D48]/30 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-black uppercase text-[var(--primary)] bg-[var(--primary-subtle)] border border-[var(--primary-border)] px-1.5 py-0.5 rounded">
                         Stage {idx + 1}
                       </span>
                       {selectedType === 'combine_movements' && (
-                        <span className="text-[11px] font-bold text-[#9CA3AF]">
+                        <span className="text-[11px] font-bold text-[var(--text-secondary)]">
                           Movement Stage
                         </span>
                       )}
                       {selectedType === 'change_weights' && (
-                        <span className="text-[11px] font-bold text-[#9CA3AF]">
+                        <span className="text-[11px] font-bold text-[var(--text-secondary)]">
                           Weight Stage
                         </span>
                       )}
@@ -669,7 +669,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                         type="button"
                         onClick={() => handleMoveStage(idx, 'up')}
                         disabled={idx === 0}
-                        className="p-1 text-[#6B7280] hover:text-[#F5F5F5] disabled:opacity-30 cursor-pointer"
+                        className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-30 cursor-pointer"
                         title="Move stage up"
                       >
                         <ChevronUp className="w-3.5 h-3.5" />
@@ -678,7 +678,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                         type="button"
                         onClick={() => handleMoveStage(idx, 'down')}
                         disabled={idx === stages.length - 1}
-                        className="p-1 text-[#6B7280] hover:text-[#F5F5F5] disabled:opacity-30 cursor-pointer"
+                        className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-30 cursor-pointer"
                         title="Move stage down"
                       >
                         <ChevronDown className="w-3.5 h-3.5" />
@@ -687,7 +687,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRemoveStage(idx)}
-                          className="p-1 text-[#6B7280] hover:text-[#EF4444] cursor-pointer ml-1"
+                          className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] cursor-pointer ml-1"
                           title="Remove stage"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -701,19 +701,19 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setPickerStageIndex(idx)}
-                      className="w-full text-left p-2.5 rounded-lg bg-[#14171A] border border-[#272B30] hover:border-[#E11D48]/60 flex items-center justify-between cursor-pointer transition-colors"
+                      className="w-full text-left p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--primary)] flex items-center justify-between cursor-pointer transition-colors"
                     >
                       <div className="min-w-0 pr-2">
-                        <div className="text-xs font-bold text-[#F5F5F5] truncate">
+                        <div className="text-xs font-bold text-[var(--text-main)] truncate">
                           {stage.exercise?.name || 'Tap to select exercise...'}
                         </div>
                         {stage.exercise && (
-                          <div className="text-[10px] text-[#9CA3AF] capitalize">
+                          <div className="text-[10px] text-[var(--text-secondary)] capitalize">
                             {stage.exercise.primaryMuscle} • {stage.exercise.equipment || 'Standard'}
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] font-extrabold text-[#E11D48] bg-[#E11D48]/10 px-2 py-0.5 rounded shrink-0">
+                      <span className="text-[10px] font-extrabold text-[var(--primary)] bg-[var(--primary-subtle)] px-2 py-0.5 rounded shrink-0">
                         {stage.exercise ? 'Change' : 'Select'}
                       </span>
                     </button>
@@ -724,7 +724,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                     selectedType === 'change_weights' ||
                     selectedType === 'build_own') && (
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[10px] text-[#9CA3AF] font-bold">
+                      <div className="flex items-center justify-between text-[10px] text-[var(--text-secondary)] font-bold">
                         <span>Movement / Stage Label</span>
                       </div>
                       <input
@@ -734,7 +734,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                           handleUpdateStage(idx, 'movementDescription', e.target.value)
                         }
                         placeholder="e.g., Partial Reps, Drop 1, Slow Tempo"
-                        className="w-full bg-[#14171A] border border-[#272B30] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:border-[#E11D48] focus:outline-none"
+                        className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] focus:border-[var(--primary)] focus:outline-none"
                       />
                       {/* Quick Chips for Common Movement Variations */}
                       {selectedType === 'combine_movements' && (
@@ -749,8 +749,8 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                                 }
                                 className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
                                   stage.movementDescription === chip
-                                    ? 'bg-[#E11D48]/20 border-[#E11D48] text-[#E11D48]'
-                                    : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF] hover:text-[#F5F5F5]'
+                                    ? 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--primary)]'
+                                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-main)]'
                                 }`}
                               >
                                 {chip}
@@ -765,7 +765,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                   {/* Target Weight & Reps */}
                   <div className="grid grid-cols-2 gap-2 pt-0.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-[#9CA3AF] mb-1">
+                      <label className="block text-[10px] font-bold text-[var(--text-secondary)] mb-1">
                         Target Weight (kg)
                       </label>
                       <input
@@ -781,12 +781,12 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                           )
                         }
                         placeholder="Optional"
-                        className="w-full bg-[#14171A] border border-[#272B30] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:border-[#E11D48] focus:outline-none"
+                        className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] focus:border-[var(--primary)] focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-[#9CA3AF] mb-1">
+                      <label className="block text-[10px] font-bold text-[var(--text-secondary)] mb-1">
                         Target Reps
                       </label>
                       <input
@@ -801,7 +801,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                           )
                         }
                         placeholder="e.g., 10"
-                        className="w-full bg-[#14171A] border border-[#272B30] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:border-[#E11D48] focus:outline-none"
+                        className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] focus:border-[var(--primary)] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -815,7 +815,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleAddStage(null)}
-                  className="flex-1 py-2 rounded-xl border border-dashed border-[#272B30] hover:border-[#E11D48] text-xs font-bold text-[#E11D48] flex items-center justify-center gap-1.5 bg-[#1B1F23]/60 cursor-pointer"
+                  className="flex-1 py-2 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] text-xs font-bold text-[var(--primary)] flex items-center justify-center gap-1.5 bg-[var(--bg-card)]/60 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Another Exercise</span>
@@ -826,7 +826,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleAddStage(stages[0]?.exercise, 'Burnout')}
-                  className="flex-1 py-2 rounded-xl border border-dashed border-[#272B30] hover:border-[#E11D48] text-xs font-bold text-[#E11D48] flex items-center justify-center gap-1.5 bg-[#1B1F23]/60 cursor-pointer"
+                  className="flex-1 py-2 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] text-xs font-bold text-[var(--primary)] flex items-center justify-center gap-1.5 bg-[var(--bg-card)]/60 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Movement Stage</span>
@@ -844,7 +844,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                       handleUpdateStage(stages.length, 'targetWeight', nextWeight);
                     }
                   }}
-                  className="flex-1 py-2 rounded-xl border border-dashed border-[#272B30] hover:border-[#E11D48] text-xs font-bold text-[#E11D48] flex items-center justify-center gap-1.5 bg-[#1B1F23]/60 cursor-pointer"
+                  className="flex-1 py-2 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] text-xs font-bold text-[var(--primary)] flex items-center justify-center gap-1.5 bg-[var(--bg-card)]/60 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Weight Stage</span>
@@ -856,17 +856,17 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleAddStage(null)}
-                    className="py-2 rounded-xl border border-dashed border-[#272B30] hover:border-[#E11D48] text-xs font-bold text-[#F5F5F5] flex items-center justify-center gap-1 bg-[#1B1F23]/60 cursor-pointer"
+                    className="py-2 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] text-xs font-bold text-[var(--text-main)] flex items-center justify-center gap-1 bg-[var(--bg-card)]/60 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#E11D48]" />
+                    <Plus className="w-3.5 h-3.5 text-[var(--primary)]" />
                     <span>Exercise</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleAddStage(stages[0]?.exercise, 'Stage Variation')}
-                    className="py-2 rounded-xl border border-dashed border-[#272B30] hover:border-[#E11D48] text-xs font-bold text-[#F5F5F5] flex items-center justify-center gap-1 bg-[#1B1F23]/60 cursor-pointer"
+                    className="py-2 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] text-xs font-bold text-[var(--text-main)] flex items-center justify-center gap-1 bg-[var(--bg-card)]/60 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#E11D48]" />
+                    <Plus className="w-3.5 h-3.5 text-[var(--primary)]" />
                     <span>Stage Variation</span>
                   </button>
                 </div>
@@ -874,20 +874,20 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
             </div>
 
             {/* Technique Label & Name Customization */}
-            <div className="bg-[#14171A] border border-[#272B30] rounded-xl p-3 space-y-2.5">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 space-y-2.5">
               {/* Technique Suggestion Row */}
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[11px] font-bold text-[#9CA3AF]">
+                <span className="text-[11px] font-bold text-[var(--text-secondary)]">
                   Technique Recognition:
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-black text-[#E11D48] bg-[#E11D48]/15 border border-[#E11D48]/30 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-black text-[var(--primary)] bg-[var(--primary-subtle)] border border-[var(--primary-border)] px-2 py-0.5 rounded">
                     {techniqueLabel}
                   </span>
                   <button
                     type="button"
                     onClick={() => setIsEditingTechnique(!isEditingTechnique)}
-                    className="p-1 text-[#6B7280] hover:text-[#F5F5F5] cursor-pointer"
+                    className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
                     title="Edit technique label"
                   >
                     <Edit2 className="w-3 h-3" />
@@ -897,14 +897,14 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
 
               {/* Suggestion prompt if different from current label */}
               {currentSuggestion.label !== techniqueLabel && (
-                <div className="flex items-center justify-between bg-[#1B1F23] border border-amber-500/30 rounded-lg px-2.5 py-1.5 text-[11px]">
-                  <span className="text-amber-400 font-semibold">
+                <div className="flex items-center justify-between bg-[var(--bg-surface)] border border-amber-500/30 rounded-lg px-2.5 py-1.5 text-[11px]">
+                  <span className="text-amber-500 font-semibold">
                     Suggested: {currentSuggestion.label}
                   </span>
                   <button
                     type="button"
                     onClick={handleApplySuggestion}
-                    className="text-[10px] font-bold text-amber-400 hover:underline cursor-pointer"
+                    className="text-[10px] font-bold text-amber-500 hover:underline cursor-pointer"
                   >
                     Apply
                   </button>
@@ -919,14 +919,14 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                     value={techniqueLabel}
                     onChange={(e) => setTechniqueLabel(e.target.value)}
                     placeholder="Custom Combination, Superset, Drop Set, etc."
-                    className="w-full bg-[#1B1F23] border border-[#272B30] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:border-[#E11D48] focus:outline-none"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] focus:border-[var(--primary)] focus:outline-none"
                   />
                 </div>
               )}
 
               {/* Combination Name */}
               <div>
-                <label className="block text-[10px] font-bold text-[#9CA3AF] mb-1">
+                <label className="block text-[10px] font-bold text-[var(--text-secondary)] mb-1">
                   Combination Name
                 </label>
                 <input
@@ -934,7 +934,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                   value={combinationName}
                   onChange={(e) => setCombinationName(e.target.value)}
                   placeholder="e.g., Biceps Tri-Set"
-                  className="w-full bg-[#1B1F23] border border-[#272B30] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:border-[#E11D48] focus:outline-none font-bold"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] focus:border-[var(--primary)] focus:outline-none font-bold"
                 />
               </div>
 
@@ -944,16 +944,16 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                   type="checkbox"
                   checked={saveAsTemplate}
                   onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                  className="rounded border-[#272B30] text-[#E11D48] focus:ring-0 focus:ring-offset-0 bg-[#1B1F23] w-4 h-4"
+                  className="rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-0 focus:ring-offset-0 bg-[var(--bg-input)] w-4 h-4"
                 />
-                <span className="text-xs text-[#F5F5F5] font-medium">
+                <span className="text-xs text-[var(--text-main)] font-medium">
                   Save combination for future workouts
                 </span>
               </label>
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-2 border-t border-[#272B30] flex gap-2">
+            <div className="pt-2 border-t border-[var(--border-subtle)] flex gap-2">
               <Button
                 variant="secondary"
                 size="md"
@@ -981,15 +981,15 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
         {/* ============================================================ */}
         {screen === 'saved' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[#272B30] pb-2">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
               <button
                 onClick={() => setScreen('options')}
-                className="text-xs font-bold text-[#9CA3AF] hover:text-[#F5F5F5] flex items-center gap-1 cursor-pointer transition-colors"
+                className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back to Options</span>
               </button>
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-[var(--text-muted)]">
                 {savedTemplates.length} saved
               </span>
             </div>
@@ -998,22 +998,22 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
               {savedTemplates.map((template) => (
                 <div
                   key={template.id}
-                  className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3.5 space-y-2"
+                  className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30">
+                        <span className="text-[10px] font-black uppercase text-[var(--primary)] bg-[var(--primary-subtle)] px-1.5 py-0.2 rounded border border-[var(--primary-border)]">
                           {template.techniqueLabel || 'COMBINATION'}
                         </span>
-                        <h4 className="text-xs font-black text-[#F5F5F5]">
+                        <h4 className="text-xs font-black text-[var(--text-main)]">
                           {template.name}
                         </h4>
                       </div>
-                      <div className="text-[11px] text-[#9CA3AF] mt-1 font-medium">
+                      <div className="text-[11px] text-[var(--text-secondary)] mt-1 font-medium">
                         {template.stages.map((s) => s.exerciseName).join(' → ')}
                       </div>
-                      <div className="text-[10px] text-[#6B7280] mt-0.5">
+                      <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
                         {template.rounds} rounds • {template.stages.length} stages
                       </div>
                     </div>
@@ -1021,25 +1021,25 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                     <button
                       type="button"
                       onClick={() => deleteCombinationTemplate(userId, template.id)}
-                      className="p-1 text-[#6B7280] hover:text-[#EF4444] cursor-pointer"
+                      className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] cursor-pointer"
                       title="Delete template"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <div className="flex gap-2 pt-1 border-t border-[#272B30]/60">
+                  <div className="flex gap-2 pt-1 border-t border-[var(--border-subtle)]">
                     <button
                       type="button"
                       onClick={() => handleEditSavedTemplate(template)}
-                      className="flex-1 py-1.5 rounded-lg bg-[#14171A] hover:bg-[#272B30] text-[11px] font-bold text-[#9CA3AF] hover:text-[#F5F5F5] border border-[#272B30] transition-colors cursor-pointer"
+                      className="flex-1 py-1.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-card-hover)] text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)] transition-colors cursor-pointer"
                     >
                       Customize
                     </button>
                     <button
                       type="button"
                       onClick={() => handleUseSavedTemplate(template)}
-                      className="flex-1 py-1.5 rounded-lg bg-[#E11D48] hover:bg-[#F43F5E] text-[11px] font-black text-[#0B0D0F] transition-colors cursor-pointer"
+                      className="flex-1 py-1.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[11px] font-black text-white transition-colors cursor-pointer"
                     >
                       Use in Workout
                     </button>
@@ -1048,17 +1048,17 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
               ))}
 
               {savedTemplates.length === 0 && (
-                <div className="py-8 text-center text-xs text-[#9CA3AF] space-y-1">
-                  <Bookmark className="w-6 h-6 mx-auto text-[#6B7280] opacity-60" />
+                <div className="py-8 text-center text-xs text-[var(--text-secondary)] space-y-1">
+                  <Bookmark className="w-6 h-6 mx-auto text-[var(--text-muted)] opacity-60" />
                   <p>No saved combination templates yet.</p>
-                  <p className="text-[11px] text-[#6B7280]">
+                  <p className="text-[11px] text-[var(--text-muted)]">
                     Create a combination and check "Save combination for future workouts".
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="pt-2 border-t border-[#272B30] flex justify-end">
+            <div className="pt-2 border-t border-[var(--border-subtle)] flex justify-end">
               <Button variant="secondary" size="sm" onClick={handleClose}>
                 Close
               </Button>

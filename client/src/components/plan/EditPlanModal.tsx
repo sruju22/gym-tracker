@@ -63,25 +63,24 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
   };
 
   const handleAddMuscleGroup = () => {
-    const existing = currentDayConfig.muscleGroups;
-    if (existing.some((m) => m.name === selectedMuscleToAdd)) return;
+    const mgMeta = MUSCLE_GROUPS[selectedMuscleToAdd];
+    if (!mgMeta) return;
 
-    const mgInfo = MUSCLE_GROUPS[selectedMuscleToAdd];
-    const displayName = mgInfo ? mgInfo.name : selectedMuscleToAdd;
-    const allSubAreas = mgInfo ? mgInfo.areas.map((s) => s.id) : [];
-
-    const newMuscleConfig = {
-      name: selectedMuscleToAdd,
-      displayName,
-      subAreas: allSubAreas,
-      exerciseCount: 3,
-    };
+    const alreadyAdded = currentDayConfig.muscleGroups.some((m) => m.name === selectedMuscleToAdd);
+    if (alreadyAdded) return;
 
     setEditedPlan((prev) => ({
       ...prev,
       [activeDay]: {
         ...prev[activeDay],
-        muscleGroups: [...prev[activeDay].muscleGroups, newMuscleConfig],
+        muscleGroups: [
+          ...prev[activeDay].muscleGroups,
+          {
+            name: selectedMuscleToAdd,
+            displayName: mgMeta.name.toUpperCase(),
+            subAreas: mgMeta.areas.map((a) => a.id),
+          },
+        ],
       },
     }));
   };
@@ -91,7 +90,7 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
       ...prev,
       [activeDay]: {
         ...prev[activeDay],
-        muscleGroups: prev[activeDay].muscleGroups.filter((_, i) => i !== index),
+        muscleGroups: prev[activeDay].muscleGroups.filter((_, idx) => idx !== index),
       },
     }));
   };
@@ -122,10 +121,10 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
                 onClick={() => setActiveDay(id)}
                 className={`flex-1 min-w-[44px] py-2 px-1 rounded-xl text-center transition-all cursor-pointer border ${
                   isActive
-                    ? 'bg-[#E11D48] text-[#FFFFFF] border-[#F43F5E] font-black shadow-sm shadow-[#E11D48]/20'
+                    ? 'bg-[var(--primary)] text-white border-[var(--primary)] font-black shadow-sm shadow-red-500/20'
                     : dayCfg.isRest
-                    ? 'bg-[#14171A] text-[#6B7280] border-[#272B30]'
-                    : 'bg-[#1B1F23] text-[#F5F5F5] border-[#272B30] hover:bg-[#23282D]'
+                    ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)]'
+                    : 'bg-[var(--bg-card)] text-[var(--text-main)] border-[var(--border-subtle)] hover:bg-[var(--bg-card-hover)]'
                 }`}
               >
                 <div className="text-[10px] uppercase font-bold tracking-wider">{shortLabel}</div>
@@ -138,10 +137,10 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
         </div>
 
         {/* Day Config Card */}
-        <div className="bg-[#14171A] border border-[#272B30] rounded-2xl p-4 space-y-4">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
-              <label className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+              <label className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
                 Workout Name ({activeDay.toUpperCase()})
               </label>
               <input
@@ -149,7 +148,7 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
                 value={currentDayConfig.name}
                 onChange={(e) => handleUpdateDayName(e.target.value)}
                 disabled={currentDayConfig.isRest}
-                className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-sm font-bold text-[#F5F5F5] focus:outline-none focus:border-[#E11D48] disabled:opacity-50"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] disabled:opacity-50"
                 placeholder="e.g. Push A"
               />
             </div>
@@ -158,8 +157,8 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
               onClick={handleToggleRest}
               className={`px-3 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer mt-5 ${
                 currentDayConfig.isRest
-                  ? 'bg-[#E11D48]/15 text-[#E11D48] border-[#E11D48]/40'
-                  : 'bg-[#1B1F23] text-[#9CA3AF] border-[#272B30] hover:text-[#F5F5F5]'
+                  ? 'bg-[var(--primary-subtle)] text-[var(--primary)] border-[var(--primary-border)]'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-main)]'
               }`}
             >
               {currentDayConfig.isRest ? 'Rest Day (ON)' : 'Set Rest Day'}
@@ -169,7 +168,7 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
           {!currentDayConfig.isRest ? (
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-[#F5F5F5] uppercase tracking-wider">
+                <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">
                   Assigned Muscle Groups ({currentDayConfig.muscleGroups.length})
                 </span>
               </div>
@@ -178,18 +177,18 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
                 {currentDayConfig.muscleGroups.map((mg, index) => (
                   <div
                     key={`${mg.name}_${index}`}
-                    className="flex items-center justify-between bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2.5"
+                    className="flex items-center justify-between bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl px-3 py-2.5"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <Dumbbell className="w-4 h-4 text-[#E11D48]" />
-                      <span className="text-xs font-bold text-[#F5F5F5] capitalize truncate">
+                      <Dumbbell className="w-4 h-4 text-[var(--primary)]" />
+                      <span className="text-xs font-bold text-[var(--text-main)] capitalize truncate">
                         {mg.displayName || mg.name}
                       </span>
                     </div>
 
                     <button
                       onClick={() => handleRemoveMuscleGroup(index)}
-                      className="p-1.5 text-[#9CA3AF] hover:text-[#EF4444] transition-colors cursor-pointer"
+                      className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] transition-colors cursor-pointer"
                       title="Remove muscle group"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -198,44 +197,54 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
                 ))}
 
                 {currentDayConfig.muscleGroups.length === 0 && (
-                  <div className="text-center py-4 text-xs text-[#9CA3AF] italic">
-                    No muscle groups assigned yet. Add one below.
+                  <div className="text-center py-4 text-xs text-[var(--text-secondary)] italic">
+                    No muscle groups assigned. Add muscles below to build this day's routine.
                   </div>
                 )}
               </div>
 
-              {/* Add Muscle Group Control */}
-              <div className="flex gap-2 pt-2 border-t border-[#272B30]">
+              {/* Add Muscle Section */}
+              <div className="flex gap-2 pt-2 border-t border-[var(--border-subtle)]">
                 <select
                   value={selectedMuscleToAdd}
                   onChange={(e) => setSelectedMuscleToAdd(e.target.value as MuscleGroup)}
-                  className="flex-1 bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs font-bold text-[#F5F5F5] focus:outline-none focus:border-[#E11D48] capitalize"
+                  className="flex-1 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] capitalize"
                 >
-                  {Object.values(MUSCLE_GROUPS).map((mg) => (
-                    <option key={mg.id} value={mg.id}>
-                      {mg.name}
+                  {Object.keys(MUSCLE_GROUPS).map((mgKey) => (
+                    <option key={mgKey} value={mgKey}>
+                      {MUSCLE_GROUPS[mgKey as MuscleGroup].name}
                     </option>
                   ))}
                 </select>
 
-                <Button variant="secondary" size="sm" onClick={handleAddMuscleGroup} className="gap-1">
-                  <Plus className="w-3.5 h-3.5 text-[#E11D48]" />
-                  Add
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleAddMuscleGroup}
+                  className="gap-1 px-3 text-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Muscle</span>
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="text-center py-6 text-xs text-[#9CA3AF] bg-[#1B1F23]/50 rounded-xl border border-[#272B30]">
-              😴 This day is marked as Rest Day. No muscles assigned.
+            <div className="py-6 text-center text-xs text-[var(--text-secondary)]">
+              This day is designated as a complete rest day for recovery.
             </div>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between gap-2 pt-2">
-          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5 text-xs text-[#9CA3AF]">
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] gap-1.5"
+          >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset Default
+            <span>Reset Split</span>
           </Button>
 
           <div className="flex gap-2">
@@ -243,8 +252,8 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
               Cancel
             </Button>
             <Button variant="primary" size="sm" onClick={handleSave} className="gap-1.5">
-              <Save className="w-4 h-4" />
-              Save Plan
+              <Save className="w-3.5 h-3.5" />
+              <span>Save Changes</span>
             </Button>
           </div>
         </div>

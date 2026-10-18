@@ -6,6 +6,7 @@ interface CardProps {
   onClick?: () => void;
   hoverable?: boolean;
   bordered?: boolean;
+  variant?: 'surface' | 'elevated' | 'subtle';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -14,11 +15,18 @@ export const Card: React.FC<CardProps> = ({
   onClick,
   hoverable = false,
   bordered = true,
+  variant = 'surface',
 }) => {
-  const baseStyle = 'bg-[#14171A] rounded-2xl p-4 transition-all duration-150 text-[#F5F5F5]';
-  const borderStyle = bordered ? 'border border-[#272B30] shadow-sm' : '';
+  const variantStyles = {
+    surface: 'bg-[var(--bg-surface)]',
+    elevated: 'bg-[var(--bg-card)] shadow-sm',
+    subtle: 'bg-[var(--bg-card-subtle)]',
+  };
+
+  const baseStyle = `${variantStyles[variant]} rounded-2xl p-4 transition-all duration-150 text-[var(--text-main)]`;
+  const borderStyle = bordered ? 'border border-[var(--border-subtle)]' : '';
   const hoverStyle = hoverable
-    ? 'hover:border-[#383D43] hover:shadow-lg active:scale-[0.99] cursor-pointer'
+    ? 'hover:border-[var(--border-strong)] hover:shadow-md active:scale-[0.99] cursor-pointer'
     : '';
 
   return (

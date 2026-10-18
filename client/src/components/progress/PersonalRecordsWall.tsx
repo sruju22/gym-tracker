@@ -276,7 +276,7 @@ export const PersonalRecordsWall: React.FC<PersonalRecordsWallProps> = ({
   };
 
   return (
-    <Card className="flex-1 flex flex-col justify-between bg-[#14171A] border-[#272B30] p-4 sm:p-5 rounded-2xl min-h-0 shadow-sm">
+    <Card className="flex-1 flex flex-col justify-between bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl min-h-0 shadow-sm">
       <div>
         {/* Section Header */}
         <div className="flex items-center justify-between mb-4">
@@ -285,11 +285,11 @@ export const PersonalRecordsWall: React.FC<PersonalRecordsWallProps> = ({
               <Award className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-black text-[#F5F5F5] uppercase tracking-wide flex items-center gap-1.5">
+              <h3 className="text-xs sm:text-sm font-black text-[var(--text-main)] uppercase tracking-wide flex items-center gap-1.5">
                 <span>Personal Records</span>
-                <span className="text-[#9CA3AF] font-bold">({uniquePRs.length})</span>
+                <span className="text-[var(--text-secondary)] font-bold">({uniquePRs.length})</span>
               </h3>
-              <div className="text-[10px] text-[#6B7280] font-semibold">
+              <div className="text-[10px] text-[var(--text-muted)] font-semibold">
                 {groupedRecords.length} muscle {groupedRecords.length === 1 ? 'group' : 'groups'}
               </div>
             </div>
@@ -299,7 +299,7 @@ export const PersonalRecordsWall: React.FC<PersonalRecordsWallProps> = ({
             {groupedRecords.length > 0 && (
               <button
                 onClick={toggleAll}
-                className="text-[10px] font-bold text-[#E11D48] hover:text-[#F43F5E] px-2 py-1 rounded-md transition-colors cursor-pointer"
+                className="text-[10px] font-bold text-[var(--primary)] hover:opacity-80 px-2 py-1 rounded-md transition-opacity cursor-pointer"
               >
                 {allExpanded ? 'Collapse All' : 'Expand All'}
               </button>
@@ -316,56 +316,56 @@ export const PersonalRecordsWall: React.FC<PersonalRecordsWallProps> = ({
             return (
               <div
                 key={group.key}
-                className="rounded-xl border border-[#272B30] overflow-hidden bg-[#1B1F23]/40 transition-colors"
+                className="rounded-xl border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-surface)]/40 transition-colors"
               >
                 {/* Collapsible Group Header Button */}
                 <button
                   onClick={() => toggleGroup(group.key)}
-                  className="w-full px-3.5 py-3 flex items-center justify-between bg-[#1B1F23] hover:bg-[#20252A] transition-colors cursor-pointer text-left select-none"
+                  className="w-full px-3.5 py-3 flex items-center justify-between bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer text-left select-none"
                   aria-expanded={isExpanded}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-[#E11D48] shadow-sm shadow-[#E11D48]/50 shrink-0" />
-                    <span className="text-xs font-black text-[#F5F5F5] uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)] shadow-sm shadow-[var(--primary)]/40 shrink-0" />
+                    <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">
                       {group.name}
                     </span>
-                    <span className="text-xs text-[#9CA3AF] font-extrabold uppercase tracking-tight">
+                    <span className="text-xs text-[var(--text-secondary)] font-extrabold uppercase tracking-tight">
                       · {group.records.length} {group.records.length === 1 ? 'RECORD' : 'RECORDS'}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1 text-[#9CA3AF] shrink-0 ml-2">
+                  <div className="flex items-center gap-1 text-[var(--text-secondary)] shrink-0 ml-2">
                     {isExpanded ? (
-                      <ChevronDown className="w-4 h-4 text-[#E11D48]" />
+                      <ChevronDown className="w-4 h-4 text-[var(--primary)]" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-[#6B7280]" />
+                      <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
                     )}
                   </div>
                 </button>
 
                 {/* Expanded Records List */}
                 {isExpanded && (
-                  <div className="p-2 space-y-2 bg-[#14171A]/80 border-t border-[#272B30]/80">
+                  <div className="p-2 space-y-2 bg-[var(--bg-card)]/80 border-t border-[var(--border-subtle)]/80">
                     {group.records.map((pr) => (
                       <div
                         key={pr.id}
-                        className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 flex items-center justify-between hover:border-[#272B30]/80 transition-colors"
+                        className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-3 flex items-center justify-between hover:border-[var(--border-subtle)]/80 transition-colors"
                       >
                         <div className="min-w-0 pr-2">
-                          <div className="text-xs font-black text-[#F5F5F5] truncate">
+                          <div className="text-xs font-black text-[var(--text-main)] truncate">
                             {pr.exerciseName}
                           </div>
                           <div className="text-[11px] text-amber-400 font-semibold truncate">
                             {pr.weight} kg × {pr.reps} reps{' '}
-                            <span className="text-[#9CA3AF] font-normal">
+                            <span className="text-[var(--text-secondary)] font-normal">
                               (Est. 1RM {pr.estimated1RM} kg)
                             </span>
                           </div>
                         </div>
 
                         <div className="text-right shrink-0">
-                          <div className="text-sm font-extrabold text-[#E11D48]">{pr.weight} kg</div>
-                          <div className="text-[10px] text-[#6B7280]">
+                          <div className="text-sm font-extrabold text-[var(--primary)]">{pr.weight} kg</div>
+                          <div className="text-[10px] text-[var(--text-muted)]">
                             {formatDateShort(pr.date)}
                           </div>
                         </div>
@@ -379,8 +379,8 @@ export const PersonalRecordsWall: React.FC<PersonalRecordsWallProps> = ({
 
           {/* Empty State when no personal records exist */}
           {groupedRecords.length === 0 && (
-            <div className="text-center py-8 px-4 border border-dashed border-[#272B30] rounded-xl bg-[#14171A]">
-              <p className="text-xs text-[#9CA3AF] italic">
+            <div className="text-center py-8 px-4 border border-dashed border-[var(--border-subtle)] rounded-xl bg-[var(--bg-card)]">
+              <p className="text-xs text-[var(--text-secondary)] italic">
                 No Personal Records recorded yet. Complete a workout to log PRs!
               </p>
             </div>

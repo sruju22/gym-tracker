@@ -4,6 +4,14 @@ export interface IUser {
   name: string;
   email: string;
   passwordHash: string;
+  onboardingCompleted?: boolean;
+  fitnessGoal?: string;
+  experienceLevel?: string;
+  trainingDaysPerWeek?: number;
+  equipmentPreference?: string;
+  heightCm?: number;
+  currentWeight?: number;
+  weightUnit?: 'kg' | 'lbs';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -32,6 +40,39 @@ const userSchema = new Schema<IUserDocument>(
     passwordHash: {
       type: String,
       required: [true, 'Password is required'],
+    },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    fitnessGoal: {
+      type: String,
+      default: '',
+    },
+    experienceLevel: {
+      type: String,
+      default: '',
+    },
+    trainingDaysPerWeek: {
+      type: Number,
+      default: 4,
+    },
+    equipmentPreference: {
+      type: String,
+      default: '',
+    },
+    heightCm: {
+      type: Number,
+      default: null,
+    },
+    currentWeight: {
+      type: Number,
+      default: null,
+    },
+    weightUnit: {
+      type: String,
+      enum: ['kg', 'lbs'],
+      default: 'kg',
     },
   },
   {

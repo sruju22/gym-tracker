@@ -33,12 +33,12 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
   const displayTitle = sectionTitle || muscleGroup;
 
   return (
-    <Card className="mb-3 border border-[#272B30] bg-[#1B1F23]/80 p-3">
+    <Card className="mb-3 border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
+        <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
           {displayTitle} Target Areas
         </span>
-        <span className="text-xs font-semibold text-[#6B7280]">
+        <span className="text-xs font-semibold text-[var(--text-muted)]">
           {coverage.coveredAreas}/{coverage.totalAreas} Covered
         </span>
       </div>
@@ -50,14 +50,14 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
             key={item.area}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
               item.covered
-                ? 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/40 font-extrabold'
-                : 'bg-[#14171A] text-[#6B7280] border-[#272B30]'
+                ? 'bg-[var(--success-subtle)] text-[var(--success)] border-[var(--success-border)] font-extrabold'
+                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)]'
             }`}
           >
             {item.covered ? (
-              <Check className="w-3.5 h-3.5 text-[#22C55E] stroke-[3]" />
+              <Check className="w-3.5 h-3.5 text-[var(--success)] stroke-[3]" />
             ) : (
-              <X className="w-3 h-3 text-[#6B7280]" />
+              <X className="w-3 h-3 text-[var(--text-muted)]" />
             )}
             <span>{item.displayName}</span>
           </div>

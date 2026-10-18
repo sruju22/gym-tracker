@@ -113,35 +113,35 @@ export const ExerciseSelectModal: React.FC<ExerciseSelectModalProps> = ({
                   onSelect(ex);
                   onClose();
                 }}
-                className="w-full text-left p-3 rounded-xl bg-[#1B1F23] hover:bg-[#272B30] border border-[#272B30] hover:border-[#E11D48]/50 flex items-center justify-between transition-colors cursor-pointer"
+                className="w-full text-left p-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--primary)] flex items-center justify-between transition-colors cursor-pointer"
               >
                 <div className="min-w-0 pr-2">
-                  <div className="text-xs font-bold text-[#F5F5F5] truncate">{ex.name}</div>
-                  <div className="text-[11px] text-[#9CA3AF] capitalize flex items-center gap-1.5 mt-0.5">
+                  <div className="text-xs font-bold text-[var(--text-main)] truncate">{ex.name}</div>
+                  <div className="text-[11px] text-[var(--text-secondary)] capitalize flex items-center gap-1.5 mt-0.5">
                     <span>{ex.primaryMuscle}</span>
                     <span>•</span>
-                    <span className="text-[#6B7280]">{ex.equipment || 'Standard'}</span>
+                    <span className="text-[var(--text-muted)]">{ex.equipment || 'Standard'}</span>
                     {ex.isCustom && (
-                      <span className="text-[9px] font-bold text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded">
+                      <span className="text-[9px] font-bold text-[var(--primary)] bg-[var(--primary-subtle)] border border-[var(--primary-border)] px-1.5 py-0.2 rounded">
                         CUSTOM
                       </span>
                     )}
                   </div>
                 </div>
 
-                <span className="text-xs font-bold text-[#E11D48] bg-[#E11D48]/10 px-2 py-1 rounded-md shrink-0">
+                <span className="text-xs font-bold text-[var(--primary)] bg-[var(--primary-subtle)] px-2 py-1 rounded-md shrink-0">
                   Select
                 </span>
               </button>
             ))}
 
             {filteredExercises.length === 0 && (
-              <div className="py-8 text-center text-xs text-[#9CA3AF] space-y-2">
-                <Dumbbell className="w-6 h-6 mx-auto text-[#6B7280] opacity-60" />
+              <div className="py-8 text-center text-xs text-[var(--text-secondary)] space-y-2">
+                <Dumbbell className="w-6 h-6 mx-auto text-[var(--text-muted)] opacity-60" />
                 <p>No matching exercises found.</p>
                 <button
                   onClick={() => setShowCreateCustom(true)}
-                  className="text-xs font-bold text-[#E11D48] hover:underline cursor-pointer"
+                  className="text-xs font-bold text-[var(--primary)] hover:underline cursor-pointer"
                 >
                   + Create custom exercise
                 </button>
@@ -149,17 +149,17 @@ export const ExerciseSelectModal: React.FC<ExerciseSelectModalProps> = ({
             )}
           </div>
 
-          <div className="pt-2 border-t border-[#272B30] flex items-center justify-between text-xs">
+          <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
             <button
               onClick={() => setShowCreateCustom(true)}
-              className="text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] flex items-center gap-1 cursor-pointer"
+              className="text-xs font-bold text-[var(--primary)] hover:opacity-80 flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Custom Exercise</span>
             </button>
             <button
               onClick={onClose}
-              className="text-xs text-[#9CA3AF] hover:text-[#F5F5F5] cursor-pointer"
+              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] cursor-pointer"
             >
               Cancel
             </button>
@@ -169,24 +169,24 @@ export const ExerciseSelectModal: React.FC<ExerciseSelectModalProps> = ({
         /* Inline Custom Exercise Creator */
         <form onSubmit={handleCreateCustomSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-bold text-[#F5F5F5] mb-1">Exercise Name</label>
+            <label className="block text-xs font-bold text-[var(--text-main)] mb-1">Exercise Name</label>
             <input
               type="text"
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
               placeholder="e.g., Incline Hammer Curl"
               required
-              className="w-full bg-[#14171A] border border-[#272B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:border-[#E11D48] focus:outline-none"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-main)] focus:border-[var(--primary)] focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-bold text-[#9CA3AF] mb-1">Muscle Group</label>
+              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Muscle Group</label>
               <select
                 value={customMuscle}
                 onChange={(e) => setCustomMuscle(e.target.value as MuscleGroup)}
-                className="w-full bg-[#14171A] border border-[#272B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] capitalize focus:border-[#E11D48] focus:outline-none"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-main)] capitalize focus:border-[var(--primary)] focus:outline-none"
               >
                 {Object.values(MUSCLE_GROUPS).map((mg) => (
                   <option key={mg.id} value={mg.id}>
@@ -197,11 +197,11 @@ export const ExerciseSelectModal: React.FC<ExerciseSelectModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#9CA3AF] mb-1">Equipment</label>
+              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Equipment</label>
               <select
                 value={customEquipment}
                 onChange={(e) => setCustomEquipment(e.target.value as Equipment)}
-                className="w-full bg-[#14171A] border border-[#272B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] capitalize focus:border-[#E11D48] focus:outline-none"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-main)] capitalize focus:border-[var(--primary)] focus:outline-none"
               >
                 <option value="dumbbell">Dumbbell</option>
                 <option value="barbell">Barbell</option>
@@ -219,14 +219,14 @@ export const ExerciseSelectModal: React.FC<ExerciseSelectModalProps> = ({
             <button
               type="button"
               onClick={() => setShowCreateCustom(false)}
-              className="flex-1 py-2 text-xs font-bold text-[#9CA3AF] bg-[#1B1F23] hover:bg-[#272B30] rounded-xl cursor-pointer"
+              className="flex-1 py-2 text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] rounded-xl cursor-pointer"
             >
               Back
             </button>
             <button
               type="submit"
               disabled={!customName.trim()}
-              className="flex-1 py-2 text-xs font-bold text-[#0B0D0F] bg-[#E11D48] hover:bg-[#F43F5E] disabled:opacity-50 rounded-xl cursor-pointer"
+              className="flex-1 py-2 text-xs font-bold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50 rounded-xl cursor-pointer"
             >
               Create & Select
             </button>

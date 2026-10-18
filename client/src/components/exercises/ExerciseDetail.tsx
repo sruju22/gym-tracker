@@ -29,11 +29,11 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={exercise.name}>
-      <div className="space-y-3 text-[#F5F5F5]">
+      <div className="space-y-3 text-[var(--text-main)]">
         {/* Cover / Demonstration images */}
         {exercise.imageEnd ? (
           <div className="grid grid-cols-2 gap-2 aspect-video">
-            <div className="relative rounded-xl overflow-hidden bg-[#1B1F23] border border-[#272B30]">
+            <div className="relative rounded-xl overflow-hidden bg-[var(--bg-card)] border border-[var(--border-subtle)]">
               <img
                 src={exercise.imageUrl}
                 alt={`${exercise.name} start position`}
@@ -43,11 +43,11 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <span className="absolute bottom-1.5 left-1.5 bg-[#0B0D0F]/85 text-[#F5F5F5] text-[10px] font-bold px-1.5 py-0.5 rounded border border-[#272B30]">
+              <span className="absolute bottom-1.5 left-1.5 bg-[var(--bg-surface)]/90 backdrop-blur-sm text-[var(--text-main)] text-[10px] font-bold px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
                 Start
               </span>
             </div>
-            <div className="relative rounded-xl overflow-hidden bg-[#1B1F23] border border-[#272B30]">
+            <div className="relative rounded-xl overflow-hidden bg-[var(--bg-card)] border border-[var(--border-subtle)]">
               <img
                 src={exercise.imageEnd}
                 alt={`${exercise.name} end position`}
@@ -57,13 +57,13 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <span className="absolute bottom-1.5 left-1.5 bg-[#0B0D0F]/85 text-[#F5F5F5] text-[10px] font-bold px-1.5 py-0.5 rounded border border-[#272B30]">
+              <span className="absolute bottom-1.5 left-1.5 bg-[var(--bg-surface)]/90 backdrop-blur-sm text-[var(--text-main)] text-[10px] font-bold px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
                 End
               </span>
             </div>
           </div>
         ) : (
-          <div className="relative aspect-video rounded-xl overflow-hidden bg-[#1B1F23] border border-[#272B30]">
+          <div className="relative aspect-video rounded-xl overflow-hidden bg-[var(--bg-card)] border border-[var(--border-subtle)]">
             <img
               src={exercise.imageUrl}
               alt={exercise.name}
@@ -91,22 +91,22 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
             {exercise.difficulty.toUpperCase()}
           </Badge>
           {exercise.isCustom && (
-            <Badge variant="primary" size="md" className="bg-[#E11D48]/20 text-[#E11D48] border-[#E11D48]">
+            <Badge variant="primary" size="md" className="bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30">
               CUSTOM
             </Badge>
           )}
         </div>
 
         {/* Muscle Emphasis sub-areas */}
-        <div className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-2.5">
-          <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2.5">
+          <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1">
             Targeted Sub-Areas
           </div>
           <div className="flex flex-wrap gap-1">
             {exercise.muscleAreaEmphasis.map((area) => (
               <span
                 key={area}
-                className="bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/40 text-xs font-semibold px-2 py-0.5 rounded"
+                className="bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30 text-xs font-semibold px-2 py-0.5 rounded"
               >
                 {getMuscleAreaName(area)}
               </span>
@@ -116,13 +116,13 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
         {/* Instructions */}
         <div>
-          <h4 className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 flex items-center gap-1">
-            <BookOpen className="w-3.5 h-3.5 text-[#E11D48]" />
+          <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <BookOpen className="w-3.5 h-3.5 text-[var(--primary)]" />
             <span>Instructions</span>
           </h4>
-          <ol className="space-y-1.5 text-xs text-[#F5F5F5] list-decimal list-inside pl-1">
+          <ol className="space-y-1.5 text-xs text-[var(--text-main)] list-decimal list-inside pl-1">
             {exercise.instructions.map((step, idx) => (
-              <li key={idx} className="leading-relaxed bg-[#1B1F23] p-2.5 rounded-xl border border-[#272B30]">
+              <li key={idx} className="leading-relaxed bg-[var(--bg-card)] p-2.5 rounded-xl border border-[var(--border-subtle)]">
                 {step}
               </li>
             ))}
@@ -131,7 +131,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
         {/* Actions for Custom Exercise */}
         {exercise.isCustom && (
-          <div className="flex gap-2 pt-2 border-t border-[#272B30]">
+          <div className="flex gap-2 pt-2 border-t border-[var(--border-subtle)]">
             {onEditCustom && (
               <Button
                 variant="secondary"
@@ -143,7 +143,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 }}
                 className="gap-1.5"
               >
-                <Edit2 className="w-4 h-4 text-[#E11D48]" />
+                <Edit2 className="w-4 h-4 text-[var(--primary)]" />
                 <span>Edit Custom Exercise</span>
               </Button>
             )}
@@ -180,8 +180,8 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           >
             {isInWorkout ? (
               <>
-                <Check className="w-4 h-4 stroke-[3] text-[#22C55E]" />
-                <span className="text-[#22C55E]">Added to Current Workout</span>
+                <Check className="w-4 h-4 stroke-[3] text-[var(--success)]" />
+                <span className="text-[var(--success)]">Added to Current Workout</span>
               </>
             ) : (
               <>

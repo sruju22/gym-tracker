@@ -1,4 +1,3 @@
-import { WorkoutSession } from '../types';
 import { getStoredToken } from './authApi';
 import { API_BASE_URL } from './config';
 

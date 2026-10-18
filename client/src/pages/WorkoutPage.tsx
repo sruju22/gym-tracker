@@ -230,46 +230,46 @@ export const WorkoutPage: React.FC = () => {
         <div className="space-y-4 pb-12">
           <Header title="Workout Session" subtitle="Today's Workout Completed" />
 
-          <Card className="w-full border border-[#22C55E]/40 bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+          <Card className="w-full border border-[var(--success-border)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-2xl shadow-sm text-[var(--text-main)]">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
+              <span className="text-[11px] sm:text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">
                 TODAY'S WORKOUT · {formatDayName(todayDay).toUpperCase()}
               </span>
-              <span className="text-[10px] font-black text-[#22C55E] bg-[#22C55E]/15 px-2.5 py-1 rounded-md border border-[#22C55E]/40 uppercase tracking-wider flex items-center gap-1">
+              <span className="text-[10px] font-black text-[var(--success)] bg-[var(--success-subtle)] px-2.5 py-1 rounded-md border border-[var(--success-border)] uppercase tracking-wider flex items-center gap-1">
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
                 COMPLETED
               </span>
             </div>
 
             <div className="mb-4">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-1 flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-1 flex items-center gap-2">
                 <span>{todayCompleted.workoutName || todayConfig.name}</span>
               </h2>
-              <div className="text-xs font-bold text-[#22C55E] flex items-center gap-1.5">
+              <div className="text-xs font-bold text-[var(--success)] flex items-center gap-1.5">
                 <span>You're done for today!</span>
                 {finishedTime && (
-                  <span className="text-[#9CA3AF] font-medium">· Finished at {finishedTime}</span>
+                  <span className="text-[var(--text-secondary)] font-medium">· Finished at {finishedTime}</span>
                 )}
               </div>
             </div>
 
             {/* Key Metrics */}
-            <div className="grid grid-cols-3 gap-2 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-center mb-5">
+            <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 text-center mb-5">
               <div>
-                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Exercises</div>
-                <div className="text-base sm:text-lg font-black text-[#F5F5F5]">
+                <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Exercises</div>
+                <div className="text-base sm:text-lg font-black text-[var(--text-main)]">
                   {todayCompleted.exercises.length}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Sets Done</div>
-                <div className="text-base sm:text-lg font-black text-[#F5F5F5]">
+                <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Sets Done</div>
+                <div className="text-base sm:text-lg font-black text-[var(--text-main)]">
                   {todayCompleted.totalSets}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Total Volume</div>
-                <div className="text-base sm:text-lg font-black text-[#E11D48]">
+                <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Total Volume</div>
+                <div className="text-base sm:text-lg font-black text-[var(--primary)]">
                   {todayCompleted.totalVolume} kg
                 </div>
               </div>
@@ -282,9 +282,9 @@ export const WorkoutPage: React.FC = () => {
                 size="md"
                 fullWidth
                 onClick={() => startEditingWorkout(userId, todayCompleted)}
-                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px] border-[#272B30] hover:border-[#E11D48]/60 hover:text-[#F5F5F5]"
+                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px]"
               >
-                <Edit3 className="w-4 h-4 text-[#E11D48]" />
+                <Edit3 className="w-4 h-4 text-[var(--primary)]" />
                 <span>Edit Workout</span>
               </Button>
 
@@ -293,18 +293,18 @@ export const WorkoutPage: React.FC = () => {
                 size="md"
                 fullWidth
                 onClick={() => setIsReviewOpen(true)}
-                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px] border-[#272B30] hover:border-[#272B30] hover:text-[#F5F5F5]"
+                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px]"
               >
-                <Eye className="w-4 h-4 text-[#9CA3AF]" />
+                <Eye className="w-4 h-4 text-[var(--text-secondary)]" />
                 <span>Review Details</span>
               </Button>
             </div>
 
             {/* Clear Secondary Action: Start another workout session without overwriting */}
-            <div className="text-center pt-2.5 border-t border-[#272B30]/60">
+            <div className="text-center pt-2.5 border-t border-[var(--border-subtle)]">
               <button
                 onClick={() => startCustomWorkout(userId, ['chest'])}
-                className="text-[11px] font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer"
+                className="text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors cursor-pointer"
               >
                 + Start another workout session today
               </button>
@@ -318,18 +318,18 @@ export const WorkoutPage: React.FC = () => {
             title={`Today's Workout — ${(todayCompleted.workoutName || todayConfig.name).toUpperCase()}`}
           >
             <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-center">
+              <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 text-center">
                 <div>
-                  <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Exercises</div>
-                  <div className="text-sm font-black text-[#F5F5F5]">{todayCompleted.exercises.length}</div>
+                  <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Exercises</div>
+                  <div className="text-sm font-black text-[var(--text-main)]">{todayCompleted.exercises.length}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Total Sets</div>
-                  <div className="text-sm font-black text-[#F5F5F5]">{todayCompleted.totalSets}</div>
+                  <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Total Sets</div>
+                  <div className="text-sm font-black text-[var(--text-main)]">{todayCompleted.totalSets}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Volume</div>
-                  <div className="text-sm font-black text-[#E11D48]">{todayCompleted.totalVolume} kg</div>
+                  <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Volume</div>
+                  <div className="text-sm font-black text-[var(--primary)]">{todayCompleted.totalVolume} kg</div>
                 </div>
               </div>
 
@@ -338,18 +338,18 @@ export const WorkoutPage: React.FC = () => {
                   const hasNestedStages = ex.sets && ex.sets.some((s) => s.stages && s.stages.length > 0);
 
                   return (
-                    <div key={ex.id || idx} className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3">
-                      <div className="text-xs font-bold text-[#F5F5F5] mb-1.5 flex items-center justify-between">
+                    <div key={ex.id || idx} className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3">
+                      <div className="text-xs font-bold text-[var(--text-main)] mb-1.5 flex items-center justify-between">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="truncate">{ex.combinationName || ex.exercise.name}</span>
                           {ex.stageDescription && (
-                            <span className="text-[10px] text-[#9CA3AF] font-normal">
+                            <span className="text-[10px] text-[var(--text-secondary)] font-normal">
                               ({ex.stageDescription})
                             </span>
                           )}
                         </div>
                         {ex.combinationName && (
-                          <span className="text-[9px] font-black uppercase text-[#E11D48] bg-[#E11D48]/15 px-1.5 py-0.2 rounded border border-[#E11D48]/30 shrink-0">
+                          <span className="text-[9px] font-black uppercase text-[var(--primary)] bg-[var(--primary-subtle)] px-1.5 py-0.2 rounded border border-[var(--primary-border)] shrink-0">
                             {ex.techniqueLabel || 'COMBINATION'}
                           </span>
                         )}
@@ -358,18 +358,18 @@ export const WorkoutPage: React.FC = () => {
                       {hasNestedStages ? (
                         <div className="space-y-1.5 mt-2">
                           {ex.sets.map((s) => (
-                            <div key={s.id || s.setNumber} className="bg-[#14171A] border border-[#272B30] rounded-lg p-2">
-                              <div className="text-[11px] font-black text-[#F5F5F5] mb-1">
-                                Set {s.setNumber} {s.completed ? <span className="text-[#22C55E]">✓</span> : ''}
+                            <div key={s.id || s.setNumber} className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg p-2">
+                              <div className="text-[11px] font-black text-[var(--text-main)] mb-1">
+                                Set {s.setNumber} {s.completed ? <span className="text-[var(--success)]">✓</span> : ''}
                               </div>
                               <div className="space-y-1 pl-1">
                                 {(s.stages || []).map((st, stIdx) => (
                                   <div key={st.id || stIdx} className="flex items-center justify-between text-[11px]">
-                                    <span className="text-[#9CA3AF] truncate mr-2">
+                                    <span className="text-[var(--text-secondary)] truncate mr-2">
                                       Stage {st.stageOrder || stIdx + 1}: {st.exerciseName}{' '}
                                       {st.movementDescription ? `[${st.movementDescription}]` : ''}
                                     </span>
-                                    <span className={st.completed ? 'text-[#22C55E] font-bold shrink-0' : 'text-[#6B7280] shrink-0'}>
+                                    <span className={st.completed ? 'text-[var(--success)] font-bold shrink-0' : 'text-[var(--text-muted)] shrink-0'}>
                                       {st.weight ?? 0}kg × {st.reps ?? 0}
                                     </span>
                                   </div>
@@ -385,8 +385,8 @@ export const WorkoutPage: React.FC = () => {
                               key={sIdx}
                               className={`border px-2 py-0.5 rounded text-[11px] font-semibold ${
                                 s.completed
-                                  ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
-                                  : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF]'
+                                  ? 'bg-[var(--success-subtle)] border-[var(--success-border)] text-[var(--success)]'
+                                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)]'
                               }`}
                             >
                               Set {s.setNumber}: {s.weight}kg × {s.reps}
@@ -396,7 +396,7 @@ export const WorkoutPage: React.FC = () => {
                       )}
 
                       {ex.notes && (
-                        <div className="mt-1.5 text-[11px] text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
+                        <div className="mt-1.5 text-[11px] text-amber-500 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
                           "{ex.notes}"
                         </div>
                       )}
@@ -405,7 +405,7 @@ export const WorkoutPage: React.FC = () => {
                 })}
               </div>
 
-              <div className="pt-2 border-t border-[#272B30]">
+              <div className="pt-2 border-t border-[var(--border-subtle)]">
                 <Button
                   variant="primary"
                   size="md"
@@ -432,32 +432,32 @@ export const WorkoutPage: React.FC = () => {
         <div className="space-y-4 pb-12">
           <Header title="Workout Session" subtitle="Rest & Recovery Day" />
 
-          <Card className="w-full border border-[#272B30] bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+          <Card className="w-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-2xl shadow-sm text-[var(--text-main)]">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
+              <span className="text-[11px] sm:text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">
                 TODAY'S WORKOUT · {formatDayName(todayDay).toUpperCase()}
               </span>
-              <span className="text-[10px] font-black text-[#9CA3AF] bg-[#1F2429] px-2.5 py-1 rounded-md border border-[#272B30] uppercase tracking-wider">
+              <span className="text-[10px] font-black text-[var(--text-secondary)] bg-[var(--bg-card)] px-2.5 py-1 rounded-md border border-[var(--border-subtle)] uppercase tracking-wider">
                 REST DAY
               </span>
             </div>
 
             <div className="py-6 text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#1F2429] border border-[#272B30] flex items-center justify-center text-[#E11D48]">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)]">
                 <Coffee className="w-6 h-6 stroke-[2.2]" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-2">
                 REST DAY
               </h2>
-              <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-sm mx-auto leading-relaxed font-medium">
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed font-medium">
                 Recovery day. Let your muscles recover and get ready for your next session.
               </p>
             </div>
 
-            <div className="text-center pt-3 border-t border-[#272B30]/60">
+            <div className="text-center pt-3 border-t border-[var(--border-subtle)]">
               <button
                 onClick={() => startCustomWorkout(userId, ['chest'])}
-                className="text-xs font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <span>+ Start an optional workout</span>
               </button>
@@ -472,23 +472,23 @@ export const WorkoutPage: React.FC = () => {
       <div className="space-y-4 pb-12">
         <Header title="Workout Session" subtitle="Ready to train" />
 
-        <Card className="w-full border border-[#272B30] bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+        <Card className="w-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-2xl shadow-sm text-[var(--text-main)]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
+            <span className="text-[11px] sm:text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">
               TODAY'S WORKOUT · {formatDayName(todayDay).toUpperCase()}
             </span>
           </div>
 
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-3">
+            <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-3">
               {todayConfig.name || todayConfig.muscleGroups.map((mg) => mg.displayName).join(' + ')}
             </h2>
 
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-6 text-xs sm:text-sm text-[#9CA3AF] font-medium">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-6 text-xs sm:text-sm text-[var(--text-secondary)] font-medium">
               {todayConfig.muscleGroups.map((mg, idx) => (
                 <React.Fragment key={idx}>
-                  {idx > 0 && <span className="text-[#6B7280] font-normal">·</span>}
-                  <span className="font-bold text-[#F5F5F5]">{mg.displayName}</span>
+                  {idx > 0 && <span className="text-[var(--text-muted)] font-normal">·</span>}
+                  <span className="font-bold text-[var(--text-main)]">{mg.displayName}</span>
                 </React.Fragment>
               ))}
             </div>
@@ -500,14 +500,14 @@ export const WorkoutPage: React.FC = () => {
               onClick={() => startTodayWorkout(userId)}
               className="font-extrabold py-3.5 sm:py-4 text-sm sm:text-base rounded-xl min-h-[48px] sm:min-h-[52px]"
             >
-              <Play className="w-5 h-5 mr-2 fill-[#FFFFFF] text-[#FFFFFF]" />
+              <Play className="w-5 h-5 mr-2 fill-white text-white" />
               <span>START TODAY'S WORKOUT</span>
             </Button>
 
-            <div className="text-center pt-3 mt-3 border-t border-[#272B30]/60">
+            <div className="text-center pt-3 mt-3 border-t border-[var(--border-subtle)]">
               <button
                 onClick={() => startCustomWorkout(userId, ['chest'])}
-                className="text-xs font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <span>+ Start a custom workout</span>
               </button>
@@ -552,12 +552,12 @@ export const WorkoutPage: React.FC = () => {
     <div className="space-y-6 pb-24 max-w-full overflow-x-hidden">
       {/* Editing Mode Banner */}
       {isEditing && editingSession && (
-        <div className="bg-[#1B1F23] border border-amber-500/30 rounded-xl px-3.5 py-2.5 flex items-center justify-between text-xs">
-          <span className="font-bold text-amber-400 flex items-center gap-1.5">
+        <div className="bg-[var(--bg-card)] border border-amber-500/30 rounded-xl px-3.5 py-2.5 flex items-center justify-between text-xs">
+          <span className="font-bold text-amber-500 flex items-center gap-1.5">
             <Edit3 className="w-3.5 h-3.5" />
             Editing Saved Workout
           </span>
-          <span className="text-[#9CA3AF] font-medium">
+          <span className="text-[var(--text-secondary)] font-medium">
             {formatDateShort(editingSession.date)}
           </span>
         </div>
@@ -565,44 +565,44 @@ export const WorkoutPage: React.FC = () => {
 
       {/* Guest Mode Banner */}
       {isGuest && (
-        <div className="bg-[#14171A] border border-[#272B30] rounded-xl px-3.5 py-2 flex items-center justify-between text-[11px] text-[#9CA3AF]">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl px-3.5 py-2 flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
           <span>Guest Mode · Progress saved on this device only</span>
-          <span className="text-[#E11D48] font-bold">Not Synced</span>
+          <span className="text-[var(--primary)] font-bold">Not Synced</span>
         </div>
       )}
 
       {/* Success Notification */}
       {saveSuccessMsg && (
-        <div className="bg-[#22C55E]/15 border border-[#22C55E]/40 text-[#22C55E] text-xs font-bold px-3 py-2 rounded-xl text-center">
+        <div className="bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success)] text-xs font-bold px-3 py-2 rounded-xl text-center">
           {saveSuccessMsg}
         </div>
       )}
 
       {/* Save Error Alert */}
       {saveError && (
-        <div className="bg-[#EF4444]/15 border border-[#EF4444]/40 text-[#EF4444] text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-between">
+        <div className="bg-[var(--danger-subtle)] border border-[var(--danger-border)] text-[var(--danger)] text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-between">
           <span>{saveError}</span>
-          <button onClick={handleSaveEdits} className="underline hover:text-white cursor-pointer">
+          <button onClick={handleSaveEdits} className="underline hover:text-[var(--text-main)] cursor-pointer">
             Retry
           </button>
         </div>
       )}
 
       {/* Workout Sticky Header */}
-      <div className="flex items-center justify-between py-2 border-b border-[#272B30] sticky top-0 bg-[#0B0D0F]/95 backdrop-blur-md z-20">
+      <div className="flex items-center justify-between py-2 border-b border-[var(--border-subtle)] sticky top-0 bg-[var(--bg-main)]/95 backdrop-blur-md z-20">
         <div className="min-w-0 mr-2">
           <span
             className={`text-[10px] font-extrabold uppercase tracking-widest ${
-              isEditing ? 'text-amber-400' : 'text-[#E11D48]'
+              isEditing ? 'text-amber-500' : 'text-[var(--primary)]'
             }`}
           >
             {isEditing ? 'EDITING SAVED WORKOUT' : 'IN PROGRESS'}
           </span>
-          <h1 className="text-lg font-black text-[#F5F5F5] uppercase tracking-tight truncate">
+          <h1 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight truncate">
             {activeTitle}
           </h1>
           {activeSubtitle && (
-            <div className="text-[11px] font-medium text-[#9CA3AF] truncate">
+            <div className="text-[11px] font-medium text-[var(--text-secondary)] truncate">
               {activeSubtitle}
             </div>
           )}
@@ -611,7 +611,7 @@ export const WorkoutPage: React.FC = () => {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleHeaderCancel}
-            className="text-xs font-bold text-[#EF4444] hover:text-[#EF4444]/80 px-2 py-1 cursor-pointer"
+            className="text-xs font-bold text-[var(--danger)] hover:opacity-80 px-2 py-1 cursor-pointer"
           >
             Cancel
           </button>
@@ -658,10 +658,10 @@ export const WorkoutPage: React.FC = () => {
             <div key={sec.displayName} className="space-y-2.5">
               {/* Section Title Bar */}
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-black text-[#F5F5F5] uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#E11D48] shadow-sm shadow-[#E11D48]/50"></span>
+                <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--primary)] shadow-sm"></span>
                   <span>{sec.displayName}</span>
-                  <span className="text-xs text-[#6B7280] font-normal">
+                  <span className="text-xs text-[var(--text-muted)] font-normal">
                     ({exList.length})
                   </span>
                 </h2>
@@ -669,16 +669,16 @@ export const WorkoutPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenCombination(sec)}
-                    className="text-xs font-bold text-[#9CA3AF] hover:text-[#E11D48] flex items-center gap-1 transition-colors cursor-pointer"
+                    className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] flex items-center gap-1 transition-colors cursor-pointer"
                     title="Create a custom training combination (superset, drop set, etc.)"
                   >
-                    <Layers className="w-3.5 h-3.5 text-[#E11D48]" />
+                    <Layers className="w-3.5 h-3.5 text-[var(--primary)]" />
                     <span>+ Combination</span>
                   </button>
 
                   <button
                     onClick={() => handleOpenAdd(sec)}
-                    className="text-xs font-bold text-[#E11D48] hover:text-[#F43F5E] flex items-center gap-1 transition-colors cursor-pointer"
+                    className="text-xs font-bold text-[var(--primary)] hover:opacity-80 flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Exercise</span>
@@ -725,14 +725,14 @@ export const WorkoutPage: React.FC = () => {
       {!isEditing &&
         currentSession.exercises.length > 0 &&
         currentSession.exercises.every((ex) => ex.completed) && (
-          <div className="bg-[#22C55E]/10 border border-[#22C55E]/40 rounded-2xl p-5 text-center space-y-2.5 my-4">
-            <div className="w-11 h-11 rounded-full bg-[#22C55E] text-[#0B0D0F] flex items-center justify-center mx-auto shadow-sm shadow-[#22C55E]/40">
+          <div className="bg-[var(--success-subtle)] border border-[var(--success-border)] rounded-2xl p-5 text-center space-y-2.5 my-4">
+            <div className="w-11 h-11 rounded-full bg-[var(--success)] text-white flex items-center justify-center mx-auto shadow-sm">
               <Check className="w-6 h-6 stroke-[3]" />
             </div>
-            <h3 className="text-sm font-black text-[#F5F5F5] uppercase tracking-wide">
+            <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wide">
               All Exercises Completed!
             </h3>
-            <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto leading-relaxed">
               Great job! Tap Finish below to save your workout and view your total volume & PR summary.
             </p>
             <Button
@@ -740,7 +740,7 @@ export const WorkoutPage: React.FC = () => {
               size="md"
               fullWidth
               onClick={() => setIsSummaryOpen(true)}
-              className="bg-[#22C55E] hover:bg-[#16A34A] text-[#0B0D0F] font-black min-h-[46px] mt-1"
+              className="bg-[var(--success)] hover:opacity-90 text-white font-black min-h-[46px] mt-1"
             >
               <Check className="w-4 h-4 mr-1.5 stroke-[3]" />
               <span>FINISH & SAVE WORKOUT</span>
@@ -750,7 +750,7 @@ export const WorkoutPage: React.FC = () => {
 
       {/* Post-Completion Editing Bottom Save Actions */}
       {isEditing && (
-        <div className="bg-[#1B1F23] border border-[#272B30] rounded-2xl p-4 space-y-2.5 mt-4">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 space-y-2.5 mt-4">
           <Button
             variant="primary"
             size="md"
@@ -780,25 +780,25 @@ export const WorkoutPage: React.FC = () => {
       <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button
           onClick={() => handleOpenCombination()}
-          className="bg-[#14171A] hover:bg-[#1B1F23] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          className="bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
         >
-          <Layers className="w-4 h-4 text-[#E11D48]" />
+          <Layers className="w-4 h-4 text-[var(--primary)]" />
           <span>Create Combination</span>
         </button>
 
         <button
           onClick={() => setIsAddSectionModalOpen(true)}
-          className="bg-[#14171A] hover:bg-[#1B1F23] border border-dashed border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          className="bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
         >
-          <Plus className="w-4 h-4 text-[#E11D48]" />
+          <Plus className="w-4 h-4 text-[var(--primary)]" />
           <span>Add Muscle Group</span>
         </button>
 
         <button
           onClick={() => navigate('/exercises')}
-          className="bg-[#14171A] hover:bg-[#1B1F23] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[#F5F5F5] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          className="bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
         >
-          <BookOpen className="w-4 h-4 text-[#E11D48]" />
+          <BookOpen className="w-4 h-4 text-[var(--primary)]" />
           <span>Browse Exercise Library</span>
         </button>
       </div>
@@ -835,7 +835,7 @@ export const WorkoutPage: React.FC = () => {
         title="Add Muscle Group"
       >
         <div className="space-y-3">
-          <p className="text-xs text-[#9CA3AF]">
+          <p className="text-xs text-[var(--text-secondary)]">
             Select a muscle group to add a new section to your current workout.
           </p>
 
@@ -852,26 +852,26 @@ export const WorkoutPage: React.FC = () => {
                   }}
                   className={`p-3 rounded-xl border flex items-center justify-between text-left transition-all ${
                     isAlreadyAdded
-                      ? 'bg-[#1B1F23]/50 border-[#272B30] opacity-50 cursor-not-allowed'
-                      : 'bg-[#14171A] hover:bg-[#1B1F23] border-[#272B30] hover:border-[#E11D48]/60 cursor-pointer active:scale-[0.98]'
+                      ? 'bg-[var(--bg-card)]/50 border-[var(--border-subtle)] opacity-50 cursor-not-allowed'
+                      : 'bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)] cursor-pointer active:scale-[0.98]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-lg">{mg.icon}</span>
                     <div>
-                      <div className="text-xs font-bold text-[#F5F5F5]">{mg.name}</div>
-                      <div className="text-[10px] text-[#9CA3AF]">
+                      <div className="text-xs font-bold text-[var(--text-main)]">{mg.name}</div>
+                      <div className="text-[10px] text-[var(--text-secondary)]">
                         {mg.areas.length} muscle sub-areas
                       </div>
                     </div>
                   </div>
 
                   {isAlreadyAdded ? (
-                    <span className="text-[10px] font-extrabold text-[#9CA3AF] bg-[#272B30] px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-extrabold text-[var(--text-secondary)] bg-[var(--bg-card)] px-2 py-0.5 rounded-md">
                       Added
                     </span>
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-[#1B1F23] border border-[#272B30] text-[#E11D48] flex items-center justify-center font-black text-xs">
+                    <div className="w-6 h-6 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--primary)] flex items-center justify-center font-black text-xs">
                       +
                     </div>
                   )}
@@ -890,14 +890,14 @@ export const WorkoutPage: React.FC = () => {
       >
         <div className="space-y-4 py-2">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400">
+            <div className="w-10 h-10 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-500">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-extrabold text-[#F5F5F5]">
+              <h4 className="text-sm font-extrabold text-[var(--text-main)]">
                 Unsaved Progress Detected
               </h4>
-              <p className="text-xs text-[#9CA3AF] mt-1 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
                 You have an unfinished workout with unsaved progress. If you leave now, your changes may be lost.
               </p>
             </div>
@@ -933,7 +933,7 @@ export const WorkoutPage: React.FC = () => {
             <button
               onClick={handleDiscardAndProceed}
               disabled={isFinishing}
-              className="w-full text-center text-xs font-bold text-[#EF4444] hover:text-[#EF4444]/80 py-2 transition-colors cursor-pointer"
+              className="w-full text-center text-xs font-bold text-[var(--danger)] hover:opacity-80 py-2 transition-colors cursor-pointer"
             >
               Leave Without Saving
             </button>
@@ -948,7 +948,7 @@ export const WorkoutPage: React.FC = () => {
         title={isEditing ? 'Discard Changes?' : 'Discard Workout?'}
       >
         <div className="space-y-4 py-2">
-          <p className="text-xs text-[#9CA3AF] leading-relaxed">
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
             {isEditing
               ? 'Are you sure you want to discard your edits? Your previous saved workout will remain unchanged.'
               : 'Are you sure you want to discard this workout? All sets and progress entered during this session will be lost.'}
@@ -970,7 +970,7 @@ export const WorkoutPage: React.FC = () => {
               size="md"
               fullWidth
               onClick={confirmDiscard}
-              className="font-bold bg-[#EF4444] hover:bg-[#DC2626] text-white"
+              className="font-bold"
             >
               Discard
             </Button>

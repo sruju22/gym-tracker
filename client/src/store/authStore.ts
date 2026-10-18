@@ -6,6 +6,7 @@ import {
   loginUser,
   registerUser,
   getMe,
+  updateUserProfile,
 } from '../api/authApi';
 import { useWorkoutStore } from './workoutStore';
 
@@ -22,6 +23,8 @@ interface AuthState {
   logout: () => void;
   restoreAuth: () => Promise<void>;
   clearError: () => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  completeOnboarding: (data: Partial<User>) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -117,6 +120,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
     // Invalidate/reset in-memory session states so no private active session leaks
     useWorkoutStore.getState().handleUserLogout();
+  },
+
+  updateProfile: async (data: Partial<User>) => {
+    const { token, currentUser } = get();
+    if (!token || !currentUser) {
+      // Local fallback for guest or offline mode
+      if (currentUser) {
+        set({ currentUser: { ...currentUser, ...data } });
+      }
+      return;
+    }
+    set({ isLoading: true, error: null });
+    try {
+      const res = await updateUserProfile(token, data);
+      set({ currentUser: res.user, isLoading: false });
+    } catch (err: any) {
+      set({ isLoading: false, error: err.message || 'Failed to update profile' });
+      throw err;
+    }
+  },
+
+  completeOnboarding: async (data: Partial<User>) => {
+    const { token, currentUser } = get();
+    const updateData = { ...data, onboardingCompleted: true };
+    if (!token || !currentUser) {
+      if (currentUser) {
+        set({ currentUser: { ...currentUser, ...updateData } });
+      }
+      return;
+    }
+    set({ isLoading: true, error: null });
+    try {
+      const res = await updateUserProfile(token, updateData);
+      set({ currentUser: res.user, isLoading: false });
+    } catch (err: any) {
+      set({ isLoading: false, error: err.message || 'Failed to complete onboarding' });
+      throw err;
+    }
   },
 
   clearError: () => {

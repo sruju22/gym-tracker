@@ -48,15 +48,17 @@ export const SetRow: React.FC<SetRowProps> = ({
     <div
       className={`flex items-center gap-2 py-1.5 px-2 rounded-xl transition-all ${
         isCompleted
-          ? 'bg-[#22C55E]/10 border border-[#22C55E]/30'
-          : 'bg-[#1B1F23] border border-[#272B30]'
+          ? 'bg-[var(--success-subtle)] border border-[var(--success-border)]'
+          : 'bg-[var(--bg-card)] border border-[var(--border-subtle)]'
       }`}
     >
       {/* Set Number */}
       <div className="w-7 flex items-center justify-center">
         <span
           className={`text-xs font-black rounded-md w-6 h-6 flex items-center justify-center ${
-            isCompleted ? 'bg-[#22C55E] text-[#0B0D0F] shadow-xs' : 'bg-[#272B30] text-[#9CA3AF]'
+            isCompleted
+              ? 'bg-[var(--success)] text-white shadow-xs'
+              : 'bg-[var(--border-subtle)] text-[var(--text-secondary)]'
           }`}
         >
           {set.setNumber}
@@ -64,7 +66,7 @@ export const SetRow: React.FC<SetRowProps> = ({
       </div>
 
       {/* Previous Performance Hint */}
-      <div className="w-18 text-[11px] text-[#6B7280] hidden sm:block truncate font-medium">
+      <div className="w-18 text-[11px] text-[var(--text-muted)] hidden sm:block truncate font-medium">
         {prevSet ? `${prevSet.weight}kg × ${prevSet.reps}` : '—'}
       </div>
 
@@ -77,15 +79,15 @@ export const SetRow: React.FC<SetRowProps> = ({
             placeholder={prevSet ? String(prevSet.weight) : 'kg'}
             value={set.weight !== null ? set.weight : ''}
             onChange={handleWeightChange}
-            className="w-full bg-[#0B0D0F] border border-[#272B30] focus:border-[#E11D48] rounded-lg px-2.5 py-1.5 text-center text-sm font-black text-[#F5F5F5] placeholder-[#6B7280] focus:outline-none min-h-[42px]"
+            className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-2.5 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[42px]"
           />
-          <span className="absolute right-2 text-[10px] font-medium text-[#6B7280] pointer-events-none">
+          <span className="absolute right-2 text-[10px] font-medium text-[var(--text-muted)] pointer-events-none">
             kg
           </span>
         </div>
       </div>
 
-      <span className="text-xs text-[#6B7280] font-bold">×</span>
+      <span className="text-xs text-[var(--text-muted)] font-bold">×</span>
 
       {/* Reps Input */}
       <div className="flex-1 min-w-[70px]">
@@ -96,9 +98,9 @@ export const SetRow: React.FC<SetRowProps> = ({
             placeholder={prevSet ? String(prevSet.reps) : 'reps'}
             value={set.reps !== null ? set.reps : ''}
             onChange={handleRepsChange}
-            className="w-full bg-[#0B0D0F] border border-[#272B30] focus:border-[#E11D48] rounded-lg px-2.5 py-1.5 text-center text-sm font-black text-[#F5F5F5] placeholder-[#6B7280] focus:outline-none min-h-[42px]"
+            className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-2.5 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[42px]"
           />
-          <span className="absolute right-2 text-[10px] font-medium text-[#6B7280] pointer-events-none">
+          <span className="absolute right-2 text-[10px] font-medium text-[var(--text-muted)] pointer-events-none">
             reps
           </span>
         </div>
@@ -110,18 +112,18 @@ export const SetRow: React.FC<SetRowProps> = ({
         onClick={handleToggle}
         className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer select-none active:scale-95 ${
           isCompleted
-            ? 'bg-[#22C55E] text-[#0B0D0F] shadow-sm shadow-[#22C55E]/30'
-            : 'bg-[#272B30] text-[#6B7280] hover:bg-[#32373E] hover:text-[#F5F5F5]'
+            ? 'bg-[var(--success)] text-white shadow-sm shadow-emerald-500/25'
+            : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-main)]'
         }`}
       >
-        <Check className={`w-5 h-5 ${isCompleted ? 'stroke-[3] text-[#0B0D0F]' : 'stroke-2'}`} />
+        <Check className={`w-5 h-5 ${isCompleted ? 'stroke-[3] text-white' : 'stroke-2'}`} />
       </button>
 
       {/* Optional Remove Set Button */}
       {canRemove && onRemove && (
         <button
           onClick={onRemove}
-          className="p-1 text-[#6B7280] hover:text-[#EF4444] transition-colors"
+          className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors cursor-pointer"
         >
           <Trash2 className="w-4 h-4" />
         </button>

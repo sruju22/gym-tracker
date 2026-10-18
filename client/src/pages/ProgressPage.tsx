@@ -21,12 +21,12 @@ export const ProgressPage: React.FC = () => {
     return (
       <div className="w-full max-w-full min-w-0 flex-1 flex flex-col space-y-4 sm:space-y-5 pb-16">
         <Header title="Progress & Stats" subtitle="Personal Records, Analytics & Goals" />
-        <div className="text-center py-12 px-5 border border-[#272B30] rounded-2xl bg-[#14171A] space-y-3">
-          <div className="w-12 h-12 rounded-full bg-[#1F2429] border border-[#272B30] flex items-center justify-center mx-auto text-[#6B7280]">
+        <div className="text-center py-12 px-5 border border-[var(--border-subtle)] rounded-2xl bg-[var(--bg-card)] space-y-3">
+          <div className="w-12 h-12 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
             <Lock className="w-6 h-6 stroke-[2]" />
           </div>
-          <h3 className="text-base font-bold text-[#F5F5F5]">Sign in to Track Progress & Records</h3>
-          <p className="text-xs text-[#9CA3AF] max-w-sm mx-auto leading-relaxed">
+          <h3 className="text-base font-bold text-[var(--text-main)]">Sign in to Track Progress & Records</h3>
+          <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
             Personal records, strength progression charts, volume trends, and fitness goals are securely linked to your personal account.
           </p>
           <div className="pt-2">
@@ -62,29 +62,29 @@ export const ProgressPage: React.FC = () => {
 
       {/* Main Stats Summary Grid */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <Card className="bg-[#14171A] border-[#272B30] p-3 sm:p-4 text-center">
-          <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-3 sm:p-4 text-center">
+          <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-0.5">
             Workouts
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#F5F5F5]">{totalWorkouts}</div>
-          <div className="text-[10px] sm:text-[11px] text-[#E11D48] font-semibold mt-0.5">{totalSets} sets</div>
+          <div className="text-2xl sm:text-3xl font-black text-[var(--text-main)]">{totalWorkouts}</div>
+          <div className="text-[10px] sm:text-[11px] text-[var(--primary)] font-semibold mt-0.5">{totalSets} sets</div>
         </Card>
 
-        <Card className="bg-[#14171A] border-[#272B30] p-3 sm:p-4 text-center">
-          <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-3 sm:p-4 text-center">
+          <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-0.5">
             Volume
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#E11D48]">
-            {formatVolume(totalVolume)} <span className="text-xs font-normal text-[#9CA3AF]">kg</span>
+          <div className="text-2xl sm:text-3xl font-black text-[var(--primary)]">
+            {formatVolume(totalVolume)} <span className="text-xs font-normal text-[var(--text-secondary)]">kg</span>
           </div>
-          <div className="text-[10px] sm:text-[11px] text-[#9CA3AF] font-medium mt-0.5">Total volume</div>
+          <div className="text-[10px] sm:text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Total volume</div>
         </Card>
 
-        <Card className="bg-[#14171A] border-[#272B30] p-3 sm:p-4 text-center">
-          <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-3 sm:p-4 text-center">
+          <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-0.5">
             PRs Hit
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#F5F5F5]">{personalRecords.length}</div>
+          <div className="text-2xl sm:text-3xl font-black text-[var(--text-main)]">{personalRecords.length}</div>
           <div className="text-[10px] sm:text-[11px] text-amber-400 font-semibold mt-0.5">Records</div>
         </Card>
       </div>

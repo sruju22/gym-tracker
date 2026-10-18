@@ -12,8 +12,8 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0D0F]/95 backdrop-blur-md border-t border-[#272B30] pb-safe">
-      <div className="w-full sm:max-w-xl mx-auto flex items-center justify-around h-13 px-1">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/95 backdrop-blur-md border-t border-[var(--border-subtle)] pb-safe shadow-xl transition-colors">
+      <div className="w-full max-w-md mx-auto flex items-center justify-around h-15 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -21,17 +21,26 @@ export const BottomNav: React.FC = () => {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center flex-1 h-10 rounded-xl transition-all cursor-pointer select-none ${
+                `relative flex flex-col items-center justify-center flex-1 h-12 rounded-2xl transition-all cursor-pointer select-none ${
                   isActive
-                    ? 'text-[#E11D48] font-bold bg-[#E11D48]/10'
-                    : 'text-[#6B7280] hover:text-[#9CA3AF]'
+                    ? 'text-[var(--primary)] font-black'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon className={`w-4 h-4 mb-0.5 ${isActive ? 'stroke-[2.5px] text-[#E11D48]' : 'stroke-2'}`} />
-                  <span className="text-[10px] tracking-tight">{item.label}</span>
+                  {isActive && (
+                    <span className="absolute top-1 w-5 h-0.5 rounded-full bg-[var(--primary)] shadow-sm shadow-red-500/50" />
+                  )}
+                  <Icon
+                    className={`w-5 h-5 mb-0.5 transition-all ${
+                      isActive ? 'stroke-[2.5px] scale-110' : 'stroke-[1.8px]'
+                    }`}
+                  />
+                  <span className={`text-[10px] tracking-tight ${isActive ? 'font-black' : 'font-medium'}`}>
+                    {item.label}
+                  </span>
                 </>
               )}
             </NavLink>

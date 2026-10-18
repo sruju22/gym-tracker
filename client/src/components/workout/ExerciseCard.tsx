@@ -85,34 +85,34 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     return (
       <div
         onClick={toggleExpand}
-        className="mb-3 bg-[#14171A] border border-[#22C55E]/40 hover:border-[#22C55E]/70 rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] shadow-xs"
+        className="mb-3 bg-[var(--bg-surface)] border border-[var(--success-border)] hover:border-[var(--success)] rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] shadow-xs"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-          <div className="w-7 h-7 rounded-full bg-[#22C55E]/15 border border-[#22C55E]/40 text-[#22C55E] flex items-center justify-center font-black shrink-0">
+          <div className="w-7 h-7 rounded-full bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success)] flex items-center justify-center font-black shrink-0">
             <Check className="w-4 h-4 stroke-[3]" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-black text-[#F5F5F5] flex items-center gap-1.5 min-w-0">
+            <div className="text-xs font-black text-[var(--text-main)] flex items-center gap-1.5 min-w-0">
               <span className="truncate min-w-0">{exercise.name}</span>
               {isNewPR && (
-                <span className="text-[9px] font-extrabold text-amber-400 bg-amber-400/15 border border-amber-400/40 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
+                <span className="text-[9px] font-extrabold text-amber-500 bg-amber-500/15 border border-amber-500/40 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
                   🏆 NEW PR
                 </span>
               )}
             </div>
             {summaryText ? (
-              <div className="text-[11px] text-[#22C55E] font-bold truncate mt-0.5">
+              <div className="text-[11px] text-[var(--success)] font-bold truncate mt-0.5">
                 {summaryText}
               </div>
             ) : (
-              <div className="text-[11px] text-[#9CA3AF] italic mt-0.5">
+              <div className="text-[11px] text-[var(--text-secondary)] italic mt-0.5">
                 Completed
               </div>
             )}
           </div>
         </div>
 
-        <div className="text-[10px] font-bold text-[#9CA3AF] bg-[#1B1F23] border border-[#272B30] px-2.5 py-1 rounded-lg shrink-0 hover:text-[#F5F5F5] transition-colors">
+        <div className="text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border-subtle)] px-2.5 py-1 rounded-lg shrink-0 hover:text-[var(--text-main)] transition-colors">
           Edit
         </div>
       </div>
@@ -124,23 +124,23 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     return (
       <div
         onClick={toggleExpand}
-        className="mb-3 bg-[#14171A] border border-[#272B30] hover:border-[#E11D48]/60 rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
+        className="mb-3 bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-          <div className="w-7 h-7 rounded-full bg-[#1B1F23] border border-[#272B30] text-[#E11D48] flex items-center justify-center font-black text-xs shrink-0">
+          <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--primary)] flex items-center justify-center font-black text-xs shrink-0">
             +
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-black text-[#F5F5F5] truncate">
+            <div className="text-xs font-black text-[var(--text-main)] truncate">
               {exercise.name}
             </div>
-            <div className="text-[11px] text-[#9CA3AF] capitalize truncate mt-0.5">
+            <div className="text-[11px] text-[var(--text-secondary)] capitalize truncate mt-0.5">
               {exercise.primaryMuscle} • {sets.length} {sets.length === 1 ? 'set' : 'sets'}
             </div>
           </div>
         </div>
 
-        <div className="text-[10px] font-extrabold text-[#E11D48] bg-[#E11D48]/10 border border-[#E11D48]/30 px-2.5 py-1 rounded-lg shrink-0">
+        <div className="text-[10px] font-extrabold text-[var(--primary)] bg-[var(--primary-subtle)] border border-[var(--primary-border)] px-2.5 py-1 rounded-lg shrink-0">
           Expand
         </div>
       </div>
@@ -155,7 +155,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
   // EXPANDED ACTIVE VIEW
   return (
-    <Card className={`mb-3 border transition-all ${completed ? 'border-[#22C55E]/50 bg-[#14171A] shadow-md' : 'border-[#E11D48]/50 bg-[#14171A] shadow-md'}`}>
+    <Card className={`mb-3 border transition-all ${completed ? 'border-[var(--success-border)] bg-[var(--bg-surface)] shadow-md' : 'border-[var(--border-strong)] bg-[var(--bg-surface)] shadow-md'}`}>
       {/* Exercise Card Header - Click to Collapse */}
       <div
         onClick={toggleExpand}
@@ -166,7 +166,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             e.stopPropagation();
             setIsImageModalOpen(true);
           }}
-          className="w-14 h-14 rounded-xl overflow-hidden bg-[#1B1F23] flex-shrink-0 border border-[#272B30] cursor-pointer group relative hover:border-[#E11D48]/60 transition-colors"
+          className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--bg-card)] flex-shrink-0 border border-[var(--border-subtle)] cursor-pointer group relative hover:border-[var(--primary)] transition-colors"
           title="Tap to view exercise demonstration"
         >
           {!imgError ? (
@@ -178,7 +178,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-[#1B1F23] text-[#6B7280]">
+            <div className="w-full h-full flex items-center justify-center bg-[var(--bg-card)] text-[var(--text-muted)]">
               <Dumbbell className="w-5 h-5 opacity-40" />
             </div>
           )}
@@ -186,12 +186,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
-            <h3 className="text-base font-extrabold text-[#F5F5F5] leading-tight flex items-center gap-1.5 min-w-0 mr-1">
-              {completed && <Check className="w-4 h-4 text-[#22C55E] stroke-[3] shrink-0" />}
+            <h3 className="text-base font-extrabold text-[var(--text-main)] leading-tight flex items-center gap-1.5 min-w-0 mr-1">
+              {completed && <Check className="w-4 h-4 text-[var(--success)] stroke-[3] shrink-0" />}
               <span className="truncate min-w-0">{exercise.name}</span>
             </h3>
             <div className="flex items-center gap-1 shrink-0">
-              <span className="text-[10px] font-bold text-[#6B7280] hover:text-[#9CA3AF] transition-colors py-0.5 px-1.5 rounded bg-[#1B1F23] border border-[#272B30]">
+              <span className="text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors py-0.5 px-1.5 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)]">
                 Collapse
               </span>
               <button
@@ -199,7 +199,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   e.stopPropagation();
                   removeExerciseFromWorkout(userId, workoutExercise.id);
                 }}
-                className="p-1 text-[#6B7280] hover:text-[#EF4444] transition-colors cursor-pointer"
+                className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors cursor-pointer"
                 title="Remove exercise"
               >
                 <Trash2 className="w-4 h-4" />
@@ -219,35 +219,35 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       </div>
 
       {/* PR & Previous Workout Comparison Panel */}
-      <div className="my-2.5 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-xs space-y-2.5 transition-all">
+      <div className="my-2.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 text-xs space-y-2.5 transition-all">
         {/* Personal Record Info Row */}
-        <div className="flex items-center justify-between border-b border-[#272B30] pb-2">
-          <div className="flex items-center gap-1.5 text-amber-400 font-bold uppercase tracking-wider text-[11px]">
-            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
+          <div className="flex items-center gap-1.5 text-amber-500 font-bold uppercase tracking-wider text-[11px]">
+            <Trophy className="w-3.5 h-3.5 text-amber-500" />
             <span>PR (Best Lift)</span>
           </div>
           {isNewPR ? (
-            <span className="text-[10px] font-black text-amber-400 bg-amber-400/15 border border-amber-400/40 px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
+            <span className="text-[10px] font-black text-amber-500 bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
               🏆 NEW PR
             </span>
           ) : exercisePR ? (
-            <span className="text-xs font-bold text-[#F5F5F5]">
-              {exercisePR.weight} kg × {exercisePR.reps} <span className="text-[11px] text-[#9CA3AF] font-normal">(1RM: {exercisePR.estimated1RM} kg)</span>
+            <span className="text-xs font-bold text-[var(--text-main)]">
+              {exercisePR.weight} kg × {exercisePR.reps} <span className="text-[11px] text-[var(--text-muted)] font-normal">(1RM: {exercisePR.estimated1RM} kg)</span>
             </span>
           ) : (
-            <span className="text-[11px] text-[#6B7280] italic">No PR set yet</span>
+            <span className="text-[11px] text-[var(--text-muted)] italic">No PR set yet</span>
           )}
         </div>
 
         {/* Previous Workout Section */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase tracking-wider text-[11px]">
-              <History className="w-3.5 h-3.5 text-[#E11D48]" />
+            <div className="flex items-center gap-1.5 text-[var(--text-secondary)] font-bold uppercase tracking-wider text-[11px]">
+              <History className="w-3.5 h-3.5 text-[var(--primary)]" />
               <span>Previous Workout</span>
             </div>
             {prevPerf && (
-              <span className="text-[11px] text-[#6B7280] font-medium">
+              <span className="text-[11px] text-[var(--text-muted)] font-medium">
                 {formatDateShort(prevPerf.date)}
               </span>
             )}
@@ -258,17 +258,17 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               {prevPerf.sets.map((s, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between text-xs py-1 px-2.5 rounded-lg bg-[#14171A] border border-[#272B30]/80"
+                  className="flex items-center justify-between text-xs py-1 px-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)]"
                 >
-                  <span className="text-[11px] font-bold text-[#6B7280]">Set {s.setNumber}</span>
-                  <span className="font-extrabold text-[#F5F5F5]">
-                    {s.weight} kg <span className="text-[#9CA3AF] font-normal">× {s.reps} reps</span>
+                  <span className="text-[11px] font-bold text-[var(--text-muted)]">Set {s.setNumber}</span>
+                  <span className="font-extrabold text-[var(--text-main)]">
+                    {s.weight} kg <span className="text-[var(--text-muted)] font-normal">× {s.reps} reps</span>
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-xs text-[#6B7280] italic py-0.5">
+            <div className="text-xs text-[var(--text-muted)] italic py-0.5">
               No previous workout
             </div>
           )}
@@ -276,7 +276,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       </div>
 
       {/* Set Header */}
-      <div className="flex items-center justify-between text-[10px] font-bold text-[#6B7280] uppercase px-2 mb-1.5">
+      <div className="flex items-center justify-between text-[10px] font-bold text-[var(--text-muted)] uppercase px-2 mb-1.5">
         <span className="w-7 text-center">Set</span>
         <span className="w-18 hidden sm:block">Previous</span>
         <span className="flex-1 text-center">Weight</span>
@@ -301,7 +301,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       </div>
 
       {/* Card Actions: Add Set, Notes, & Done */}
-      <div className="flex items-center justify-between pt-2 border-t border-[#272B30] gap-2">
+      <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] gap-2">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -309,13 +309,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             onClick={() => addSetToExercise(userId, workoutExercise.id)}
             className="text-xs"
           >
-            <Plus className="w-3.5 h-3.5 mr-1 text-[#E11D48]" />
+            <Plus className="w-3.5 h-3.5 mr-1 text-[var(--primary)]" />
             <span>Add Set</span>
           </Button>
 
           <button
             onClick={() => setShowNotes(!showNotes)}
-            className="flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-[#F5F5F5] transition-colors font-medium cursor-pointer"
+            className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors font-medium cursor-pointer"
           >
             <StickyNote className="w-3.5 h-3.5" />
             <span>{notes ? 'Edit Note' : 'Add Note'}</span>
@@ -339,10 +339,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           }}
           className={`font-black px-4 min-h-[38px] transition-all ${
             completed
-              ? 'bg-[#22C55E] hover:bg-[#16A34A] text-[#0B0D0F] cursor-pointer'
+              ? 'bg-[var(--success)] hover:opacity-90 text-white cursor-pointer'
               : isDoneEnabled
-              ? 'bg-[#E11D48] hover:bg-[#F43F5E] text-[#FFFFFF] cursor-pointer'
-              : 'bg-[#272B30] text-[#6B7280] opacity-50 cursor-not-allowed border border-[#32373E]'
+              ? 'bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white cursor-pointer'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] opacity-50 cursor-not-allowed border border-[var(--border-subtle)]'
           }`}
         >
           <Check className="w-4 h-4 mr-1 stroke-[3]" />
@@ -352,13 +352,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       {/* Optional Exercise Note Input */}
       {showNotes && (
-        <div className="mt-2 pt-2 border-t border-[#272B30]">
+        <div className="mt-2 pt-2 border-t border-[var(--border-subtle)]">
           <input
             type="text"
             placeholder="Add note (e.g. seat height 4, felt easy)..."
             value={notes}
             onChange={(e) => updateExerciseNotes(userId, workoutExercise.id, e.target.value)}
-            className="w-full bg-[#1B1F23] border border-[#272B30] rounded-lg px-3 py-1.5 text-xs text-[#F5F5F5] placeholder-[#6B7280] focus:outline-none focus:border-[#E11D48]"
+            className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--primary)]"
           />
         </div>
       )}

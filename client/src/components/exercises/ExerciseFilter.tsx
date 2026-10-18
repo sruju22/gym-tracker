@@ -69,8 +69,8 @@ export const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             onClick={() => onEquipmentChange(eq)}
             className={`px-2.5 py-1 rounded-lg font-bold capitalize whitespace-nowrap flex-shrink-0 transition-all cursor-pointer border ${
               selectedEquipment === eq
-                ? 'bg-[#E11D48] text-[#FFFFFF] border-[#F43F5E] font-extrabold shadow-sm shadow-[#E11D48]/20'
-                : 'bg-[#1B1F23] text-[#9CA3AF] border border-[#272B30] hover:bg-[#23282D] hover:text-[#F5F5F5]'
+                ? 'bg-[var(--primary)] text-white border-[var(--primary)] font-extrabold shadow-sm shadow-[var(--primary)]/20'
+                : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)]'
             }`}
           >
             {eq === 'all' ? 'All Equipment' : eq.replace('_', ' ')}

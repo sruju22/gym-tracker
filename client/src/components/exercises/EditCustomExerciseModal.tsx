@@ -102,7 +102,7 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
         />
 
         <div>
-          <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
             Primary Muscle Group
           </label>
           <select
@@ -112,10 +112,10 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
               setPrimaryMuscle(mg);
               setSelectedSubAreas([]);
             }}
-            className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2.5 text-sm font-bold text-[#F5F5F5] focus:outline-none focus:border-[#E11D48] capitalize"
+            className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] capitalize"
           >
             {Object.values(MUSCLE_GROUPS).map((mg) => (
-              <option key={mg.id} value={mg.id}>
+              <option key={mg.id} value={mg.id} className="bg-[var(--bg-surface)] text-[var(--text-main)]">
                 {mg.name}
               </option>
             ))}
@@ -124,7 +124,7 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
 
         {currentMuscleGroupInfo && currentMuscleGroupInfo.areas.length > 0 && (
           <div>
-            <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
               Target Sub-Areas
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -137,8 +137,8 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
                     onClick={() => toggleSubArea(sa.id)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#E11D48] text-[#FFFFFF] border-[#F43F5E]'
-                        : 'bg-[#1B1F23] text-[#9CA3AF] border-[#272B30] hover:text-[#F5F5F5]'
+                        ? 'bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-sm shadow-[var(--primary)]/25'
+                        : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-main)]'
                     }`}
                   >
                     {sa.name}
@@ -151,16 +151,16 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
               Equipment
             </label>
             <select
               value={equipment}
               onChange={(e) => setEquipment(e.target.value as Equipment)}
-              className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs font-bold text-[#F5F5F5] focus:outline-none focus:border-[#E11D48]"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
             >
               {EQUIPMENT_OPTIONS.map((eq) => (
-                <option key={eq.id} value={eq.id}>
+                <option key={eq.id} value={eq.id} className="bg-[var(--bg-surface)] text-[var(--text-main)]">
                   {eq.name}
                 </option>
               ))}
@@ -168,16 +168,16 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
           </div>
 
           <div>
-            <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
               Exercise Type
             </label>
             <select
               value={exerciseType}
               onChange={(e) => setExerciseType(e.target.value as ExerciseType)}
-              className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs font-bold text-[#F5F5F5] focus:outline-none focus:border-[#E11D48]"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
             >
               {EXERCISE_TYPES.map((et) => (
-                <option key={et.id} value={et.id}>
+                <option key={et.id} value={et.id} className="bg-[var(--bg-surface)] text-[var(--text-main)]">
                   {et.name}
                 </option>
               ))}
@@ -186,14 +186,14 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
         </div>
 
         <div>
-          <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
             Instructions / Notes
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full bg-[#1B1F23] border border-[#272B30] rounded-xl px-3 py-2 text-xs font-bold text-[#F5F5F5] focus:outline-none focus:border-[#E11D48] resize-none"
+            className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] resize-none"
             placeholder="Add execution instructions or form cues..."
           />
         </div>

@@ -1,35 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
-import { getTodayDayOfWeek, formatDayName } from '../../utils/formatters';
+import { DayOfWeek, WorkoutSession } from '../../types';
+import { getTodayDayOfWeek, formatDayName, parseLocalDate } from '../../utils/formatters';
 import { DEFAULT_WORKOUT_PLAN } from '../../data/workoutPlan';
 import { useNavigate } from 'react-router-dom';
-import { Check, Edit3, Eye, Coffee } from 'lucide-react';
-import { UserModal } from '../auth/UserModal';
+import {
+  Check,
+  Edit3,
+  Eye,
+  Coffee,
+  Play,
+  Dumbbell,
+  Clock,
+  Flame,
+  Sparkles,
+  Calendar,
+  AlertCircle,
+  History,
+  BookOpen,
+  ChevronRight,
+  Plus,
+} from 'lucide-react';
 
-export const TodayCard: React.FC = () => {
+interface TodayCardProps {
+  selectedDay?: DayOfWeek;
+  selectedDate?: Date;
+  onJumpToToday?: () => void;
+  onOpenEditPlan?: () => void;
+}
+
+export const TodayCard: React.FC<TodayCardProps> = ({
+  selectedDay,
+  selectedDate,
+  onJumpToToday,
+  onOpenEditPlan,
+}) => {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
   const isGuest = !currentUser;
   const userId = currentUser?.id || 'guest';
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const {
     getWeeklyPlan,
     getActiveSession,
     getTodayCompletedWorkout,
+    getHistory,
+    getExercises,
     startTodayWorkout,
     startEditingWorkout,
     startCustomWorkout,
   } = useWorkoutStore();
 
-  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [selectedReviewSession, setSelectedReviewSession] = useState<WorkoutSession | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [, setTick] = useState(0);
 
-  // Periodic and focus-based tick to ensure date boundaries update automatically
   useEffect(() => {
     const timer = setInterval(() => {
       setTick((t) => t + 1);
@@ -51,23 +80,62 @@ export const TodayCard: React.FC = () => {
     };
   }, []);
 
+  // System's actual current date (never altered by calendar navigation)
+  const now = new Date();
+  const today = getTodayDayOfWeek();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  // Selected calendar date (strictly independent from actual today)
+  const targetDate = selectedDate ? new Date(selectedDate.getTime()) : now;
+  const targetMidnight = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime();
+
+  const isPast = targetMidnight < todayMidnight;
+  const isToday = targetMidnight === todayMidnight;
+  const isFuture = targetMidnight > todayMidnight;
+
+  const activeDay = selectedDay || today;
+
   const weeklyPlan = getWeeklyPlan(userId);
   const activeSession = getActiveSession(userId);
-  // Security guard: Guests NEVER have a completed workout record
   const todayCompleted = isGuest ? null : getTodayCompletedWorkout(userId);
+  const history = getHistory(userId);
+  const allExercises = getExercises(userId);
 
-  const today = getTodayDayOfWeek();
-  const todayConfig = (weeklyPlan && weeklyPlan[today]) || DEFAULT_WORKOUT_PLAN[today];
+  const targetConfig = (weeklyPlan && weeklyPlan[activeDay]) || DEFAULT_WORKOUT_PLAN[activeDay];
 
-  const handleStart = () => {
+  // Match all historical completed sessions for the selected target date using local calendar date
+  const sessionsForDate = useMemo(() => {
+    return history.filter((h) => {
+      if (h.status !== 'completed') return false;
+      const d = parseLocalDate(h.completedAt || h.date);
+      if (isNaN(d.getTime())) return false;
+      const sMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      return sMidnight === targetMidnight;
+    });
+  }, [history, targetMidnight]);
+
+  // Recommended exercises for future workout preview
+  const previewExercises = useMemo(() => {
+    if (!targetConfig || targetConfig.isRest) return [];
+    const targetMuscleNames = new Set(targetConfig.muscleGroups.map((m) => m.name.toLowerCase()));
+    const matched = allExercises.filter((ex) => targetMuscleNames.has(ex.primaryMuscle.toLowerCase()));
+    return matched.slice(0, 6);
+  }, [targetConfig, allExercises]);
+
+  const handleStartToday = () => {
     if (!activeSession) {
       startTodayWorkout(userId);
     }
     navigate('/workout');
   };
 
+  const handleStartAdditional = () => {
+    startCustomWorkout(userId, targetConfig.muscleGroups.map((m) => m.name));
+    navigate('/workout');
+  };
+
   const handleStartOptional = () => {
-    startCustomWorkout(userId, ['chest']);
+    startCustomWorkout(userId, ['chest', 'triceps']);
     navigate('/workout');
   };
 
@@ -81,287 +149,829 @@ export const TodayCard: React.FC = () => {
     }
   };
 
-  // 1. ACTIVE SESSION IN PROGRESS
-  if (activeSession) {
+  const formattedTargetDate = targetDate.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  // ==========================================
+  // STATE 1: TODAY'S WORKOUT IN PROGRESS
+  // ==========================================
+  if (isToday && activeSession) {
     return (
-      <Card className="w-full border border-[#E11D48]/40 bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+      <Card className="w-full relative overflow-hidden border border-[var(--primary-border)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl shadow-lg shadow-red-500/5 text-[var(--text-main)] transition-all">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500" />
+
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
+          <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+            <Flame className="w-3.5 h-3.5 text-[var(--primary)]" />
             TODAY'S WORKOUT · {formatDayName(today).toUpperCase()}
           </span>
-          <span className="text-[10px] font-black text-[#E11D48] bg-[#E11D48]/15 px-2.5 py-1 rounded-md border border-[#E11D48]/40 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#E11D48] animate-pulse" />
+          <span className="text-[10px] font-black text-[var(--primary)] bg-[var(--primary-subtle)] px-2.5 py-1 rounded-full border border-[var(--primary-border)] uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
             IN PROGRESS
           </span>
         </div>
 
         <div className="mb-4">
-          <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-1">
-            {activeSession.workoutName || todayConfig.name}
+          <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-1">
+            {activeSession.workoutName || targetConfig.name}
           </h2>
-          <div className="text-xs font-semibold text-[#9CA3AF]">
-            Workout currently active · {activeSession.exercises.length} exercise{activeSession.exercises.length === 1 ? '' : 's'} added
+          <div className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-2">
+            <span>{activeSession.exercises.length} exercise{activeSession.exercises.length === 1 ? '' : 's'} added</span>
+            <span>·</span>
+            <span>Session active now</span>
           </div>
         </div>
 
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
+        <button
           onClick={() => navigate('/workout')}
-          className="font-extrabold py-3.5 sm:py-4 text-sm sm:text-base rounded-xl min-h-[48px] sm:min-h-[52px]"
+          className="w-full h-13 sm:h-14 rounded-2xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] text-white font-black text-sm sm:text-base uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
         >
+          <Play className="w-4 h-4 fill-white stroke-[2.5]" />
           <span>CONTINUE WORKOUT</span>
-        </Button>
+        </button>
       </Card>
     );
   }
 
-  // 2. UNIQUE STATE: Today's Workout has been COMPLETED and SAVED
-  if (todayCompleted) {
-    const finishedTime = formatCompletionTime(todayCompleted.completedAt || todayCompleted.date);
+  // ==========================================
+  // STATE 2: TODAY'S WORKOUT COMPLETED
+  // ==========================================
+  if (isToday && (todayCompleted || sessionsForDate.length > 0)) {
+    const displaySessions = sessionsForDate.length > 0 ? sessionsForDate : (todayCompleted ? [todayCompleted] : []);
 
     return (
       <>
-        <Card className="w-full border border-[#22C55E]/40 bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
-              TODAY'S WORKOUT · {formatDayName(today).toUpperCase()}
-            </span>
-            <span className="text-[10px] font-black text-[#22C55E] bg-[#22C55E]/15 px-2.5 py-1 rounded-md border border-[#22C55E]/40 uppercase tracking-wider flex items-center gap-1">
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-              COMPLETED
-            </span>
-          </div>
+        <div className="space-y-3 w-full">
+          <Card className="w-full relative overflow-hidden border border-emerald-500/30 bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl shadow-lg shadow-emerald-500/5 text-[var(--text-main)] transition-all">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
 
-          <div className="mb-4">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-1 flex items-center gap-2">
-              <span>{todayCompleted.workoutName || todayConfig.name}</span>
-            </h2>
-            <div className="text-xs font-bold text-[#22C55E] flex items-center gap-1.5">
-              <span>You're done for today!</span>
-              {finishedTime && (
-                <span className="text-[#9CA3AF] font-medium">· Finished at {finishedTime}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Key Metrics */}
-          <div className="grid grid-cols-3 gap-2 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-center mb-5">
-            <div>
-              <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Exercises</div>
-              <div className="text-base sm:text-lg font-black text-[#F5F5F5]">
-                {todayCompleted.exercises.length}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Sets Done</div>
-              <div className="text-base sm:text-lg font-black text-[#F5F5F5]">
-                {todayCompleted.totalSets}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Total Volume</div>
-              <div className="text-base sm:text-lg font-black text-[#E11D48]">
-                {todayCompleted.totalVolume} kg
-              </div>
-            </div>
-          </div>
-
-          {/* Actions: Edit Workout & Review */}
-          <div className="flex items-center gap-2.5 mb-3">
-            <Button
-              variant="secondary"
-              size="md"
-              fullWidth
-              onClick={() => {
-                startEditingWorkout(userId, todayCompleted);
-                navigate('/workout');
-              }}
-              className="font-bold flex items-center justify-center gap-1.5 min-h-[46px] border-[#272B30] hover:border-[#E11D48]/60 hover:text-[#F5F5F5]"
-            >
-              <Edit3 className="w-4 h-4 text-[#E11D48]" />
-              <span>Edit Workout</span>
-            </Button>
-
-            <Button
-              variant="secondary"
-              size="md"
-              fullWidth
-              onClick={() => setIsReviewOpen(true)}
-              className="font-bold flex items-center justify-center gap-1.5 min-h-[46px] border-[#272B30] hover:border-[#272B30] hover:text-[#F5F5F5]"
-            >
-              <Eye className="w-4 h-4 text-[#9CA3AF]" />
-              <span>Review Details</span>
-            </Button>
-          </div>
-
-          {/* Optional Extra Session Link */}
-          <div className="text-center pt-2.5 border-t border-[#272B30]/60">
-            <button
-              onClick={handleStartOptional}
-              className="text-[11px] font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer"
-            >
-              + Start another workout session today
-            </button>
-          </div>
-        </Card>
-
-        {/* Review Workout Modal */}
-        <Modal
-          isOpen={isReviewOpen}
-          onClose={() => setIsReviewOpen(false)}
-          title={`Today's Workout — ${(todayCompleted.workoutName || todayConfig.name).toUpperCase()}`}
-        >
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2 bg-[#1B1F23] border border-[#272B30] rounded-xl p-3 text-center">
-              <div>
-                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Exercises</div>
-                <div className="text-sm font-black text-[#F5F5F5]">{todayCompleted.exercises.length}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Total Sets</div>
-                <div className="text-sm font-black text-[#F5F5F5]">{todayCompleted.totalSets}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Volume</div>
-                <div className="text-sm font-black text-[#E11D48]">{todayCompleted.totalVolume} kg</div>
-              </div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
+                TODAY'S WORKOUT · {formatDayName(today).toUpperCase()}
+              </span>
+              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/15 px-2.5 py-1 rounded-full border border-emerald-500/30 uppercase tracking-wider flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                {displaySessions.length > 1 ? `${displaySessions.length} SESSIONS COMPLETED` : 'COMPLETED'}
+              </span>
             </div>
 
-            <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
-              {todayCompleted.exercises.map((ex, idx) => (
-                <div key={ex.id || idx} className="bg-[#1B1F23] border border-[#272B30] rounded-xl p-3">
-                  <div className="text-xs font-bold text-[#F5F5F5] mb-1.5">{ex.exercise.name}</div>
-                  <div className="flex flex-wrap gap-1">
-                    {ex.sets.map((s, sIdx) => (
-                      <span
-                        key={sIdx}
-                        className={`border px-2 py-0.5 rounded text-[11px] font-semibold ${
-                          s.completed
-                            ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
-                            : 'bg-[#14171A] border-[#272B30] text-[#9CA3AF]'
-                        }`}
-                      >
-                        Set {s.setNumber}: {s.weight}kg × {s.reps}
-                      </span>
-                    ))}
-                  </div>
-                  {ex.notes && (
-                    <div className="mt-1.5 text-[11px] text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/40 italic">
-                      "{ex.notes}"
+            {displaySessions.map((sessionRecord, idx) => {
+              const finishedTime = formatCompletionTime(sessionRecord.completedAt || sessionRecord.date);
+
+              return (
+                <div
+                  key={sessionRecord.id || idx}
+                  className={`py-3 ${idx > 0 ? 'border-t border-[var(--border-subtle)] mt-3 pt-4' : ''}`}
+                >
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
+                        {sessionRecord.workoutName || targetConfig.name}
+                      </h2>
+                      {finishedTime && (
+                        <span className="text-[11px] font-bold text-[var(--text-secondary)]">
+                          Finished at {finishedTime}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                      <span>Completed today ✓</span>
+                    </div>
+                  </div>
 
-            <div className="pt-2 border-t border-[#272B30]">
-              <Button
-                variant="primary"
-                size="md"
-                fullWidth
-                onClick={() => {
-                  setIsReviewOpen(false);
-                  startEditingWorkout(userId, todayCompleted);
-                  navigate('/workout');
-                }}
-                className="font-bold flex items-center justify-center gap-1.5 min-h-[44px]"
+                  {/* Key Metrics Row */}
+                  <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3 text-center mb-3">
+                    <div>
+                      <div className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Exercises</div>
+                      <div className="text-base sm:text-lg font-black text-[var(--text-main)] mt-0.5">
+                        {sessionRecord.exercises.length}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Sets</div>
+                      <div className="text-base sm:text-lg font-black text-[var(--text-main)] mt-0.5">
+                        {sessionRecord.totalSets}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Volume</div>
+                      <div className="text-base sm:text-lg font-black text-[var(--primary)] mt-0.5">
+                        {sessionRecord.totalVolume.toLocaleString()} <span className="text-[10px] font-bold">kg</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons: View Workout & Edit Workout */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSelectedReviewSession(sessionRecord)}
+                      className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Workout</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        startEditingWorkout(userId, sessionRecord);
+                        navigate('/workout');
+                      }}
+                      className="gap-2 py-3 rounded-xl font-black text-xs uppercase text-[var(--primary)] border-[var(--primary-border)] hover:bg-[var(--primary-subtle)]"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit Workout</span>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Deliberate additional session link (not the primary or default action) */}
+            <div className="pt-3 border-t border-[var(--border-subtle)] text-center">
+              <button
+                onClick={handleStartAdditional}
+                className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors inline-flex items-center gap-1 cursor-pointer"
               >
-                <Edit3 className="w-4 h-4" />
-                <span>Edit Workout</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Start an Additional Workout</span>
+              </button>
+            </div>
+          </Card>
+        </div>
+
+        {/* Modal for Reviewing Session Breakdown */}
+        {selectedReviewSession && (
+          <Modal
+            isOpen={Boolean(selectedReviewSession)}
+            onClose={() => setSelectedReviewSession(null)}
+            title={selectedReviewSession.workoutName || 'Workout Details'}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pb-3 border-b border-[var(--border-subtle)]">
+                <span>{new Date(selectedReviewSession.date).toLocaleDateString(undefined, { dateStyle: 'full' })}</span>
+                <span>
+                  {formatCompletionTime(selectedReviewSession.completedAt || selectedReviewSession.date)}
+                </span>
+              </div>
+
+              <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+                {selectedReviewSession.exercises.map((ex, idx) => (
+                  <div key={ex.id || idx} className="bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border-subtle)]">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-black text-[var(--text-main)] uppercase">{ex.exercise?.name || 'Exercise'}</span>
+                      <span className="text-[10px] font-bold text-[var(--text-secondary)]">{ex.sets.length} sets</span>
+                    </div>
+                    <div className="text-xs text-[var(--text-secondary)] space-y-0.5">
+                      {ex.sets.map((s, sIdx) => (
+                        <div key={sIdx} className="flex justify-between text-[11px]">
+                          <span>Set {s.setNumber}:</span>
+                          <span className="font-semibold text-[var(--text-main)]">
+                            {s.weight} kg × {s.reps} reps {s.completed ? '✓' : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button variant="secondary" fullWidth onClick={() => setSelectedReviewSession(null)}>
+                Close
               </Button>
             </div>
-          </div>
-        </Modal>
+          </Modal>
+        )}
       </>
     );
   }
 
-  // 3. DEDICATED REST DAY STATE
-  if (todayConfig.isRest) {
-    return (
-      <Card className="w-full border border-[#272B30] bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
-            TODAY'S WORKOUT · {formatDayName(today).toUpperCase()}
-          </span>
-          <span className="text-[10px] font-black text-[#9CA3AF] bg-[#1F2429] px-2.5 py-1 rounded-md border border-[#272B30] uppercase tracking-wider">
-            REST DAY
-          </span>
-        </div>
+  // ==========================================
+  // STATE 3: PAST DAY SELECTION
+  // (Never display a Start Workout action!)
+  // ==========================================
+  if (isPast) {
+    // 3A. Past day HAS completed session(s)
+    if (sessionsForDate.length > 0) {
+      return (
+        <>
+          <div className="space-y-3 w-full">
+            <Card className="w-full relative overflow-hidden border border-emerald-500/30 bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl shadow-sm text-[var(--text-main)] transition-all">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                  HISTORICAL WORKOUT{sessionsForDate.length > 1 ? 'S' : ''} · {formattedTargetDate.toUpperCase()}
+                </span>
+                <div className="flex items-center gap-2">
+                  {onJumpToToday && (
+                    <button
+                      onClick={onJumpToToday}
+                      className="text-[10px] font-bold text-[var(--primary)] hover:underline cursor-pointer"
+                    >
+                      Back to Today
+                    </button>
+                  )}
+                  <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/15 px-2.5 py-1 rounded-full border border-emerald-500/30 uppercase tracking-wider flex items-center gap-1">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                    {sessionsForDate.length > 1 ? `${sessionsForDate.length} SESSIONS` : 'COMPLETED'}
+                  </span>
+                </div>
+              </div>
 
-        <div className="py-5 sm:py-6 text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#1F2429] border border-[#272B30] flex items-center justify-center text-[#E11D48]">
-            <Coffee className="w-6 h-6 stroke-[2.2]" />
+              {sessionsForDate.map((pastRecord, idx) => {
+                const finishedTime = formatCompletionTime(pastRecord.completedAt || pastRecord.date);
+
+                return (
+                  <div
+                    key={pastRecord.id || idx}
+                    className={`py-3 ${idx > 0 ? 'border-t border-[var(--border-subtle)] mt-3 pt-4' : ''}`}
+                  >
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
+                          {pastRecord.workoutName || targetConfig.name}
+                        </h2>
+                        {finishedTime && (
+                          <span className="text-[11px] font-bold text-[var(--text-secondary)]">
+                            Finished at {finishedTime}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs font-semibold text-emerald-400">
+                        Logged and saved for {formattedTargetDate}
+                      </div>
+                    </div>
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3 text-center mb-3">
+                      <div>
+                        <div className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Exercises</div>
+                        <div className="text-base sm:text-lg font-black text-[var(--text-main)] mt-0.5">
+                          {pastRecord.exercises.length}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Sets</div>
+                        <div className="text-base sm:text-lg font-black text-[var(--text-main)] mt-0.5">
+                          {pastRecord.totalSets}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Volume</div>
+                        <div className="text-base sm:text-lg font-black text-[var(--primary)] mt-0.5">
+                          {pastRecord.totalVolume.toLocaleString()} <span className="text-[10px] font-bold">kg</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Past Session Actions ONLY (No Start Workout Action) */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setSelectedReviewSession(pastRecord)}
+                        className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View Workout</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          startEditingWorkout(userId, pastRecord);
+                          navigate('/workout');
+                        }}
+                        className="gap-2 py-3 rounded-xl font-black text-xs uppercase text-[var(--primary)] border-[var(--primary-border)] hover:bg-[var(--primary-subtle)]"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit Workout</span>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div className="pt-3 border-t border-[var(--border-subtle)] text-center">
+                <button
+                  onClick={() => navigate('/history')}
+                  className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  <span>View in Full History</span>
+                </button>
+              </div>
+            </Card>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-2">
-            REST DAY
-          </h2>
-          <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-sm mx-auto leading-relaxed font-medium">
-            Recovery day. Let your muscles recover and get ready for your next session.
-          </p>
+
+          {/* Modal for Reviewing Session Breakdown */}
+          {selectedReviewSession && (
+            <Modal
+              isOpen={Boolean(selectedReviewSession)}
+              onClose={() => setSelectedReviewSession(null)}
+              title={selectedReviewSession.workoutName || 'Historical Workout Details'}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pb-3 border-b border-[var(--border-subtle)]">
+                  <span>{new Date(selectedReviewSession.date).toLocaleDateString(undefined, { dateStyle: 'full' })}</span>
+                  <span>
+                    {formatCompletionTime(selectedReviewSession.completedAt || selectedReviewSession.date)}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+                  {selectedReviewSession.exercises.map((ex, idx) => (
+                    <div key={ex.id || idx} className="bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border-subtle)]">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-black text-[var(--text-main)] uppercase">{ex.exercise?.name || 'Exercise'}</span>
+                        <span className="text-[10px] font-bold text-[var(--text-secondary)]">{ex.sets.length} sets</span>
+                      </div>
+                      <div className="text-xs text-[var(--text-secondary)] space-y-0.5">
+                        {ex.sets.map((s, sIdx) => (
+                          <div key={sIdx} className="flex justify-between text-[11px]">
+                            <span>Set {s.setNumber}:</span>
+                            <span className="font-semibold text-[var(--text-main)]">
+                              {s.weight} kg × {s.reps} reps {s.completed ? '✓' : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button variant="secondary" fullWidth onClick={() => setSelectedReviewSession(null)}>
+                  Close
+                </Button>
+              </div>
+            </Modal>
+          )}
+        </>
+      );
+    }
+
+    // 3B. Past day was a scheduled REST DAY
+    if (targetConfig.isRest) {
+      return (
+        <Card className="w-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl text-[var(--text-main)] transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+              <Coffee className="w-3.5 h-3.5 text-amber-500" />
+              PAST SCHEDULE · {formattedTargetDate.toUpperCase()}
+            </span>
+            <div className="flex items-center gap-2">
+              {onJumpToToday && (
+                <button
+                  onClick={onJumpToToday}
+                  className="text-[10px] font-bold text-[var(--primary)] hover:underline cursor-pointer"
+                >
+                  Back to Today
+                </button>
+              )}
+              <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/25 uppercase tracking-wider">
+                REST DAY
+              </span>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-1">
+              Rest Day
+            </h2>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              Scheduled recovery day on {formatDayName(activeDay)}, {formattedTargetDate}. No workout was required.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/history')}
+              className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>View History</span>
+            </Button>
+            {onJumpToToday && (
+              <Button
+                variant="outline"
+                onClick={onJumpToToday}
+                className="py-3 rounded-xl font-black text-xs uppercase"
+              >
+                <span>Back to Today</span>
+              </Button>
+            )}
+          </div>
+        </Card>
+      );
+    }
+
+    // 3C. Past day was scheduled but NO WORKOUT WAS COMPLETED
+    return (
+      <Card className="w-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl text-[var(--text-main)] transition-all">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+            PAST SCHEDULE · {formattedTargetDate.toUpperCase()}
+          </span>
+          <div className="flex items-center gap-2">
+            {onJumpToToday && (
+              <button
+                onClick={onJumpToToday}
+                className="text-[10px] font-bold text-[var(--primary)] hover:underline cursor-pointer"
+              >
+                Back to Today
+              </button>
+            )}
+            <span className="text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-card)] px-2.5 py-1 rounded-full border border-[var(--border-subtle)] uppercase tracking-wider">
+              WORKOUT NOT COMPLETED
+            </span>
+          </div>
         </div>
 
-        <div className="text-center pt-3 border-t border-[#272B30]/60">
-          <button
-            onClick={handleStartOptional}
-            className="text-xs font-bold text-[#9CA3AF] hover:text-[#E11D48] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+        <div className="mb-4">
+          <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-1">
+            Workout not completed
+          </h2>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
+            {targetConfig.name} was scheduled on {formatDayName(activeDay)}, {formattedTargetDate}, but was not completed.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {targetConfig.muscleGroups.map((m) => (
+              <span
+                key={m.name}
+                className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]"
+              >
+                {m.displayName || m.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Never show Start Workout for past planned sessions */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/history')}
+            className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
           >
-            <span>+ Start an optional workout</span>
-          </button>
+            <History className="w-3.5 h-3.5" />
+            <span>View History</span>
+          </Button>
+          {onJumpToToday && (
+            <Button
+              variant="outline"
+              onClick={onJumpToToday}
+              className="py-3 rounded-xl font-black text-xs uppercase"
+            >
+              <span>Back to Today</span>
+            </Button>
+          )}
         </div>
       </Card>
     );
   }
 
-  // 4. NORMAL SCHEDULED WORKOUT DAY — NOT STARTED
+  // ==========================================
+  // STATE 4: FUTURE DAY PREVIEW
+  // (Do not present a normal Start Workout action!)
+  // ==========================================
+  if (isFuture) {
+    if (targetConfig.isRest) {
+      return (
+        <Card className="w-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl text-[var(--text-main)] transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+              <Coffee className="w-3.5 h-3.5 text-amber-500" />
+              FUTURE SCHEDULE · {formattedTargetDate.toUpperCase()}
+            </span>
+            <div className="flex items-center gap-2">
+              {onJumpToToday && (
+                <button
+                  onClick={onJumpToToday}
+                  className="text-[10px] font-bold text-[var(--primary)] hover:underline cursor-pointer"
+                >
+                  Back to Today
+                </button>
+              )}
+              <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/25 uppercase tracking-wider">
+                UPCOMING REST
+              </span>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-1">
+              Scheduled Rest Day
+            </h2>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              Planned recovery on {formatDayName(activeDay)}, {formattedTargetDate}. Prepare your body with rest and nutrition.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (onOpenEditPlan) onOpenEditPlan();
+                else navigate('/workout');
+              }}
+              className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>View Plan</span>
+            </Button>
+            {onJumpToToday && (
+              <Button
+                variant="outline"
+                onClick={onJumpToToday}
+                className="py-3 rounded-xl font-black text-xs uppercase"
+              >
+                <span>Back to Today</span>
+              </Button>
+            )}
+          </div>
+        </Card>
+      );
+    }
+
+    // Future scheduled workout preview
+    return (
+      <>
+        <Card className="w-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl text-[var(--text-main)] transition-all shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[var(--primary)]" />
+              FUTURE SCHEDULE · {formattedTargetDate.toUpperCase()}
+            </span>
+            <div className="flex items-center gap-2">
+              {onJumpToToday && (
+                <button
+                  onClick={onJumpToToday}
+                  className="text-[10px] font-bold text-[var(--primary)] hover:underline cursor-pointer"
+                >
+                  Back to Today
+                </button>
+              )}
+              <span className="text-[10px] font-black text-[var(--primary)] bg-[var(--primary-subtle)] px-2.5 py-1 rounded-full border border-[var(--primary-border)] uppercase tracking-wider">
+                PLANNED
+              </span>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-2">
+              {targetConfig.name}
+            </h2>
+
+            <div className="flex flex-wrap items-center gap-1.5 mb-3">
+              {targetConfig.muscleGroups.map((m) => (
+                <span
+                  key={m.name}
+                  className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-subtle)]"
+                >
+                  {m.displayName || m.name}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-4 text-xs font-bold text-[var(--text-secondary)] mb-4">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-[var(--primary)]" />
+                <span>~45-60 min</span>
+              </div>
+              <span>·</span>
+              <div className="flex items-center gap-1.5">
+                <Dumbbell className="w-3.5 h-3.5 text-[var(--primary)]" />
+                <span>{targetConfig.muscleGroups.length * 2 || 5} Exercises Planned</span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-[var(--bg-card)]/60 border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+              <span>
+                This workout is planned for {formatDayName(activeDay)}, {formattedTargetDate}. You can start and log it on that day.
+              </span>
+            </div>
+          </div>
+
+          {/* Primary Action: Preview Workout */}
+          <button
+            onClick={() => setIsPreviewModalOpen(true)}
+            className="w-full h-13 sm:h-14 rounded-2xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
+          >
+            <Eye className="w-4 h-4 stroke-[2.5]" />
+            <span>PREVIEW WORKOUT</span>
+          </button>
+
+          {/* Secondary Actions: View Plan & Back to Today */}
+          <div className="grid grid-cols-2 gap-2.5 mt-2.5">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (onOpenEditPlan) onOpenEditPlan();
+                else setIsPreviewModalOpen(true);
+              }}
+              className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>View Plan</span>
+            </Button>
+            {onJumpToToday && (
+              <Button
+                variant="outline"
+                onClick={onJumpToToday}
+                className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
+              >
+                <span>Back to Today</span>
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        {/* Future Workout Preview Modal */}
+        {isPreviewModalOpen && (
+          <Modal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            title={targetConfig.name}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pb-3 border-b border-[var(--border-subtle)]">
+                <span>Scheduled for {formatDayName(activeDay)}, {formattedTargetDate}</span>
+                <span className="font-bold text-[var(--primary)]">~45-60 min</span>
+              </div>
+
+              <div>
+                <div className="text-[11px] font-bold uppercase text-[var(--text-secondary)] mb-2">
+                  Target Muscle Groups
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {targetConfig.muscleGroups.map((m) => (
+                    <span
+                      key={m.name}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-main)]"
+                    >
+                      {m.displayName || m.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {previewExercises.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-bold uppercase text-[var(--text-secondary)] mb-2">
+                    Planned Exercises
+                  </div>
+                  <div className="space-y-2 max-h-[35vh] overflow-y-auto pr-1">
+                    {previewExercises.map((ex, idx) => (
+                      <div
+                        key={ex.id || idx}
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]"
+                      >
+                        <div className="min-w-0 pr-2">
+                          <div className="text-xs font-bold text-[var(--text-main)] truncate">
+                            {ex.name}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] capitalize">
+                            {ex.primaryMuscle} • {ex.equipment}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-black text-[var(--text-secondary)] shrink-0">
+                          3–4 Sets
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
+                This workout session will be ready to start and log when {formatDayName(activeDay)} arrives.
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                {onOpenEditPlan && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsPreviewModalOpen(false);
+                      onOpenEditPlan();
+                    }}
+                    className="font-bold text-xs"
+                  >
+                    Edit Routine Plan
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  fullWidth={!onOpenEditPlan}
+                  onClick={() => setIsPreviewModalOpen(false)}
+                  className="font-bold text-xs"
+                >
+                  Close Preview
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </>
+    );
+  }
+
+  // ==========================================
+  // STATE 5: TODAY REST DAY
+  // ==========================================
+  if (targetConfig.isRest) {
+    return (
+      <Card className="w-full relative overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl shadow-sm text-[var(--text-main)] transition-all">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+            <Coffee className="w-3.5 h-3.5 text-amber-500" />
+            TODAY'S SCHEDULE · {formatDayName(today).toUpperCase()}
+          </span>
+          <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/25 uppercase tracking-wider">
+            REST & RECOVERY
+          </span>
+        </div>
+
+        <div className="mb-4">
+          <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-1">
+            Rest & Recovery Day
+          </h2>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+            Rest is when muscles rebuild and grow stronger. Focus on hydration, quality nutrition, light mobility, and deep sleep.
+          </p>
+        </div>
+
+        <button
+          onClick={handleStartOptional}
+          className="w-full h-12 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-main)] font-black text-xs sm:text-sm uppercase tracking-wider border border-[var(--border-subtle)] hover:border-[var(--primary-border)] hover:text-[var(--primary)] flex items-center justify-center gap-2 transition-all cursor-pointer"
+        >
+          <Dumbbell className="w-4 h-4" />
+          <span>START OPTIONAL WORKOUT</span>
+        </button>
+      </Card>
+    );
+  }
+
+  // ==========================================
+  // STATE 6: TODAY SCHEDULED WORKOUT
+  // ==========================================
+  const estimatedDuration = '~45-60 min';
+  const exerciseCount = targetConfig.muscleGroups.length > 0 ? targetConfig.muscleGroups.length * 2 : 5;
+
   return (
-    <Card className="w-full border border-[#272B30] bg-[#14171A] p-5 sm:p-6 rounded-2xl shadow-sm text-[#F5F5F5]">
+    <Card className="w-full relative overflow-hidden border border-[var(--border-subtle)] hover:border-[var(--border-strong)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl shadow-lg shadow-black/10 text-[var(--text-main)] transition-all">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] uppercase tracking-widest">
-          TODAY'S WORKOUT · {formatDayName(today).toUpperCase()}
+        <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-[var(--primary)]" />
+          TODAY'S FOCUS · {formatDayName(today).toUpperCase()}
+        </span>
+        <span className="text-[10px] font-black text-[var(--primary)] bg-[var(--primary-subtle)] px-2.5 py-1 rounded-full border border-[var(--primary-border)] uppercase tracking-wider">
+          SCHEDULED
         </span>
       </div>
 
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] uppercase tracking-tight mb-3">
-          {todayConfig.name || todayConfig.muscleGroups.map((mg) => mg.displayName).join(' + ')}
+      <div className="mb-4">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-[var(--text-main)] uppercase tracking-tight mb-2">
+          {targetConfig.name}
         </h2>
 
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-6 text-xs sm:text-sm text-[#9CA3AF] font-medium">
-          {todayConfig.muscleGroups.map((mg, idx) => (
-            <React.Fragment key={idx}>
-              {idx > 0 && <span className="text-[#6B7280] font-normal">·</span>}
-              <span className="font-bold text-[#F5F5F5]">{mg.displayName}</span>
-            </React.Fragment>
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          {targetConfig.muscleGroups.map((m) => (
+            <span
+              key={m.name}
+              className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-subtle)]"
+            >
+              {m.displayName || m.name}
+            </span>
           ))}
         </div>
 
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onClick={handleStart}
-          className="font-extrabold py-3.5 sm:py-4 text-sm sm:text-base rounded-xl min-h-[48px] sm:min-h-[52px]"
-        >
-          <span>START WORKOUT</span>
-        </Button>
-
-        {isGuest && (
-          <div className="mt-3.5 pt-3 border-t border-[#272B30]/60 flex items-center justify-between text-[11px] text-[#9CA3AF]">
-            <span>Guest session · Workouts won't sync to cloud</span>
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="font-bold text-[#E11D48] hover:text-[#F43F5E] transition-colors cursor-pointer"
-            >
-              Sign In
-            </button>
+        <div className="flex items-center gap-4 text-xs font-bold text-[var(--text-secondary)]">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-[var(--primary)]" />
+            <span>{estimatedDuration}</span>
           </div>
-        )}
+          <span>·</span>
+          <div className="flex items-center gap-1.5">
+            <Dumbbell className="w-3.5 h-3.5 text-[var(--primary)]" />
+            <span>{exerciseCount} Exercises</span>
+          </div>
+        </div>
       </div>
 
-      <UserModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      {/* High-Contrast Large Red Start Button */}
+      <button
+        onClick={handleStartToday}
+        className="w-full h-13 sm:h-14 rounded-2xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] text-white font-black text-sm sm:text-base uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-[0.99] group"
+      >
+        <Play className="w-4 h-4 fill-white stroke-[2.5] group-hover:scale-110 transition-transform" />
+        <span>START WORKOUT</span>
+      </button>
     </Card>
   );
 };

@@ -119,7 +119,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
     <Modal isOpen={isOpen} onClose={onClose} title={goal ? 'Edit Fitness Goal' : 'Create Fitness Goal'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block mb-1">
+          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
             Goal Type
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -128,8 +128,8 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
               onClick={() => handleTypeChange('body_weight')}
               className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                 type === 'body_weight'
-                  ? 'bg-[#E11D48] text-[#FFFFFF] border-[#F43F5E]'
-                  : 'bg-[#1B1F23] text-[#9CA3AF] border-[#272B30] hover:text-[#F5F5F5]'
+                  ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm shadow-[var(--primary)]/25'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-main)]'
               }`}
             >
               ⚖️ Body Weight
@@ -139,8 +139,8 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
               onClick={() => handleTypeChange('exercise_strength')}
               className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                 type === 'exercise_strength'
-                  ? 'bg-[#E11D48] text-[#FFFFFF] border-[#F43F5E]'
-                  : 'bg-[#1B1F23] text-[#9CA3AF] border-[#272B30] hover:text-[#F5F5F5]'
+                  ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm shadow-[var(--primary)]/25'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-main)]'
               }`}
             >
               🏋️ Strength / Lift
@@ -150,7 +150,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
 
         {type === 'exercise_strength' && (
           <div className="space-y-2">
-            <label className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block">
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">
               Target Exercise
             </label>
             <SearchBar
@@ -158,7 +158,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
               onChange={setExerciseSearch}
               placeholder="Search target exercise..."
             />
-            <div className="max-h-48 overflow-y-auto bg-[#1B1F23] border border-[#272B30] rounded-xl p-1.5 space-y-1">
+            <div className="max-h-48 overflow-y-auto bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-1.5 space-y-1">
               {filteredExercises.length > 0 ? (
                 filteredExercises.map((ex) => {
                   const isSelected = ex.id === selectedExerciseId;
@@ -171,14 +171,14 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
                       onClick={() => handleExerciseChange(ex.id)}
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
                         isSelected
-                          ? 'bg-[#E11D48] text-[#FFFFFF]'
-                          : 'text-[#F5F5F5] hover:bg-[#272B30]'
+                          ? 'bg-[var(--primary)] text-white font-bold'
+                          : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
                       }`}
                     >
                       <span className="truncate pr-2">{ex.name}</span>
                       <span
                         className={`text-[11px] capitalize shrink-0 ${
-                          isSelected ? 'text-[#FFFFFF]/80 font-normal' : 'text-[#9CA3AF]'
+                          isSelected ? 'text-white/80 font-normal' : 'text-[var(--text-secondary)]'
                         }`}
                       >
                         {muscleName}
@@ -187,7 +187,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
                   );
                 })
               ) : (
-                <div className="text-xs text-[#9CA3AF] py-4 text-center font-medium">
+                <div className="text-xs text-[var(--text-secondary)] py-4 text-center font-medium">
                   No exercises found
                 </div>
               )}

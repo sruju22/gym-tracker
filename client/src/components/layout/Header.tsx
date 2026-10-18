@@ -1,59 +1,133 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore, ThemeMode } from '../../store/themeStore';
 import { UserModal } from '../auth/UserModal';
-import { User } from 'lucide-react';
+import { User, Sun, Moon, Laptop, Dumbbell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   title?: string;
   subtitle?: string;
   showGreeting?: boolean;
+  action?: React.ReactNode;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  title = 'Gym Tracker',
+  title,
   subtitle,
   showGreeting = false,
+  action,
 }) => {
+  const navigate = useNavigate();
   const { currentUser } = useAuthStore();
+  const { theme, setTheme, resolvedTheme } = useThemeStore();
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   const initialLetter = currentUser ? currentUser.name.charAt(0).toUpperCase() : null;
 
+  const cycleTheme = () => {
+    const next: ThemeMode =
+      theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark';
+    setTheme(next);
+  };
+
+  const getTimeGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Good morning';
+    if (hour >= 12 && hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const getFormattedDate = (): string => {
+    return new Date().toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-[#0B0D0F]/95 backdrop-blur-md border-b border-[#272B30] px-4 sm:px-5 py-3 pt-safe mb-2">
-        <div className="w-full sm:max-w-xl mx-auto flex items-center justify-between">
-          {showGreeting ? (
-            <div className="min-w-0">
-              <div className="text-[11px] sm:text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-0.5">
-                {currentUser ? 'Welcome back' : 'Welcome to GymTracker'}
-              </div>
-              <h1 className="text-xl sm:text-2xl font-black text-[#E11D48] tracking-tight leading-tight truncate">
-                {currentUser?.name || 'Guest Athlete'}
-              </h1>
+      <header className="w-full transition-colors pb-1">
+        {/* Top Mobile Bar: Brand Mark + Quick Controls */}
+        <div className="flex items-center justify-between mb-2 md:hidden">
+          {/* Brand Mark */}
+          <div
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 cursor-pointer select-none"
+          >
+            <div className="w-8 h-8 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center font-black shadow-sm shadow-red-500/25">
+              <Dumbbell className="w-4 h-4 stroke-[2.5]" />
             </div>
-          ) : (
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-black text-[#F5F5F5] tracking-tight leading-tight truncate">
+            <span className="text-base font-black tracking-wider text-[var(--text-main)]">
+              GYM<span className="text-[var(--primary)]">TRACKIE</span>
+            </span>
+          </div>
+
+          {/* Right Controls */}
+          <div className="flex items-center gap-2">
+            {action}
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={cycleTheme}
+              className="p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-all cursor-pointer"
+              title={`Theme: ${theme}`}
+              aria-label="Toggle theme appearance"
+            >
+              {theme === 'system' ? (
+                <Laptop className="w-4 h-4" />
+              ) : resolvedTheme === 'dark' ? (
+                <Moon className="w-4 h-4" />
+              ) : (
+                <Sun className="w-4 h-4" />
+              )}
+            </button>
+
+            {/* Profile Avatar Button */}
+            <button
+              onClick={() => setIsUserModalOpen(true)}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm active:scale-95 transition-transform flex-shrink-0 border cursor-pointer ${
+                currentUser
+                  ? 'bg-[var(--primary)] text-white shadow-red-500/25 border-red-400'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border-[var(--border-subtle)]'
+              }`}
+              aria-label="User Profile"
+              title={currentUser ? `${currentUser.name} (Signed In)` : 'Not Signed In — Click to Sign In'}
+            >
+              {currentUser ? initialLetter : <User className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Personalized Greeting or Page Title */}
+        {showGreeting ? (
+          <div className="min-w-0 pt-1">
+            <div className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-0.5">
+              {getFormattedDate()}
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] tracking-tight leading-tight truncate">
+              {getTimeGreeting()},{' '}
+              <span className="text-[var(--primary)]">{currentUser?.name || 'Athlete'}</span>
+            </h1>
+          </div>
+        ) : title ? (
+          <div className="min-w-0 flex items-center justify-between">
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-[var(--text-main)] tracking-tight leading-tight truncate">
                 {title}
               </h1>
-              {subtitle && <p className="text-xs text-[#9CA3AF] mt-0.5 truncate">{subtitle}</p>}
+              {subtitle && (
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5 truncate font-medium">
+                  {subtitle}
+                </p>
+              )}
             </div>
-          )}
-
-          <button
-            onClick={() => setIsUserModalOpen(true)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shadow-sm active:scale-95 transition-transform flex-shrink-0 ml-3 border cursor-pointer ${
-              currentUser
-                ? 'bg-[#E11D48] text-[#FFFFFF] shadow-[#E11D48]/20 border-[#F43F5E]'
-                : 'bg-[#1F2429] text-[#9CA3AF] hover:text-[#F5F5F5] border-[#272B30]'
-            }`}
-            aria-label="User Profile"
-            title={currentUser ? `${currentUser.name} (Signed In)` : 'Not Signed In — Click to Sign In'}
-          >
-            {currentUser ? initialLetter : <User className="w-4 h-4" />}
-          </button>
-        </div>
+            <div className="hidden md:flex items-center gap-2">
+              {action}
+            </div>
+          </div>
+        ) : null}
       </header>
 
       <UserModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} />

@@ -92,3 +92,22 @@ export function prewarmBackend(): void {
   });
 }
 
+export async function updateUserProfile(
+  token: string,
+  data: Partial<User>
+): Promise<{ message: string; user: User }> {
+  const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  return handleResponse<{ message: string; user: User }>(
+    response,
+    'Failed to update profile'
+  );
+}
+

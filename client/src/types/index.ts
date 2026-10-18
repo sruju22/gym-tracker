@@ -214,13 +214,20 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  onboardingCompleted?: boolean;
+  fitnessGoal?: string;
+  experienceLevel?: string;
+  trainingDaysPerWeek?: number;
+  equipmentPreference?: string;
+  heightCm?: number | null;
+  currentWeight?: number | null;
+  weightUnit?: 'kg' | 'lbs';
   createdAt: string;
-  currentWeight?: number;
 }
 
 export interface UserSettings {
   weightUnit: 'kg' | 'lbs';
-  theme: 'dark' | 'light';
+  theme: 'dark' | 'light' | 'system';
   defaultSetsPerExercise: number;
   rotationWindowDays: number;
 }

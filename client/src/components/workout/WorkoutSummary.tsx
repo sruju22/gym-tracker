@@ -57,39 +57,39 @@ export const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, onClose 
     <Modal isOpen={isOpen} onClose={isFinishing ? () => {} : onClose} title="Workout Summary">
       <div className="text-center py-2 space-y-4">
         <div>
-          <h2 className="text-xl font-black text-[#F5F5F5] uppercase tracking-tight">
+          <h2 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">
             Workout Complete
           </h2>
-          <p className="text-xs text-[#9CA3AF] mt-0.5">
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             Your workout session data has been recorded.
           </p>
         </div>
 
         {/* Key Metrics grid */}
-        <div className="grid grid-cols-3 gap-2 bg-[#1B1F23] border border-[#272B30] rounded-2xl p-4">
+        <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4">
           <div>
-            <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Exercises</div>
-            <div className="text-lg font-black text-[#F5F5F5]">{activeSession.exercises.length}</div>
+            <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Exercises</div>
+            <div className="text-lg font-black text-[var(--text-main)]">{activeSession.exercises.length}</div>
           </div>
           <div>
-            <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Sets</div>
-            <div className="text-lg font-black text-[#F5F5F5]">{totalCompletedSets}</div>
+            <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Sets</div>
+            <div className="text-lg font-black text-[var(--text-main)]">{totalCompletedSets}</div>
           </div>
           <div>
-            <div className="text-[10px] text-[#9CA3AF] uppercase font-bold">Volume</div>
-            <div className="text-lg font-black text-[#E11D48]">{totalVolume} kg</div>
+            <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Volume</div>
+            <div className="text-lg font-black text-[var(--primary)]">{totalVolume} kg</div>
           </div>
         </div>
 
         {/* PR Alert if achieved */}
         {personalRecords.length > 0 && (
           <div className="bg-amber-500/15 border border-amber-500/40 rounded-xl p-3 flex items-center gap-2.5 text-left">
-            <Award className="w-5 h-5 text-amber-400 flex-shrink-0" />
+            <Award className="w-5 h-5 text-amber-500 flex-shrink-0" />
             <div>
-              <div className="text-xs font-extrabold text-amber-400 uppercase">
+              <div className="text-xs font-extrabold text-amber-500 uppercase">
                 Personal Records ({personalRecords.length})
               </div>
-              <div className="text-xs text-[#F5F5F5] font-semibold truncate">
+              <div className="text-xs text-[var(--text-main)] font-semibold truncate">
                 {personalRecords[personalRecords.length - 1].exerciseName}: {personalRecords[personalRecords.length - 1].details}
               </div>
             </div>
@@ -98,11 +98,11 @@ export const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, onClose 
 
         {/* Error Feedback */}
         {errorMessage && (
-          <div className="bg-[#EF4444]/15 border border-[#EF4444]/40 rounded-xl p-3 text-xs text-[#EF4444] font-bold text-left flex items-start justify-between gap-2">
+          <div className="bg-[var(--danger-subtle)] border border-[var(--danger-border)] rounded-xl p-3 text-xs text-[var(--danger)] font-bold text-left flex items-start justify-between gap-2">
             <span>{errorMessage}</span>
             <button
               onClick={handleFinish}
-              className="text-[#F5F5F5] underline hover:text-[#EF4444] shrink-0 font-extrabold cursor-pointer"
+              className="text-[var(--text-main)] underline hover:text-[var(--danger)] shrink-0 font-extrabold cursor-pointer"
             >
               Retry
             </button>
