@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import User from '../models/User';
+import Workout from '../models/Workout';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -15,16 +16,64 @@ const generateToken = (userId: string, email: string): string => {
   return jwt.sign({ id: userId, email }, secret, options);
 };
 
-const formatUserResponse = (user: any, isNewRegistration = false) => {
+/**
+ * Resolves onboarding eligibility without blindly marking accounts complete.
+ * - If user.onboardingCompleted is explicitly boolean, respect it.
+ * - For pre-existing accounts where onboardingCompleted was undefined in MongoDB:
+ *   - If the user has saved fitness preferences or logged workouts -> mark complete and persist.
+ *   - If the user has no workouts and no preferences -> mark incomplete and persist.
+ */
+export const resolveOnboardingStatus = async (user: any): Promise<boolean> => {
+  if (typeof user.onboardingCompleted === 'boolean') {
+    return user.onboardingCompleted;
+  }
+
+  // 1. Check if user already configured explicit fitness profile preferences
+  const hasPreferences = Boolean(
+    (user.fitnessGoal && String(user.fitnessGoal).trim()) ||
+    (user.experienceLevel && String(user.experienceLevel).trim()) ||
+    user.heightCm ||
+    user.currentWeight
+  );
+
+  if (hasPreferences) {
+    await User.findByIdAndUpdate(user._id, { $set: { onboardingCompleted: true } });
+    user.onboardingCompleted = true;
+    return true;
+  }
+
+  // 2. Check if user has recorded workout sessions
+  try {
+    const hasWorkouts = await Workout.exists({ userId: user._id.toString() });
+    if (hasWorkouts) {
+      await User.findByIdAndUpdate(user._id, { $set: { onboardingCompleted: true } });
+      user.onboardingCompleted = true;
+      return true;
+    }
+  } catch (err) {
+    console.warn('[Onboarding] Error checking workouts for user:', err);
+  }
+
+  // 3. User has no workouts and no preferences -> mark incomplete and persist
+  await User.findByIdAndUpdate(user._id, { $set: { onboardingCompleted: false } });
+  user.onboardingCompleted = false;
+  return false;
+};
+
+const formatUserResponse = (user: any, isNewRegistration = false, resolvedOnboarding?: boolean) => {
+  const onboardingStatus = isNewRegistration
+    ? false
+    : resolvedOnboarding !== undefined
+    ? resolvedOnboarding
+    : typeof user.onboardingCompleted === 'boolean'
+    ? user.onboardingCompleted
+    : false;
+
   return {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
-    onboardingCompleted: isNewRegistration
-      ? false
-      : user.onboardingCompleted !== undefined
-      ? user.onboardingCompleted
-      : true, // Safe backward-compatible default for existing accounts
+    onboardingCompleted: onboardingStatus,
     fitnessGoal: user.fitnessGoal || '',
     experienceLevel: user.experienceLevel || '',
     trainingDaysPerWeek: user.trainingDaysPerWeek || 4,
@@ -144,13 +193,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Resolve onboarding eligibility accurately and persist
+    const onboardingCompleted = await resolveOnboardingStatus(user);
+
     // 4. Generate Auth Token
     const token = generateToken(user._id.toString(), user.email);
 
     res.status(200).json({
       message: 'Login successful',
       token,
-      user: formatUserResponse(user, false),
+      user: formatUserResponse(user, false, onboardingCompleted),
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Server error during login', details: error.message });
@@ -169,8 +221,10 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
       return;
     }
 
+    const onboardingCompleted = await resolveOnboardingStatus(req.user);
+
     res.status(200).json({
-      user: formatUserResponse(req.user, false),
+      user: formatUserResponse(req.user, false, onboardingCompleted),
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Server error retrieving user profile', details: error.message });
@@ -228,7 +282,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
 
     res.status(200).json({
       message: 'Profile updated successfully',
-      user: formatUserResponse(updatedUser, false),
+      user: formatUserResponse(updatedUser, false, updatedUser.onboardingCompleted),
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Server error updating profile', details: error.message });

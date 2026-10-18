@@ -27,8 +27,31 @@ interface AuthState {
   completeOnboarding: (data: Partial<User>) => Promise<void>;
 }
 
+const getCachedProfile = (): User | null => {
+  if (typeof localStorage === 'undefined') return null;
+  const activeUserId = localStorage.getItem('gymtracker_active_user_id');
+  if (!activeUserId) return null;
+  const raw = localStorage.getItem(`gymtracker_user_profile_${activeUserId}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const setCachedProfile = (user: User | null): void => {
+  if (typeof localStorage === 'undefined') return;
+  if (user && user.id) {
+    localStorage.setItem('gymtracker_active_user_id', user.id);
+    localStorage.setItem(`gymtracker_user_profile_${user.id}`, JSON.stringify(user));
+  } else {
+    localStorage.removeItem('gymtracker_active_user_id');
+  }
+};
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  currentUser: null,
+  currentUser: getCachedProfile(),
   token: getStoredToken(),
   isLoading: false,
   isInitializing: true,
@@ -41,9 +64,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    set({ isLoading: true });
+    set({ isLoading: true, isInitializing: true });
     try {
       const data = await getMe(token);
+      setCachedProfile(data.user);
       set({
         currentUser: data.user,
         token,
@@ -52,15 +76,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
       });
     } catch (err: any) {
-      // Invalid/expired token -> clear authentication state
-      setStoredToken(null);
-      set({
-        currentUser: null,
-        token: null,
-        isLoading: false,
-        isInitializing: false,
-        error: null,
-      });
+      const isAuthError =
+        err.message?.includes('401') ||
+        err.message?.includes('Not authorized') ||
+        err.message?.includes('Token expired') ||
+        err.message?.includes('Invalid token') ||
+        err.message?.includes('user not found');
+
+      if (isAuthError) {
+        // Invalid or expired token -> clear authentication state
+        setStoredToken(null);
+        setCachedProfile(null);
+        set({
+          currentUser: null,
+          token: null,
+          isLoading: false,
+          isInitializing: false,
+          error: null,
+        });
+      } else {
+        // Network failure / temporary server wake-up:
+        // Do NOT wipe credentials or treat user as a brand-new user!
+        const fallbackUser = getCachedProfile();
+        console.warn('[Auth] Network error restoring profile; preserving cached session:', err.message);
+        set({
+          currentUser: fallbackUser || get().currentUser,
+          token,
+          isLoading: false,
+          isInitializing: false,
+          error: err.message || 'Unable to connect to server',
+        });
+      }
     }
   },
 
@@ -73,6 +119,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const duration = (performance.now() - startTime).toFixed(2);
       console.log(`[Auth Performance] ✅ Sign In completed in ${duration}ms`);
       setStoredToken(data.token);
+      setCachedProfile(data.user);
       set({
         currentUser: data.user,
         token: data.token,
@@ -95,6 +142,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const data = await registerUser(name, email, password);
       setStoredToken(data.token);
+      setCachedProfile(data.user);
       set({
         currentUser: data.user,
         token: data.token,
@@ -112,6 +160,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     setStoredToken(null);
+    setCachedProfile(null);
     set({
       currentUser: null,
       token: null,
@@ -127,13 +176,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!token || !currentUser) {
       // Local fallback for guest or offline mode
       if (currentUser) {
-        set({ currentUser: { ...currentUser, ...data } });
+        const updated = { ...currentUser, ...data };
+        setCachedProfile(updated);
+        set({ currentUser: updated });
       }
       return;
     }
     set({ isLoading: true, error: null });
     try {
       const res = await updateUserProfile(token, data);
+      setCachedProfile(res.user);
       set({ currentUser: res.user, isLoading: false });
     } catch (err: any) {
       set({ isLoading: false, error: err.message || 'Failed to update profile' });
@@ -146,13 +198,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const updateData = { ...data, onboardingCompleted: true };
     if (!token || !currentUser) {
       if (currentUser) {
-        set({ currentUser: { ...currentUser, ...updateData } });
+        const updated = { ...currentUser, ...updateData };
+        setCachedProfile(updated);
+        set({ currentUser: updated });
       }
       return;
     }
     set({ isLoading: true, error: null });
     try {
       const res = await updateUserProfile(token, updateData);
+      setCachedProfile(res.user);
       set({ currentUser: res.user, isLoading: false });
     } catch (err: any) {
       set({ isLoading: false, error: err.message || 'Failed to complete onboarding' });

@@ -51,16 +51,25 @@ export function App() {
     }
   }, [currentUser?.id, fetchWeeklyPlan, fetchHistory, fetchBackendPRs, fetchProgressStats]);
 
-  // If a newly registered user has not completed onboarding, show OnboardingFlow
-  const needsOnboarding =
-    !isInitializing && currentUser && currentUser.onboardingCompleted === false;
-
-  if (needsOnboarding) {
+  // Handle initialization loading state to avoid flashing screens
+  if (isInitializing && !currentUser) {
     return (
       <div className="min-h-[100dvh] w-full bg-[var(--bg-main)] text-[var(--text-main)] flex items-center justify-center p-4">
-        <OnboardingFlow />
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin" />
+          <span className="text-xs font-semibold text-[var(--text-secondary)] tracking-wide">
+            Loading GymTrackie...
+          </span>
+        </div>
       </div>
     );
+  }
+
+  // Show onboarding ONLY when the authenticated user has not completed onboarding
+  const needsOnboarding = currentUser !== null && currentUser.onboardingCompleted === false;
+
+  if (needsOnboarding) {
+    return <OnboardingFlow />;
   }
 
   return <RouterProvider router={router} />;

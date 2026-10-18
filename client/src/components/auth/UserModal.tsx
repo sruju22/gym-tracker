@@ -48,6 +48,7 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
     try {
       await login(emailInput.trim(), passwordInput);
       setMode('view');
+      onClose();
     } catch (err: any) {
       setFormError(err.message || 'Login failed');
     }
@@ -67,6 +68,7 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
     try {
       await signup(nameInput.trim(), emailInput.trim(), passwordInput);
       setMode('view');
+      onClose();
     } catch (err: any) {
       setFormError(err.message || 'Registration failed');
     }

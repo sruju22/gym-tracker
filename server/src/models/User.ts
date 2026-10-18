@@ -43,7 +43,6 @@ const userSchema = new Schema<IUserDocument>(
     },
     onboardingCompleted: {
       type: Boolean,
-      default: false,
     },
     fitnessGoal: {
       type: String,
