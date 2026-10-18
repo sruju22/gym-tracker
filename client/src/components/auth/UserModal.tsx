@@ -5,6 +5,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { User, UserPlus, LogOut, ShieldCheck, LogIn, Settings } from 'lucide-react';
+import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 
 interface UserModalProps {
   isOpen: boolean;
@@ -95,6 +96,10 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
           : 'User Account'
       }
     >
+      <div className="flex justify-center pt-0.5 pb-3">
+        <GymTrackieLogo variant="compact" height={30} />
+      </div>
+
       {mode === 'view' && (
         <div className="space-y-5">
           {currentUser ? (

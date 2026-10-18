@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore, ThemeMode } from '../../store/themeStore';
+import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 
 export const DesktopNav: React.FC = () => {
   const navigate = useNavigate();
@@ -42,14 +43,10 @@ export const DesktopNav: React.FC = () => {
         {/* Brand */}
         <div
           onClick={() => navigate('/')}
-          className="flex items-center gap-2.5 cursor-pointer select-none group"
+          className="flex items-center cursor-pointer select-none group hover:opacity-90 transition-opacity"
+          title="GymTrackie Home"
         >
-          <div className="w-9 h-9 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center font-black shadow-sm shadow-red-500/25 group-hover:scale-105 transition-transform">
-            <Dumbbell className="w-5 h-5 stroke-[2.5]" />
-          </div>
-          <span className="text-lg font-black tracking-wider text-[var(--text-main)]">
-            GYM<span className="text-[var(--primary)]">TRACKIE</span>
-          </span>
+          <GymTrackieLogo variant="compact" height={32} />
         </div>
 
         {/* Center Nav Links */}

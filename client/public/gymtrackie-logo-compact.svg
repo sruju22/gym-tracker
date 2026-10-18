@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 100" width="440" height="100" fill="none">
+  <defs>
+    <linearGradient id="gtRedCompact" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF2E34"/>
+      <stop offset="55%" stop-color="#EE1D24"/>
+      <stop offset="100%" stop-color="#C91218"/>
+    </linearGradient>
+    <linearGradient id="gtSilverCompact" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="35%" stop-color="#F1F5F9"/>
+      <stop offset="75%" stop-color="#CBD5E1"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+    <linearGradient id="gtPlateCompact" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="40%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Symbol -->
+  <g id="symbol" transform="translate(5, 5) scale(0.52)">
+    <path d="M 68 174 L 18 124 C 6 112 0 96 0 80 C 0 65 7 51 19 41 L 64 6 L 174 6 L 146 34 L 80 34 L 40 74 C 36 78 34 84 36 90 L 52 148 Z" fill="url(#gtRedCompact)"/>
+    <rect x="35" y="72" width="12" height="52" rx="6" fill="url(#gtPlateCompact)"/>
+    <rect x="51" y="60" width="15" height="76" rx="7.5" fill="url(#gtPlateCompact)"/>
+    <rect x="66" y="89" width="74" height="18" rx="4" fill="url(#gtSilverCompact)"/>
+    <path d="M 112 88 L 138 62 L 172 62 L 172 122 L 130 164 L 92 164 L 70 142 L 88 126 L 116 126 L 144 114 L 144 88 Z" fill="url(#gtSilverCompact)"/>
+    <rect x="178" y="60" width="15" height="76" rx="7.5" fill="url(#gtRedCompact)"/>
+    <rect x="197" y="72" width="12" height="52" rx="6" fill="url(#gtRedCompact)"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g id="wordmark">
+    <text x="122" y="68" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Montserrat', 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="56" letter-spacing="-0.035em">
+      <tspan fill="#FFFFFF">Gym</tspan><tspan fill="url(#gtRedCompact)">Trackie</tspan>
+    </text>
+  </g>
+</svg>

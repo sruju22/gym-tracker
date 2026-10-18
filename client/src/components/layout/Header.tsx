@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore, ThemeMode } from '../../store/themeStore';
 import { UserModal } from '../auth/UserModal';
-import { User, Sun, Moon, Laptop, Dumbbell } from 'lucide-react';
+import { User, Sun, Moon, Laptop } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 
 interface HeaderProps {
   title?: string;
@@ -54,14 +55,10 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Brand Mark */}
           <div
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 cursor-pointer select-none"
+            className="flex items-center cursor-pointer select-none active:opacity-80 transition-opacity"
+            title="GymTrackie Home"
           >
-            <div className="w-8 h-8 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center font-black shadow-sm shadow-red-500/25">
-              <Dumbbell className="w-4 h-4 stroke-[2.5]" />
-            </div>
-            <span className="text-base font-black tracking-wider text-[var(--text-main)]">
-              GYM<span className="text-[var(--primary)]">TRACKIE</span>
-            </span>
+            <GymTrackieLogo variant="compact" height={28} />
           </div>
 
           {/* Right Controls */}

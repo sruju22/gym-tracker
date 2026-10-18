@@ -13,6 +13,7 @@ import {
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
+import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { useAuthStore } from '../../store/authStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 
@@ -170,9 +171,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
       <header className="relative z-10 w-full max-w-md mx-auto pt-[max(0.75rem,env(safe-area-inset-top))] px-4 sm:px-6 pb-2 shrink-0">
         <div className="flex items-center justify-between py-1.5">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-[var(--primary)] text-white flex items-center justify-center font-black text-[10px] shadow-sm shadow-red-500/30">
-              G
-            </div>
+            <GymTrackieLogo variant="icon" height={20} width={20} />
             <span className="text-[11px] font-black uppercase tracking-wider text-[var(--primary)]">
               Step {step} of {totalSteps}
             </span>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 130" width="520" height="130" fill="none">
+  <defs>
+    <linearGradient id="gtRedLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF2E34"/>
+      <stop offset="55%" stop-color="#EE1D24"/>
+      <stop offset="100%" stop-color="#C91218"/>
+    </linearGradient>
+    <linearGradient id="gtCharcoalLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E2028"/>
+      <stop offset="50%" stop-color="#14151B"/>
+      <stop offset="100%" stop-color="#0B0C10"/>
+    </linearGradient>
+    <linearGradient id="gtPlateLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="40%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#CBD5E1"/>
+    </linearGradient>
+    <linearGradient id="gtBarLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="50%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Symbol -->
+  <g id="symbol" transform="translate(5, 5) scale(0.72)">
+    <!-- Red Upper Hood -->
+    <path d="M 68 174 L 18 124 C 6 112 0 96 0 80 C 0 65 7 51 19 41 L 64 6 L 174 6 L 146 34 L 80 34 L 40 74 C 36 78 34 84 36 90 L 52 148 Z" fill="url(#gtRedLight)"/>
+
+    <!-- Left Outer Silver Plate -->
+    <rect x="35" y="72" width="12" height="52" rx="6" fill="url(#gtPlateLight)" stroke="#94A3B8" stroke-width="1"/>
+
+    <!-- Left Inner Silver Plate -->
+    <rect x="51" y="60" width="15" height="76" rx="7.5" fill="url(#gtPlateLight)" stroke="#94A3B8" stroke-width="1"/>
+
+    <!-- Central Barbell Handle -->
+    <rect x="66" y="89" width="74" height="18" rx="4" fill="url(#gtBarLight)" stroke="#94A3B8" stroke-width="1"/>
+
+    <!-- Charcoal G Body (High contrast for light background) -->
+    <path d="M 112 88 L 138 62 L 172 62 L 172 122 L 130 164 L 92 164 L 70 142 L 88 126 L 116 126 L 144 114 L 144 88 Z" fill="url(#gtCharcoalLight)"/>
+
+    <!-- Right Inner Red Plate -->
+    <rect x="178" y="60" width="15" height="76" rx="7.5" fill="url(#gtRedLight)"/>
+
+    <!-- Right Outer Red Plate -->
+    <rect x="197" y="72" width="12" height="52" rx="6" fill="url(#gtRedLight)"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g id="wordmark">
+    <text x="165" y="74" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Montserrat', 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="64" letter-spacing="-0.035em">
+      <tspan fill="#0F0F14">Gym</tspan><tspan fill="url(#gtRedLight)">Trackie</tspan>
+    </text>
+  </g>
+
+  <!-- Tagline -->
+  <g id="tagline">
+    <text x="168" y="102" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Montserrat', 'Inter', 'Segoe UI', sans-serif" font-weight="800" font-size="10.5" letter-spacing="0.34em" fill="#64748B">
+      TRACK <tspan fill="#EE1D24" font-weight="900">·</tspan> TRAIN <tspan fill="#EE1D24" font-weight="900">·</tspan> PROGRESS
+    </text>
+  </g>
+</svg>
