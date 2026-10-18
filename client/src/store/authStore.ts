@@ -75,6 +75,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isInitializing: false,
         error: null,
       });
+
+      // Synchronize canonical weight and unit into workoutStore
+      if (data.user.currentWeight) {
+        useWorkoutStore.getState().updateCurrentWeight(data.user.id, data.user.currentWeight);
+      }
+      if (data.user.weightUnit) {
+        useWorkoutStore.getState().updateUserSettings({ weightUnit: data.user.weightUnit });
+      }
     } catch (err: any) {
       const isAuthError =
         err.message?.includes('401') ||
@@ -126,6 +134,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+
+      // Synchronize canonical weight and unit into workoutStore
+      if (data.user.currentWeight) {
+        useWorkoutStore.getState().updateCurrentWeight(data.user.id, data.user.currentWeight);
+      }
+      if (data.user.weightUnit) {
+        useWorkoutStore.getState().updateUserSettings({ weightUnit: data.user.weightUnit });
+      }
     } catch (err: any) {
       const duration = (performance.now() - startTime).toFixed(2);
       console.warn(`[Auth Performance] ❌ Sign In failed after ${duration}ms:`, err.message);
@@ -149,6 +165,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+
+      // Synchronize canonical weight and unit into workoutStore
+      if (data.user.currentWeight) {
+        useWorkoutStore.getState().updateCurrentWeight(data.user.id, data.user.currentWeight);
+      }
+      if (data.user.weightUnit) {
+        useWorkoutStore.getState().updateUserSettings({ weightUnit: data.user.weightUnit });
+      }
     } catch (err: any) {
       set({
         isLoading: false,
@@ -179,6 +203,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const updated = { ...currentUser, ...data };
         setCachedProfile(updated);
         set({ currentUser: updated });
+        if (data.currentWeight) {
+          useWorkoutStore.getState().updateCurrentWeight(currentUser.id, data.currentWeight);
+        }
+        if (data.weightUnit) {
+          useWorkoutStore.getState().updateUserSettings({ weightUnit: data.weightUnit });
+        }
       }
       return;
     }
@@ -187,6 +217,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await updateUserProfile(token, data);
       setCachedProfile(res.user);
       set({ currentUser: res.user, isLoading: false });
+
+      // Synchronize canonical weight and unit into workoutStore
+      if (res.user.currentWeight) {
+        useWorkoutStore.getState().updateCurrentWeight(res.user.id, res.user.currentWeight);
+      }
+      if (res.user.weightUnit) {
+        useWorkoutStore.getState().updateUserSettings({ weightUnit: res.user.weightUnit });
+      }
     } catch (err: any) {
       set({ isLoading: false, error: err.message || 'Failed to update profile' });
       throw err;
@@ -201,6 +239,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const updated = { ...currentUser, ...updateData };
         setCachedProfile(updated);
         set({ currentUser: updated });
+        if (data.currentWeight) {
+          useWorkoutStore.getState().updateCurrentWeight(currentUser.id, data.currentWeight);
+        }
+        if (data.weightUnit) {
+          useWorkoutStore.getState().updateUserSettings({ weightUnit: data.weightUnit });
+        }
       }
       return;
     }
@@ -209,6 +253,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await updateUserProfile(token, updateData);
       setCachedProfile(res.user);
       set({ currentUser: res.user, isLoading: false });
+
+      // Synchronize canonical weight and unit into workoutStore
+      if (res.user.currentWeight) {
+        useWorkoutStore.getState().updateCurrentWeight(res.user.id, res.user.currentWeight);
+      }
+      if (res.user.weightUnit) {
+        useWorkoutStore.getState().updateUserSettings({ weightUnit: res.user.weightUnit });
+      }
     } catch (err: any) {
       set({ isLoading: false, error: err.message || 'Failed to complete onboarding' });
       throw err;

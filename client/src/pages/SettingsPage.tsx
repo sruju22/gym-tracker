@@ -42,6 +42,7 @@ export const SettingsPage: React.FC = () => {
   const [daysInput, setDaysInput] = useState(currentUser?.trainingDaysPerWeek || 4);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const handleOpenEditProfile = () => {
     setNameInput(currentUser?.name || '');
@@ -50,16 +51,36 @@ export const SettingsPage: React.FC = () => {
     setGoalInput(currentUser?.fitnessGoal || 'Muscle Building / Hypertrophy');
     setDaysInput(currentUser?.trainingDaysPerWeek || 4);
     setSaveSuccess(false);
+    setProfileError(null);
     setIsEditProfileOpen(true);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setProfileError(null);
+
+    let weight: number | null = null;
+    if (weightInput.trim()) {
+      weight = parseFloat(weightInput);
+      if (isNaN(weight) || weight < 20 || weight > 500) {
+        setProfileError('Please enter a realistic weight between 20 and 500 kg.');
+        return;
+      }
+      weight = Math.round(weight * 10) / 10;
+    }
+
+    let height: number | null = null;
+    if (heightInput.trim()) {
+      height = parseFloat(heightInput);
+      if (isNaN(height) || height < 50 || height > 280) {
+        setProfileError('Please enter a realistic height between 50 and 280 cm.');
+        return;
+      }
+      height = Math.round(height);
+    }
+
     setIsSaving(true);
     try {
-      const weight = weightInput ? parseFloat(weightInput) : null;
-      const height = heightInput ? parseFloat(heightInput) : null;
-
       await updateProfile({
         name: nameInput.trim() || currentUser?.name,
         currentWeight: weight,
@@ -77,8 +98,9 @@ export const SettingsPage: React.FC = () => {
         setIsEditProfileOpen(false);
         setSaveSuccess(false);
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update profile:', err);
+      setProfileError(err?.message || 'Failed to update profile');
     } finally {
       setIsSaving(false);
     }
@@ -94,20 +116,20 @@ export const SettingsPage: React.FC = () => {
   const themeOptions: { id: ThemeMode; label: string; desc: string; icon: any }[] = [
     {
       id: 'dark',
-      label: 'Dark Mode',
-      desc: '#0F0F14 Charcoal & Red Accents',
+      label: 'Dark mode',
+      desc: 'Near-black charcoal with energetic red accents',
       icon: Moon,
     },
     {
       id: 'light',
-      label: 'Light Mode',
-      desc: '#FFFFFF Clean White & Red Accents',
+      label: 'Light mode',
+      desc: 'Crisp clean theme with energetic red accents',
       icon: Sun,
     },
     {
       id: 'system',
-      label: 'System Appearance',
-      desc: 'Matches your OS dark/light setting',
+      label: 'System default',
+      desc: 'Automatically matches your device preference',
       icon: Laptop,
     },
   ];
@@ -206,14 +228,11 @@ export const SettingsPage: React.FC = () => {
       {/* 2. Theme & Appearance Settings */}
       <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
         <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)]">
-            VISUAL DIRECTION
-          </div>
-          <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
-            Crisp + Charcoal Appearance
+          <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight">
+            Appearance
           </h3>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Choose your preferred interface theme. Selected theme is instantly applied and persisted.
+            Choose how GymTrackie looks.
           </p>
         </div>
 
@@ -222,18 +241,19 @@ export const SettingsPage: React.FC = () => {
             const Icon = opt.icon;
             const isSelected = theme === opt.id;
             return (
-              <div
+              <button
                 key={opt.id}
+                type="button"
                 onClick={() => setTheme(opt.id)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer select-none ${
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer select-none relative focus:outline-none focus:ring-2 focus:ring-[var(--primary)] ${
                   isSelected
                     ? 'bg-[var(--primary-subtle)] border-[var(--primary)] shadow-sm'
                     : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2.5">
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                       isSelected
                         ? 'bg-[var(--primary)] text-white'
                         : 'bg-[var(--bg-surface)] text-[var(--text-secondary)]'
@@ -242,7 +262,7 @@ export const SettingsPage: React.FC = () => {
                     <Icon className="w-4 h-4 stroke-[2.5]" />
                   </div>
                   {isSelected && (
-                    <span className="w-5 h-5 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-[10px] font-bold">
+                    <span className="w-5 h-5 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-[10px] font-black">
                       ✓
                     </span>
                   )}
@@ -251,7 +271,7 @@ export const SettingsPage: React.FC = () => {
                 <div className="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-snug">
                   {opt.desc}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -371,6 +391,12 @@ export const SettingsPage: React.FC = () => {
             <div className="p-2.5 rounded-xl bg-[var(--success-subtle)] text-[var(--success)] border border-[var(--success-border)] text-xs font-bold flex items-center gap-2">
               <Check className="w-4 h-4" />
               <span>Preferences saved successfully!</span>
+            </div>
+          )}
+
+          {profileError && (
+            <div className="p-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 text-xs font-bold">
+              {profileError}
             </div>
           )}
 

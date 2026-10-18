@@ -10,7 +10,7 @@ import { GoalModal } from './GoalModal';
 import { ConfirmDeleteModal } from '../ui/ConfirmDeleteModal';
 
 export const GoalsList: React.FC = () => {
-  const { currentUser } = useAuthStore();
+  const { currentUser, updateProfile } = useAuthStore();
   const userId = currentUser?.id || 'guest';
 
   const { getGoals, addGoal, updateGoal, deleteGoal, updateCurrentWeight } = useWorkoutStore();
@@ -22,6 +22,8 @@ export const GoalsList: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [showWeightInput, setShowWeightInput] = useState(false);
+  const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
+  const [weightError, setWeightError] = useState<string | null>(null);
 
   const handleOpenAdd = () => {
     setEditingGoal(null);
@@ -46,14 +48,37 @@ export const GoalsList: React.FC = () => {
     }
   };
 
-  const handleUpdateWeight = () => {
+  const handleOpenWeightInput = () => {
+    setWeightInput(currentUser?.currentWeight ? String(currentUser.currentWeight) : '');
+    setWeightError(null);
+    setShowWeightInput(true);
+  };
+
+  const handleUpdateWeight = async () => {
     const val = parseFloat(weightInput);
-    if (!isNaN(val) && val > 0) {
-      updateCurrentWeight(userId, val);
+    if (isNaN(val) || val < 20 || val > 500) {
+      setWeightError('Weight must be between 20 and 500 kg');
+      return;
+    }
+    setWeightError(null);
+    setIsUpdatingWeight(true);
+    try {
+      const rounded = Math.round(val * 10) / 10;
+      await updateProfile({ currentWeight: rounded });
+      updateCurrentWeight(userId, rounded);
       setShowWeightInput(false);
       setWeightInput('');
+    } catch (err: any) {
+      console.error('Failed to update weight:', err);
+      setWeightError(err?.message || 'Failed to update weight');
+    } finally {
+      setIsUpdatingWeight(false);
     }
   };
+
+  const bodyWeightGoal = goals.find((g) => g.type === 'body_weight');
+  const displayedWeight = currentUser?.currentWeight ?? bodyWeightGoal?.currentValue ?? null;
+  const unitLabel = currentUser?.weightUnit || bodyWeightGoal?.unit || 'kg';
 
   return (
     <Card className="flex-1 flex flex-col justify-between bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl min-h-0">
@@ -73,37 +98,82 @@ export const GoalsList: React.FC = () => {
         </div>
 
         {/* Quick Body Weight Log Row */}
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-3 flex items-center justify-between">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-center gap-2">
-            <Scale className="w-4 h-4 text-[var(--text-secondary)]" />
+            <Scale className="w-4 h-4 text-[var(--text-secondary)] shrink-0" />
             <div>
               <div className="text-xs font-bold text-[var(--text-main)]">Log Current Body Weight</div>
               <div className="text-[11px] text-[var(--text-muted)]">
-                {currentUser?.name}: <span className="text-[var(--text-main)] font-bold">{goals.find((g) => g.type === 'body_weight')?.currentValue || 66} kg</span>
+                {currentUser?.name || 'Current'}:{' '}
+                {displayedWeight !== null ? (
+                  <span className="text-[var(--text-main)] font-bold">
+                    {displayedWeight} {unitLabel}
+                  </span>
+                ) : (
+                  <span className="text-[var(--text-muted)] italic">Not set</span>
+                )}
               </div>
             </div>
           </div>
 
           {!showWeightInput ? (
             <button
-              onClick={() => setShowWeightInput(true)}
-              className="text-xs font-extrabold text-[var(--primary)] hover:opacity-80 transition-opacity cursor-pointer"
+              onClick={handleOpenWeightInput}
+              className="text-xs font-extrabold text-[var(--primary)] hover:opacity-80 transition-opacity cursor-pointer self-start sm:self-auto"
             >
               Update Weight
             </button>
           ) : (
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                step="0.1"
-                placeholder="kg"
-                value={weightInput}
-                onChange={(e) => setWeightInput(e.target.value)}
-                className="w-16 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
-              />
-              <Button variant="primary" size="sm" onClick={handleUpdateWeight} className="px-2 py-1 min-h-[30px] text-xs">
-                Save
-              </Button>
+            <div className="flex flex-col items-end gap-1 w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="20"
+                  max="500"
+                  placeholder={unitLabel}
+                  value={weightInput}
+                  onChange={(e) => {
+                    setWeightInput(e.target.value);
+                    if (weightError) setWeightError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleUpdateWeight();
+                    if (e.key === 'Escape') {
+                      setShowWeightInput(false);
+                      setWeightError(null);
+                    }
+                  }}
+                  disabled={isUpdatingWeight}
+                  className="w-20 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)]"
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleUpdateWeight}
+                  disabled={isUpdatingWeight}
+                  className="px-2.5 py-1 min-h-[30px] text-xs font-bold"
+                >
+                  {isUpdatingWeight ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setShowWeightInput(false);
+                    setWeightError(null);
+                  }}
+                  disabled={isUpdatingWeight}
+                  className="px-2 py-1 min-h-[30px] text-xs"
+                >
+                  Cancel
+                </Button>
+              </div>
+              {weightError && (
+                <div className="text-[10px] text-[var(--danger)] font-medium">
+                  {weightError}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -197,11 +267,19 @@ export const GoalsList: React.FC = () => {
           setIsGoalModalOpen(false);
           setEditingGoal(null);
         }}
-        onSave={(data) => {
+        onSave={async (data) => {
           if (editingGoal) {
             updateGoal(userId, editingGoal.id, data);
           } else {
             addGoal(userId, data);
+          }
+          if (data.type === 'body_weight' && typeof data.currentValue === 'number' && data.currentValue > 0) {
+            try {
+              await updateProfile({ currentWeight: data.currentValue });
+              updateCurrentWeight(userId, data.currentValue);
+            } catch (err) {
+              console.error('Failed to sync body weight goal to profile:', err);
+            }
           }
         }}
       />

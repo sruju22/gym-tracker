@@ -54,10 +54,11 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
       setTitle('Target Body Weight');
       setType('body_weight');
       setSelectedExerciseId(exercises[0]?.id || '');
-      setStartValue(66);
-      setCurrentValue(66);
-      setTargetValue(72);
-      setUnit('kg');
+      const userWeight = currentUser?.currentWeight || '';
+      setStartValue(userWeight);
+      setCurrentValue(userWeight);
+      setTargetValue(userWeight ? Math.round(Number(userWeight) * 1.05 * 10) / 10 : '');
+      setUnit(currentUser?.weightUnit || 'kg');
     }
   }, [goal, isOpen]);
 
@@ -68,15 +69,18 @@ export const GoalModal: React.FC<GoalModalProps> = ({ isOpen, goal, onClose, onS
     setExerciseSearch('');
     if (newType === 'body_weight') {
       setTitle('Target Body Weight');
-      setStartValue(66);
-      setCurrentValue(66);
-      setTargetValue(72);
+      const userWeight = currentUser?.currentWeight || '';
+      setStartValue(userWeight);
+      setCurrentValue(userWeight);
+      setTargetValue(userWeight ? Math.round(Number(userWeight) * 1.05 * 10) / 10 : '');
+      setUnit(currentUser?.weightUnit || 'kg');
     } else {
       const ex = exercises.find((e) => e.id === selectedExerciseId) || exercises[0];
       setTitle(`${ex?.name || 'Exercise'} Target`);
       setStartValue(60);
       setCurrentValue(60);
       setTargetValue(100);
+      setUnit(currentUser?.weightUnit || 'kg');
     }
   };
 

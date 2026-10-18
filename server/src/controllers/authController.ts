@@ -265,7 +265,18 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     if (trainingDaysPerWeek !== undefined) updateFields.trainingDaysPerWeek = Number(trainingDaysPerWeek);
     if (equipmentPreference !== undefined) updateFields.equipmentPreference = equipmentPreference;
     if (heightCm !== undefined) updateFields.heightCm = heightCm ? Number(heightCm) : null;
-    if (currentWeight !== undefined) updateFields.currentWeight = currentWeight ? Number(currentWeight) : null;
+    if (currentWeight !== undefined) {
+      if (currentWeight === null || currentWeight === '' || Number(currentWeight) === 0) {
+        updateFields.currentWeight = null;
+      } else {
+        const numWeight = Number(currentWeight);
+        if (isNaN(numWeight) || numWeight < 20 || numWeight > 500) {
+          res.status(400).json({ error: 'Please enter a valid body weight between 20 and 500 kg' });
+          return;
+        }
+        updateFields.currentWeight = Math.round(numWeight * 10) / 10;
+      }
+    }
     if (weightUnit && (weightUnit === 'kg' || weightUnit === 'lbs')) updateFields.weightUnit = weightUnit;
     if (onboardingCompleted !== undefined) updateFields.onboardingCompleted = Boolean(onboardingCompleted);
 
