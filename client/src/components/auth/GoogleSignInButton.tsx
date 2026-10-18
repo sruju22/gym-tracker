@@ -5,7 +5,12 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface GoogleSignInButtonProps {
   onSuccess?: () => void;
-  onError?: (error: string, isExistingPasswordAccount?: boolean, email?: string) => void;
+  onError?: (
+    error: string,
+    isExistingPasswordAccount?: boolean,
+    email?: string,
+    credential?: string
+  ) => void;
   text?: 'continue_with' | 'signin_with' | 'signup_with';
   mode?: 'auth' | 'link';
   disabled?: boolean;
@@ -26,6 +31,10 @@ declare global {
   }
 }
 
+// Official production Google OAuth Web Client ID for GymTrackie
+const DEFAULT_GOOGLE_CLIENT_ID =
+  '500048065533-fn8bfmvb8kds0440ntca7f1mjit3r42q.apps.googleusercontent.com';
+
 export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   onSuccess,
   onError,
@@ -41,16 +50,22 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const clientId =
+    (typeof import.meta !== 'undefined' &&
+      import.meta.env &&
+      import.meta.env.VITE_GOOGLE_CLIENT_ID &&
+      import.meta.env.VITE_GOOGLE_CLIENT_ID.trim()) ||
+    DEFAULT_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
-    if (!clientId || !clientId.trim()) {
+    if (!clientId) {
       setConfigError('Google Client ID is missing (VITE_GOOGLE_CLIENT_ID).');
       return;
     }
 
     let intervalId: any;
     let isCancelled = false;
+    let attempts = 0;
 
     const setupGoogleButton = () => {
       if (isCancelled || !buttonRef.current) return;
@@ -75,9 +90,10 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
             } catch (err: any) {
               const errMsg = err.message || 'Google authentication failed';
               const isPasswordAccount =
+                err.code === 'ACCOUNT_EXISTS_WITH_PASSWORD' ||
                 errMsg.includes('ACCOUNT_EXISTS_WITH_PASSWORD') ||
                 errMsg.toLowerCase().includes('already exists using email and password');
-              onError?.(errMsg, isPasswordAccount);
+              onError?.(errMsg, isPasswordAccount, err.email, response.credential);
             } finally {
               setIsLoading(false);
               isSubmittingRef.current = false;
@@ -87,19 +103,29 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           cancel_on_tap_outside: true,
         });
 
-        // Clear existing children before re-rendering (e.g. on theme change)
+        // Determine if light theme is explicitly requested on document
+        const isLightMode =
+          typeof document !== 'undefined' &&
+          (document.documentElement.getAttribute('data-theme') === 'light' ||
+            document.documentElement.classList.contains('light'));
+
+        // Clear existing children before re-rendering (e.g. on theme or width change)
         if (buttonRef.current) {
           buttonRef.current.innerHTML = '';
         }
 
+        // Compute responsive width that comfortably fits mobile modal without overflow
+        const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 360;
+        const buttonWidth = Math.max(220, Math.min(290, viewportWidth - 64));
+
         window.google.accounts.id.renderButton(buttonRef.current, {
           type: 'standard',
-          theme: resolvedTheme === 'dark' ? 'filled_black' : 'outline',
+          theme: isLightMode ? 'outline' : 'filled_black',
           size: 'large',
           text,
-          shape: 'rectangular',
+          shape: 'pill',
           logo_alignment: 'left',
-          width: 320,
+          width: buttonWidth,
         });
       } catch (err) {
         console.warn('[GoogleAuth] Failed to initialize Google button:', err);
@@ -110,11 +136,15 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       setupGoogleButton();
     } else {
       intervalId = setInterval(() => {
+        attempts++;
         if (window.google?.accounts?.id) {
           clearInterval(intervalId);
           setupGoogleButton();
+        } else if (attempts > 30) {
+          clearInterval(intervalId);
+          console.warn('[GoogleAuth] Google Identity Services script load timed out.');
         }
-      }, 150);
+      }, 100);
     }
 
     return () => {
@@ -133,9 +163,9 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   }
 
   return (
-    <div className="relative w-full flex flex-col items-center justify-center">
+    <div className="relative w-full flex flex-col items-center justify-center my-0.5">
       {isLoading && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-card)]/80 backdrop-blur-xs rounded-xl">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-card)]/80 backdrop-blur-xs rounded-full">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--primary)]">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Connecting with Google...</span>
@@ -146,7 +176,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       {/* Official Google Identity Services Render Container */}
       <div
         ref={buttonRef}
-        className={`w-full flex justify-center overflow-hidden transition-opacity duration-200 ${
+        className={`w-full flex justify-center items-center overflow-visible transition-opacity duration-200 ${
           disabled || isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'
         }`}
         style={{ minHeight: '44px' }}

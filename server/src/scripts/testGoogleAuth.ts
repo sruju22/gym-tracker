@@ -80,8 +80,8 @@ async function runTests() {
     assert(body?.error === 'Invalid or expired Google credential', 'Returns clear credential error');
   }
 
-  // 4. Test Missing Server Environment Variable Handling
-  console.log('\n--- Test 4: Missing GOOGLE_CLIENT_ID Configuration Safety ---');
+  // 4. Test Missing Server Environment Variable Graceful Fallback
+  console.log('\n--- Test 4: Server GOOGLE_CLIENT_ID Fallback Resiliency ---');
   {
     const savedClientId = process.env.GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_ID;
@@ -95,8 +95,8 @@ async function runTests() {
     };
     const { googleAuth } = await import('../controllers/authController');
     await googleAuth(req, res);
-    assert(statusCode === 500, 'Returns 500 Configuration Error without crashing server', `Got ${statusCode}`);
-    assert(body?.error?.includes('not configured'), 'Informs that Google Sign-In is unconfigured without breaking normal flows');
+    assert(statusCode === 401, 'Uses official fallback client ID and verifies credential without 500 crash', `Got ${statusCode}`);
+    assert(body?.error?.includes('Invalid or expired'), 'Rejects invalid token gracefully while keeping service operational');
 
     process.env.GOOGLE_CLIENT_ID = savedClientId;
   }

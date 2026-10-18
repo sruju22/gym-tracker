@@ -45,7 +45,11 @@ async function handleResponse<T>(response: Response, defaultErrorMessage: string
     if (!errorMessage) {
       errorMessage = response.status ? `Server error (${response.status})` : defaultErrorMessage;
     }
-    throw new Error(errorMessage);
+    const err: any = new Error(errorMessage);
+    err.status = response.status;
+    err.code = data?.code;
+    err.email = data?.email;
+    throw err;
   }
 
   if (!data) {

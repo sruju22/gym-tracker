@@ -318,8 +318,14 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
  * issuer, expiration, and verified email status.
  * Never logs credentials.
  */
+// Fallback client ID matches the official web client ID configured in Google Cloud Console
+const GOOGLE_CLIENT_ID_FALLBACK = '500048065533-fn8bfmvb8kds0440ntca7f1mjit3r42q.apps.googleusercontent.com';
+
 const verifyGoogleToken = async (credential: string) => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientId =
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID.trim()) ||
+    GOOGLE_CLIENT_ID_FALLBACK;
+
   if (!clientId || !clientId.trim()) {
     throw new Error('CONFIG_ERROR: Google Client ID is not configured on the server.');
   }
