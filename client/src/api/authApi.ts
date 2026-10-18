@@ -34,7 +34,17 @@ async function handleResponse<T>(response: Response, defaultErrorMessage: string
   }
 
   if (!response.ok) {
-    const errorMessage = data?.error || data?.message || (response.status ? `Server error (${response.status})` : defaultErrorMessage);
+    let errorMessage = data?.error || data?.message;
+    if (data?.details) {
+      if (typeof data.details === 'string' && data.details.includes('buffering timed out')) {
+        errorMessage = 'Database connection timed out. MongoDB Atlas is unreachable from the server (check MONGODB_URI in Render dashboard).';
+      } else {
+        errorMessage = `${errorMessage || defaultErrorMessage}: ${data.details}`;
+      }
+    }
+    if (!errorMessage) {
+      errorMessage = response.status ? `Server error (${response.status})` : defaultErrorMessage;
+    }
     throw new Error(errorMessage);
   }
 

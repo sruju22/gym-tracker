@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  User,
   Sun,
   Moon,
   Laptop,

@@ -6,6 +6,7 @@ import {
   WorkoutExercise,
   WorkoutSet,
   WeeklySchedule,
+  DayOfWeek,
   PersonalRecord,
   UserSettings,
   MuscleGroup,
@@ -136,6 +137,7 @@ interface WorkoutStore {
   fetchBackendPRs: (userId: string) => Promise<PersonalRecord[]>;
   fetchProgressStats: (userId: string) => Promise<void>;
   startTodayWorkout: (userId: string) => void;
+  startScheduledWorkout: (userId: string, day: DayOfWeek) => void;
   startCustomWorkout: (userId: string, muscleGroups: MuscleGroup[]) => void;
   startEditingWorkout: (userId: string, session: WorkoutSession) => void;
   cancelEditingWorkout: (userId: string) => void;
@@ -720,6 +722,45 @@ export const useWorkoutStore = create<WorkoutStore>()(
           workoutName: dayConfig.name,
           date: new Date().toISOString(),
           dayOfWeek: today,
+          muscleGroups: targetMuscles,
+          sections: dayConfig.muscleGroups,
+          status: 'in_progress',
+          startedAt: new Date().toISOString(),
+          exercises: [],
+          totalVolume: 0,
+          totalSets: 0,
+        };
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              activeSession: newSession,
+            },
+          },
+        }));
+      },
+
+      startScheduledWorkout: (userId: string, day: DayOfWeek) => {
+        const userData = get().getUserData(userId);
+        if (userData.activeSession) return;
+
+        const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
+        const dayConfig = plan[day] || DEFAULT_WORKOUT_PLAN[day];
+
+        if (dayConfig.isRest) {
+          get().startCustomWorkout(userId, ['chest']);
+          return;
+        }
+
+        const targetMuscles = dayConfig.muscleGroups.map((m: MuscleGroupConfig) => m.name);
+
+        const newSession: WorkoutSession = {
+          id: `session_${Date.now()}`,
+          workoutName: dayConfig.name,
+          date: new Date().toISOString(),
+          dayOfWeek: day,
           muscleGroups: targetMuscles,
           sections: dayConfig.muscleGroups,
           status: 'in_progress',

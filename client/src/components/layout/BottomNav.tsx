@@ -12,33 +12,48 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/95 backdrop-blur-md border-t border-[var(--border-subtle)] pb-safe shadow-xl transition-colors">
-      <div className="w-full max-w-md mx-auto flex items-center justify-around h-15 px-2">
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/95 backdrop-blur-md border-t border-[var(--border-subtle)] shadow-xl transition-colors"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="w-full max-w-md mx-auto flex items-center justify-around h-16 px-1.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.to === '/'}
               className={({ isActive }) =>
-                `relative flex flex-col items-center justify-center flex-1 h-12 rounded-2xl transition-all cursor-pointer select-none ${
+                `group flex flex-col items-center justify-center flex-1 h-full py-1 transition-all duration-200 cursor-pointer select-none ${
                   isActive
-                    ? 'text-[var(--primary)] font-black'
+                    ? 'text-[var(--primary)]'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  {isActive && (
-                    <span className="absolute top-1 w-5 h-0.5 rounded-full bg-[var(--primary)] shadow-sm shadow-red-500/50" />
-                  )}
-                  <Icon
-                    className={`w-5 h-5 mb-0.5 transition-all ${
-                      isActive ? 'stroke-[2.5px] scale-110' : 'stroke-[1.8px]'
+                  <div
+                    className={`w-12 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
+                      isActive
+                        ? 'bg-[var(--primary-subtle)] text-[var(--primary)]'
+                        : 'bg-transparent text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]'
                     }`}
-                  />
-                  <span className={`text-[10px] tracking-tight ${isActive ? 'font-black' : 'font-medium'}`}>
+                  >
+                    <Icon
+                      className={`w-5 h-5 transition-transform duration-200 ${
+                        isActive ? 'stroke-[2.2px] scale-105' : 'stroke-[1.8px]'
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`text-[10px] tracking-tight mt-0.5 transition-colors duration-200 ${
+                      isActive
+                        ? 'font-black text-[var(--primary)]'
+                        : 'font-semibold text-[var(--text-secondary)]'
+                    }`}
+                  >
                     {item.label}
                   </span>
                 </>

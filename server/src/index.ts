@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import connectDB from './config/db';
 
 import exerciseRoutes from './routes/exerciseRoutes';
@@ -26,6 +27,7 @@ const corsOptions: cors.CorsOptions = {
     if (!origin) return callback(null, true);
     if (
       allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
       origin.startsWith('http://localhost:') ||
       origin.startsWith('http://192.168.1.')
     ) {
@@ -48,9 +50,13 @@ connectDB();
 
 // Healthcheck
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'GymTracker API server running',
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.status(isDbConnected ? 200 : 503).json({
+    status: isDbConnected ? 'ok' : 'degraded',
+    database: isDbConnected ? 'connected' : 'disconnected',
+    message: isDbConnected
+      ? 'GymTracker API server running'
+      : 'GymTracker API server running (Database disconnected)',
   });
 });
 

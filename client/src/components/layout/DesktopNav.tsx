@@ -60,6 +60,7 @@ export const DesktopNav: React.FC = () => {
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={item.to === '/'}
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                     isActive

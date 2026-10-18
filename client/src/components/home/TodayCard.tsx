@@ -22,7 +22,6 @@ import {
   AlertCircle,
   History,
   BookOpen,
-  ChevronRight,
   Plus,
 } from 'lucide-react';
 
@@ -51,6 +50,7 @@ export const TodayCard: React.FC<TodayCardProps> = ({
     getHistory,
     getExercises,
     startTodayWorkout,
+    startScheduledWorkout,
     startEditingWorkout,
     startCustomWorkout,
   } = useWorkoutStore();
@@ -125,6 +125,17 @@ export const TodayCard: React.FC<TodayCardProps> = ({
   const handleStartToday = () => {
     if (!activeSession) {
       startTodayWorkout(userId);
+    }
+    navigate('/workout');
+  };
+
+  const handleStartScheduled = (day: DayOfWeek) => {
+    if (!activeSession) {
+      if (day === today) {
+        startTodayWorkout(userId);
+      } else {
+        startScheduledWorkout(userId, day);
+      }
     }
     navigate('/workout');
   };
@@ -671,6 +682,14 @@ export const TodayCard: React.FC<TodayCardProps> = ({
             </p>
           </div>
 
+          <button
+            onClick={handleStartOptional}
+            className="w-full h-12 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-main)] font-black text-xs sm:text-sm uppercase tracking-wider border border-[var(--border-subtle)] hover:border-[var(--primary-border)] hover:text-[var(--primary)] flex items-center justify-center gap-2 transition-all cursor-pointer mb-2.5"
+          >
+            <Dumbbell className="w-4 h-4" />
+            <span>START OPTIONAL WORKOUT</span>
+          </button>
+
           <div className="grid grid-cols-2 gap-2.5">
             <Button
               variant="secondary"
@@ -697,7 +716,7 @@ export const TodayCard: React.FC<TodayCardProps> = ({
       );
     }
 
-    // Future scheduled workout preview
+    // Future scheduled workout preview & start action
     return (
       <>
         <Card className="w-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl text-[var(--text-main)] transition-all shadow-sm">
@@ -752,34 +771,40 @@ export const TodayCard: React.FC<TodayCardProps> = ({
             <div className="p-3 rounded-2xl bg-[var(--bg-card)]/60 border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] flex items-center gap-2">
               <Clock className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
               <span>
-                This workout is planned for {formatDayName(activeDay)}, {formattedTargetDate}. You can start and log it on that day.
+                Scheduled for {formatDayName(activeDay)}, {formattedTargetDate}. You can start it now or preview the workout plan.
               </span>
             </div>
           </div>
 
-          {/* Primary Action: Preview Workout */}
+          {/* Primary Action: Start Workout */}
           <button
-            onClick={() => setIsPreviewModalOpen(true)}
-            className="w-full h-13 sm:h-14 rounded-2xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
+            onClick={() => handleStartScheduled(activeDay)}
+            className="w-full h-13 sm:h-14 rounded-2xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-[0.99] group"
           >
-            <Eye className="w-4 h-4 stroke-[2.5]" />
-            <span>PREVIEW WORKOUT</span>
+            <Play className="w-4 h-4 fill-white stroke-[2.5] group-hover:scale-110 transition-transform" />
+            <span>START WORKOUT</span>
           </button>
 
-          {/* Secondary Actions: View Plan & Back to Today */}
+          {/* Secondary Actions: Preview Workout & View Plan */}
           <div className="grid grid-cols-2 gap-2.5 mt-2.5">
             <Button
               variant="secondary"
-              onClick={() => {
-                if (onOpenEditPlan) onOpenEditPlan();
-                else setIsPreviewModalOpen(true);
-              }}
+              onClick={() => setIsPreviewModalOpen(true)}
               className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>View Plan</span>
+              <Eye className="w-3.5 h-3.5" />
+              <span>Preview Workout</span>
             </Button>
-            {onJumpToToday && (
+            {onOpenEditPlan ? (
+              <Button
+                variant="outline"
+                onClick={onOpenEditPlan}
+                className="gap-2 py-3 rounded-xl font-black text-xs uppercase"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>View Plan</span>
+              </Button>
+            ) : onJumpToToday ? (
               <Button
                 variant="outline"
                 onClick={onJumpToToday}
@@ -787,7 +812,7 @@ export const TodayCard: React.FC<TodayCardProps> = ({
               >
                 <span>Back to Today</span>
               </Button>
-            )}
+            ) : null}
           </div>
         </Card>
 

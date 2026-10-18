@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import User from '../models/User';
@@ -43,6 +44,15 @@ const formatUserResponse = (user: any, isNewRegistration = false) => {
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password } = req.body;
+
+    // Check MongoDB connection readiness
+    if (mongoose.connection.readyState !== 1) {
+      res.status(503).json({
+        error: 'Database unavailable',
+        details: 'The backend cannot connect to MongoDB Atlas. Please verify MONGODB_URI in Render dashboard.',
+      });
+      return;
+    }
 
     // 1. Validation
     if (!name || typeof name !== 'string' || !name.trim()) {
@@ -102,6 +112,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
+
+    // Check MongoDB connection readiness
+    if (mongoose.connection.readyState !== 1) {
+      res.status(503).json({
+        error: 'Database unavailable',
+        details: 'The backend cannot connect to MongoDB Atlas. Please verify MONGODB_URI in Render dashboard.',
+      });
+      return;
+    }
 
     // 1. Validation
     if (!email || !password) {
