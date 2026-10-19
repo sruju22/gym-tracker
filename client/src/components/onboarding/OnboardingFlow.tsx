@@ -11,20 +11,36 @@ import {
   Home,
   Activity,
   Zap,
+  Sliders,
+  RotateCcw,
+  Calendar,
+  ShieldCheck,
 } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { useAuthStore } from '../../store/authStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { getRecommendedTemplate } from '../../data/workoutTemplates';
+import { WorkoutTemplatesModal } from '../plan/WorkoutTemplatesModal';
+import { WorkoutTemplate, DayOfWeek } from '../../types';
 
 interface OnboardingFlowProps {
   onCompleted?: () => void;
 }
 
+const DAYS_ORDER: { id: DayOfWeek; short: string }[] = [
+  { id: 'monday', short: 'Mon' },
+  { id: 'tuesday', short: 'Tue' },
+  { id: 'wednesday', short: 'Wed' },
+  { id: 'thursday', short: 'Thu' },
+  { id: 'friday', short: 'Fri' },
+  { id: 'saturday', short: 'Sat' },
+  { id: 'sunday', short: 'Sun' },
+];
+
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) => {
   const { currentUser, completeOnboarding, isLoading } = useAuthStore();
-  const { updateCurrentWeight, updateUserSettings, applyWorkoutTemplate } = useWorkoutStore();
+  const { getUserData, updateCurrentWeight, updateUserSettings, applyWorkoutTemplate } = useWorkoutStore();
 
   const [step, setStep] = useState(1);
   const totalSteps = 5;
@@ -37,6 +53,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
   const [heightCm, setHeightCm] = useState<string>('');
   const [currentWeight, setCurrentWeight] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
+
+  // Workout Split Selection State
+  const [selectedCustomTemplate, setSelectedCustomTemplate] = useState<WorkoutTemplate | null>(null);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   const goalOptions = [
     {
@@ -92,32 +112,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
     },
   ];
 
-  const daysOptions = [
-    {
-      days: 3,
-      label: '3 Days / Week',
-      split: 'Full Body Split',
-      desc: '3 compound full-body workouts with recovery days in between.',
-    },
-    {
-      days: 4,
-      label: '4 Days / Week',
-      split: 'Upper / Lower Split',
-      desc: 'The gold standard for balancing muscle hypertrophy and recovery.',
-    },
-    {
-      days: 5,
-      label: '5 Days / Week',
-      split: 'PPL + Upper / Lower',
-      desc: 'High frequency push/pull/legs + upper/lower progression.',
-    },
-    {
-      days: 6,
-      label: '6 Days / Week',
-      split: 'Push / Pull / Legs 2x',
-      desc: 'High-volume split for dedicated athletes with dialed recovery.',
-    },
-  ];
+  const daysOptions = useMemo(() => {
+    return [3, 4, 5, 6].map((days) => {
+      const rec = getRecommendedTemplate(fitnessGoal, days);
+      return {
+        days,
+        label: `${days} Days / Week`,
+        split: rec.name,
+        desc: rec.shortDescription,
+      };
+    });
+  }, [fitnessGoal]);
 
   const equipmentOptions = [
     {
@@ -161,13 +166,65 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
   };
 
   const matchedTemplate = useMemo(() => {
+    if (selectedCustomTemplate) {
+      return selectedCustomTemplate;
+    }
     return getRecommendedTemplate(fitnessGoal, trainingDays);
-  }, [fitnessGoal, trainingDays]);
+  }, [fitnessGoal, trainingDays, selectedCustomTemplate]);
+
+  const handleSelectGoal = (goalLabel: string) => {
+    setFitnessGoal(goalLabel);
+    setSelectedCustomTemplate(null);
+  };
+
+  const handleSelectDays = (days: number) => {
+    setTrainingDays(days);
+    setSelectedCustomTemplate(null);
+  };
+
+  const handleSkipEntireOnboarding = async () => {
+    const activeUserId = currentUser?.id || 'guest';
+    const userData = getUserData(activeUserId);
+    const hasCustomExistingPlan = Boolean(
+      userData.workoutPlanDocId ||
+      currentUser?.selectedTemplateId ||
+      (userData.activeTemplateId && userData.activeTemplateId !== 'hypertrophy-ppl-6day')
+    );
+
+    try {
+      await completeOnboarding({
+        fitnessGoal: currentUser?.fitnessGoal || fitnessGoal,
+        experienceLevel: currentUser?.experienceLevel || experienceLevel,
+        trainingDaysPerWeek: currentUser?.trainingDaysPerWeek || trainingDays,
+        equipmentPreference: currentUser?.equipmentPreference || equipmentPreference,
+        selectedTemplateId: hasCustomExistingPlan
+          ? (userData.activeTemplateId || currentUser?.selectedTemplateId || matchedTemplate.id)
+          : matchedTemplate.id,
+      });
+
+      // Existing users retain their custom plans unless explicitly replaced.
+      // Skipping onboarding must not silently overwrite an existing plan.
+      if (!hasCustomExistingPlan) {
+        await applyWorkoutTemplate(activeUserId, matchedTemplate.id);
+      }
+
+      if (onCompleted) {
+        onCompleted();
+      } else {
+        window.location.href = '/';
+      }
+    } catch (err) {
+      console.error('[Onboarding] Skip failed:', err);
+      if (onCompleted) onCompleted();
+      else window.location.href = '/';
+    }
+  };
 
   const finishOnboarding = async (skipPhysicalStats = false) => {
     const height = !skipPhysicalStats && heightCm ? parseFloat(heightCm) : null;
     const weight = !skipPhysicalStats && currentWeight ? parseFloat(currentWeight) : null;
-    const matched = getRecommendedTemplate(fitnessGoal, trainingDays);
+    const activeUserId = currentUser?.id || 'guest';
+    const finalTemplate = matchedTemplate;
 
     try {
       await completeOnboarding({
@@ -178,12 +235,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         heightCm: height,
         currentWeight: weight,
         weightUnit,
-        selectedTemplateId: matched.id,
+        selectedTemplateId: finalTemplate.id,
       });
 
       // Automatically apply the tailored template to the user's weekly schedule
-      const activeUserId = currentUser?.id || 'guest';
-      await applyWorkoutTemplate(activeUserId, matched.id);
+      await applyWorkoutTemplate(activeUserId, finalTemplate.id);
 
       // Synchronize weight & unit to local workout store
       if (currentUser?.id && weight) {
@@ -198,8 +254,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
       }
     } catch (err) {
       console.error('[Onboarding] Failed to save onboarding preferences:', err);
-      const activeUserId = currentUser?.id || 'guest';
-      await applyWorkoutTemplate(activeUserId, matched.id);
+      await applyWorkoutTemplate(activeUserId, finalTemplate.id);
       if (onCompleted) {
         onCompleted();
       } else {
@@ -254,7 +309,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
 
           <button
             type="button"
-            onClick={() => finishOnboarding(true)}
+            onClick={handleSkipEntireOnboarding}
             className="text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer py-1 px-2.5 rounded-lg hover:bg-white/5 active:scale-95"
             title="Skip to Dashboard"
           >
@@ -296,7 +351,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => setFitnessGoal(opt.label)}
+                    onClick={() => handleSelectGoal(opt.label)}
                     className={`group relative w-full text-left flex items-center gap-3.5 sm:gap-4.5 p-4 sm:p-5 min-h-[105px] sm:min-h-[114px] rounded-2xl border transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${
                       isSelected
                         ? 'bg-gradient-to-br from-[#231016]/95 via-[#1a0c12]/92 to-[#130910]/90 border-2 border-red-500/85 shadow-[0_10px_32px_rgba(220,38,38,0.24),0_2px_10px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.22)]'
@@ -434,7 +489,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                     <button
                       key={opt.days}
                       type="button"
-                      onClick={() => setTrainingDays(opt.days)}
+                      onClick={() => handleSelectDays(opt.days)}
                       className={`group relative text-left p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between min-h-[125px] sm:min-h-[148px] active:scale-[0.99] ${
                         isSelected
                           ? 'bg-gradient-to-br from-[#231016]/95 via-[#1a0c12]/92 to-[#130910]/90 border-2 border-red-500/85 shadow-[0_10px_32px_rgba(220,38,38,0.24),0_2px_10px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.22)]'
@@ -562,25 +617,99 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
             </div>
 
             <div className="flex-1 flex flex-col justify-center py-2 space-y-3 sm:space-y-4">
-              {/* Matched Training Split Card */}
-              <div className="p-3.5 sm:p-4 rounded-2xl border border-[var(--primary)]/30 bg-[#12141c]/90 backdrop-blur-md shadow-lg space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">
+              {/* Tailored Workout Plan Preview Card */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-[var(--primary)]/35 bg-[#12141c]/90 backdrop-blur-md shadow-[0_10px_35px_rgba(220,38,38,0.18)] space-y-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[var(--primary)]">
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Tailored Workout Plan Ready</span>
+                    <span>{selectedCustomTemplate ? 'Custom Selected Split' : 'Tailored Split Recommendation'}</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-white">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)] shrink-0">
                     {matchedTemplate.daysPerWeek} Days / Week
                   </span>
                 </div>
-                <div className="text-sm sm:text-base font-extrabold text-white">
-                  {matchedTemplate.name}
+
+                <div>
+                  <div className="text-base sm:text-lg font-black text-white tracking-tight flex items-center justify-between gap-2">
+                    <span>{matchedTemplate.name}</span>
+                    {selectedCustomTemplate && (
+                      <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full shrink-0">
+                        Custom Pick
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] font-bold text-zinc-400 mt-0.5 flex items-center gap-1.5">
+                    <span>Target:</span>
+                    <span className="text-zinc-200">{fitnessGoal}</span>
+                  </div>
+                  <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
+                    {matchedTemplate.shortDescription}
+                  </p>
                 </div>
-                <p className="text-[11px] text-zinc-300 leading-relaxed line-clamp-2">
-                  {matchedTemplate.shortDescription}
-                </p>
-                <div className="text-[10px] text-amber-400 font-mono bg-white/[0.03] p-2 rounded-xl border border-white/[0.05] line-clamp-2">
-                  Progression: {matchedTemplate.progressionMethodology}
+
+                {/* 7-Day Mini Schedule Strip */}
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+                    <span>Weekly Schedule Breakdown</span>
+                    <span className="text-emerald-400 font-bold">{matchedTemplate.daysPerWeek} Active Days</span>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {DAYS_ORDER.map(({ id, short }) => {
+                      const dayConfig = matchedTemplate.weeklySchedule[id];
+                      const isRest = dayConfig?.isRest;
+                      return (
+                        <div
+                          key={id}
+                          className={`p-1.5 rounded-xl text-center border transition-all flex flex-col justify-between min-h-[58px] ${
+                            isRest
+                              ? 'bg-black/30 border-white/[0.05] text-zinc-500'
+                              : 'bg-gradient-to-b from-red-500/20 to-red-600/10 border-red-500/40 text-white shadow-[0_2px_10px_rgba(220,38,38,0.15)]'
+                          }`}
+                        >
+                          <div className="text-[10px] font-bold uppercase opacity-75">{short}</div>
+                          <div
+                            className={`text-[9px] font-extrabold leading-tight mt-0.5 truncate ${
+                              isRest ? 'text-zinc-500' : 'text-red-300'
+                            }`}
+                            title={isRest ? 'Rest' : dayConfig?.name}
+                          >
+                            {isRest ? 'Rest' : (dayConfig?.name?.replace(/Day|Workout/gi, '').trim() || 'Train')}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Progression Rule Box */}
+                <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-start gap-2">
+                  <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1 text-[11px] text-zinc-300 leading-snug">
+                    <span className="font-bold text-amber-300">Progression Strategy: </span>
+                    {matchedTemplate.progressionMethodology}
+                  </div>
+                </div>
+
+                {/* Actions: Browse Alternatives or Reset to Default */}
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsTemplateModalOpen(true)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-bold text-zinc-200 hover:text-white border border-white/[0.1] transition-all cursor-pointer active:scale-[0.99]"
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-[var(--primary)]" />
+                    <span>Browse Alternative Splits ({matchedTemplate.daysPerWeek}-Day & More)</span>
+                  </button>
+                  {selectedCustomTemplate && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCustomTemplate(null)}
+                      className="px-2.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-bold text-zinc-400 hover:text-white border border-white/[0.06] transition-all cursor-pointer active:scale-95"
+                      title="Reset to recommended split"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -694,6 +823,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
           </button>
         </div>
       </footer>
+
+      {/* Workout Split Templates Modal */}
+      <WorkoutTemplatesModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        initialGoal={fitnessGoal}
+        initialDays={trainingDays}
+        onTemplateApplied={(template) => {
+          setSelectedCustomTemplate(template);
+          setTrainingDays(template.daysPerWeek);
+          setIsTemplateModalOpen(false);
+        }}
+      />
     </div>
   );
 };

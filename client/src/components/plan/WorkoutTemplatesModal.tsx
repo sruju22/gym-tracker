@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { WORKOUT_TEMPLATES, getRecommendedTemplate } from '../../data/workoutTemplates';
+import { WORKOUT_TEMPLATES, getRecommendedTemplate, goalToCategory } from '../../data/workoutTemplates';
 import { WorkoutTemplate, DayOfWeek } from '../../types';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
@@ -29,6 +29,8 @@ interface WorkoutTemplatesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTemplateApplied?: (template: WorkoutTemplate) => void;
+  initialGoal?: string;
+  initialDays?: number | 'all';
 }
 
 const DAYS_ORDER: { id: DayOfWeek; label: string }[] = [
@@ -45,6 +47,8 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
   isOpen,
   onClose,
   onTemplateApplied,
+  initialGoal,
+  initialDays,
 }) => {
   const { currentUser } = useAuthStore();
   const userId = currentUser?.id || 'guest';
@@ -54,13 +58,24 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
   const activeTemplateId = userData.activeTemplateId || currentUser?.selectedTemplateId;
 
   // Active filters
-  const [selectedGoal, setSelectedGoal] = useState<string>('all');
-  const [selectedDays, setSelectedDays] = useState<number | 'all'>('all');
+  const [selectedGoal, setSelectedGoal] = useState<string>(() => (initialGoal ? goalToCategory(initialGoal) : 'all'));
+  const [selectedDays, setSelectedDays] = useState<number | 'all'>(() => (initialDays !== undefined ? initialDays : 'all'));
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
   const [confirmTemplate, setConfirmTemplate] = useState<WorkoutTemplate | null>(null);
   const [isApplying, setIsApplying] = useState(false);
   const [appliedToast, setAppliedToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialGoal) {
+        setSelectedGoal(goalToCategory(initialGoal));
+      }
+      if (initialDays !== undefined) {
+        setSelectedDays(initialDays);
+      }
+    }
+  }, [isOpen, initialGoal, initialDays]);
 
   // Compute recommended template based on user onboarding goals
   const recommendedTemplate = useMemo(() => {

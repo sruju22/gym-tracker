@@ -10,7 +10,7 @@ function assert(condition: boolean, message: string) {
 
 async function runTests() {
   console.log('--- TEST 1: Catalog Integrity & Completeness ---');
-  assert(WORKOUT_TEMPLATES.length === 20, `Expected 20 workout templates, found ${WORKOUT_TEMPLATES.length}`);
+  assert(WORKOUT_TEMPLATES.length === 26, `Expected 26 workout templates, found ${WORKOUT_TEMPLATES.length}`);
 
   const ids = new Set<string>();
   const validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -28,13 +28,16 @@ async function runTests() {
 
     // Verify 7-day schedule
     assert(Boolean(tpl.weeklySchedule), `Template ${tpl.id} must define weeklySchedule`);
+    let activeTrainingDays = 0;
     for (const day of validDays) {
       const dayConfig = (tpl.weeklySchedule as any)[day];
       assert(Boolean(dayConfig), `Template ${tpl.id} missing schedule for day: ${day}`);
       if (!dayConfig.isRest) {
+        activeTrainingDays++;
         assert(Array.isArray(dayConfig.muscleGroups) && dayConfig.muscleGroups.length > 0, `Training day ${day} in ${tpl.id} must have assigned muscle groups`);
       }
     }
+    assert(activeTrainingDays === tpl.daysPerWeek, `Template ${tpl.id} active training days (${activeTrainingDays}) matches declared daysPerWeek (${tpl.daysPerWeek})`);
   }
 
   console.log('\n--- TEST 2: Specific Famous Progression Rules Verification ---');
@@ -63,24 +66,23 @@ async function runTests() {
   assert(ppl6!.weeklySchedule.saturday.name === 'Upper + Arms', 'Saturday is Upper + Arms');
   assert(ppl6!.weeklySchedule.sunday.isRest === true, 'Sunday is Rest');
 
-  console.log('\n--- TEST 3: Recommendation Engine Alignment ---');
-  // Hypertrophy
-  assert(getRecommendedTemplate('Muscle Building & Hypertrophy', 6).id === 'hypertrophy-ppl-6day', 'Recommends 6-day PPL for Hypertrophy 6 days');
-  assert(getRecommendedTemplate('Muscle Building & Hypertrophy', 5).id === 'hypertrophy-bro-split-5day', 'Recommends 5-day Bro Split for Hypertrophy 5 days');
-  assert(getRecommendedTemplate('Muscle Building & Hypertrophy', 4).id === 'hypertrophy-upper-lower-4day', 'Recommends 4-day Upper/Lower for Hypertrophy 4 days');
-  assert(getRecommendedTemplate('Muscle Building & Hypertrophy', 3).id === 'hypertrophy-ppl-3day', 'Recommends 3-day PPL for Hypertrophy 3 days');
+  console.log('\n--- TEST 3: All 16 Goal × Frequency Combinations ---');
+  const goals = [
+    'Muscle Building & Hypertrophy',
+    'Strength & Power',
+    'Fat Loss & Conditioning',
+    'General Fitness & Longevity',
+  ];
+  const frequencies = [3, 4, 5, 6];
 
-  // Strength
-  assert(getRecommendedTemplate('Strength & Power', 4).id === 'strength-531-inspired-4day', 'Recommends 5/3/1 for Strength 4 days');
-  assert(getRecommendedTemplate('Strength & Power', 3).id === 'strength-texas-method-3day', 'Recommends Texas Method for Strength 3 days');
-
-  // Fat Loss & Conditioning
-  assert(getRecommendedTemplate('Fat Loss & Conditioning', 4).id === 'fatloss-upper-lower-conditioning-4day', 'Recommends Upper/Lower Conditioning for Fat Loss 4 days');
-  assert(getRecommendedTemplate('Fat Loss & Conditioning', 3).id === 'fatloss-full-body-conditioning-3day', 'Recommends Full Body Conditioning for Fat Loss 3 days');
-
-  // General Fitness & Longevity
-  assert(getRecommendedTemplate('General Fitness & Longevity', 4).id === 'longevity-4day-balanced', 'Recommends 4-Day Balanced for Longevity 4 days');
-  assert(getRecommendedTemplate('General Fitness & Longevity', 3).id === 'longevity-full-body-3day', 'Recommends Full Body Longevity for Longevity 3 days');
+  for (const g of goals) {
+    for (const f of frequencies) {
+      const rec = getRecommendedTemplate(g, f);
+      assert(Boolean(rec), `Recommendation exists for ${g} + ${f} days`);
+      assert(rec.daysPerWeek === f, `Recommended template ${rec.id} has ${rec.daysPerWeek} days, expected exact match of ${f} days`);
+      assert(rec.goal.toLowerCase().includes(g.split(' ')[0].toLowerCase()), `Recommended template ${rec.id} goal aligns with ${g}`);
+    }
+  }
 
   console.log('\n--- TEST 4: Data Isolation & Safety Guarantee ---');
   // Simulated switching: ensure user workout history & PR collections are unaffected
@@ -101,7 +103,7 @@ async function runTests() {
   assert(mockUserPRs.length === 1 && mockUserPRs[0].weight === 100, 'Personal records intact after template update');
   assert(updatedPlan.templateId === 'strength-531-inspired-4day', 'Template switched successfully to 5/3/1');
 
-  console.log('\n🎉 ALL 20 TEMPLATES & LOGIC TESTS PASSED SUCCESSFULLY!\n');
+  console.log('\n🎉 ALL 26 TEMPLATES & 16-COMBINATION TESTS PASSED SUCCESSFULLY!\n');
 }
 
 runTests();

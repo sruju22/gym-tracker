@@ -9,6 +9,10 @@ import {
   UserPlus,
   Check,
   Edit2,
+  Sparkles,
+  Sliders,
+  Dumbbell,
+  Zap,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -18,13 +22,30 @@ import { Modal } from '../components/ui/Modal';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore, ThemeMode } from '../store/themeStore';
 import { useWorkoutStore } from '../store/workoutStore';
+import { WorkoutTemplatesModal } from '../components/plan/WorkoutTemplatesModal';
+import { getRecommendedTemplate } from '../data/workoutTemplates';
+import { WorkoutTemplate } from '../types';
 
 export const SettingsPage: React.FC = () => {
   const { currentUser, updateProfile, logout, openAccountModal } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
-  const { settings, updateUserSettings, updateCurrentWeight } = useWorkoutStore();
+  const {
+    settings,
+    updateUserSettings,
+    updateCurrentWeight,
+    getActiveTemplate,
+    getUserData,
+    applyWorkoutTemplate,
+  } = useWorkoutStore();
+
+  const userId = currentUser?.id || 'guest';
+  const userData = getUserData(userId);
+  const activeTemplate = getActiveTemplate(userId);
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
+  const [pendingRecommendation, setPendingRecommendation] = useState<WorkoutTemplate | null>(null);
+  const [isApplyingRecommendation, setIsApplyingRecommendation] = useState(false);
 
   // Edit Profile Form
   const [nameInput, setNameInput] = useState(currentUser?.name || '');
@@ -35,7 +56,7 @@ export const SettingsPage: React.FC = () => {
     currentUser?.heightCm ? String(currentUser.heightCm) : ''
   );
   const [goalInput, setGoalInput] = useState(
-    currentUser?.fitnessGoal || 'Muscle Building / Hypertrophy'
+    currentUser?.fitnessGoal || 'Muscle Building & Hypertrophy'
   );
   const [daysInput, setDaysInput] = useState(currentUser?.trainingDaysPerWeek || 4);
   const [isSaving, setIsSaving] = useState(false);
@@ -46,7 +67,7 @@ export const SettingsPage: React.FC = () => {
     setNameInput(currentUser?.name || '');
     setWeightInput(currentUser?.currentWeight ? String(currentUser.currentWeight) : '');
     setHeightInput(currentUser?.heightCm ? String(currentUser.heightCm) : '');
-    setGoalInput(currentUser?.fitnessGoal || 'Muscle Building / Hypertrophy');
+    setGoalInput(currentUser?.fitnessGoal || 'Muscle Building & Hypertrophy');
     setDaysInput(currentUser?.trainingDaysPerWeek || 4);
     setSaveSuccess(false);
     setProfileError(null);
@@ -77,6 +98,11 @@ export const SettingsPage: React.FC = () => {
       height = Math.round(height);
     }
 
+    const previousGoal = currentUser?.fitnessGoal || 'Muscle Building & Hypertrophy';
+    const previousDays = currentUser?.trainingDaysPerWeek || 4;
+    const goalChanged = previousGoal !== goalInput;
+    const daysChanged = previousDays !== Number(daysInput);
+
     setIsSaving(true);
     try {
       await updateProfile({
@@ -92,10 +118,21 @@ export const SettingsPage: React.FC = () => {
       }
 
       setSaveSuccess(true);
-      setTimeout(() => {
-        setIsEditProfileOpen(false);
-        setSaveSuccess(false);
-      }, 1000);
+
+      // If goal or frequency changed, prompt user with the new recommended split
+      if (goalChanged || daysChanged) {
+        const newRec = getRecommendedTemplate(goalInput, Number(daysInput));
+        setTimeout(() => {
+          setIsEditProfileOpen(false);
+          setSaveSuccess(false);
+          setPendingRecommendation(newRec);
+        }, 500);
+      } else {
+        setTimeout(() => {
+          setIsEditProfileOpen(false);
+          setSaveSuccess(false);
+        }, 1000);
+      }
     } catch (err: any) {
       console.error('Failed to update profile:', err);
       setProfileError(err?.message || 'Failed to update profile');
@@ -272,6 +309,58 @@ export const SettingsPage: React.FC = () => {
               </button>
             );
           })}
+        </div>
+      </Card>
+
+      {/* 2.5 Active Workout Split Card */}
+      <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)]">
+              CURRENT PROGRAMMING
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
+              Active Workout Split & Schedule
+            </h3>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsTemplatesModalOpen(true)}
+            className="gap-1.5 self-start sm:self-auto"
+          >
+            <Sliders className="w-3.5 h-3.5 text-[var(--primary)]" />
+            <span>Browse All 26 Splits</span>
+          </Button>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-base font-extrabold text-[var(--text-main)]">
+                  {activeTemplate?.name || userData.templateName || 'Push / Pull / Legs (PPL) — 6-Day'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)]">
+                  {activeTemplate?.daysPerWeek || currentUser?.trainingDaysPerWeek || 4} Days / Week
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                {activeTemplate?.shortDescription || 'Tailored weekly training schedule.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs">
+            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+              <Sparkles className="w-4 h-4 text-[var(--primary)] shrink-0" />
+              <span>Goal: <strong className="text-[var(--text-main)]">{currentUser?.fitnessGoal || activeTemplate?.goal || 'Muscle Building & Hypertrophy'}</strong></span>
+            </div>
+            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+              <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="truncate">Progression: <strong className="text-[var(--text-main)] truncate">{activeTemplate?.progressionMethodology || userData.progressionRule || 'Double Progression'}</strong></span>
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -480,6 +569,82 @@ export const SettingsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Workout Split Templates Browser */}
+      <WorkoutTemplatesModal
+        isOpen={isTemplatesModalOpen}
+        onClose={() => setIsTemplatesModalOpen(false)}
+        initialGoal={currentUser?.fitnessGoal || 'Muscle Building & Hypertrophy'}
+        initialDays={currentUser?.trainingDaysPerWeek || 4}
+      />
+
+      {/* Split Recommendation Confirmation Modal */}
+      {pendingRecommendation && (
+        <Modal
+          isOpen={!!pendingRecommendation}
+          onClose={() => setPendingRecommendation(null)}
+          title="Update Weekly Workout Split?"
+        >
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-[var(--primary)] shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <div className="font-extrabold text-[var(--text-main)] text-sm">
+                  Recommended: {pendingRecommendation.name}
+                </div>
+                <p className="text-[var(--text-secondary)] mt-1 leading-relaxed">
+                  Based on your updated goal (<span className="text-[var(--primary)] font-bold">{goalInput}</span>) and schedule (<span className="text-[var(--primary)] font-bold">{daysInput} Days / Week</span>).
+                </p>
+                <p className="text-[var(--text-secondary)] mt-1.5 leading-relaxed text-[11px]">
+                  {pendingRecommendation.shortDescription}
+                </p>
+                <div className="mt-2 text-[10px] text-amber-400 font-mono bg-black/30 p-2 rounded-xl border border-white/5">
+                  Progression: {pendingRecommendation.progressionMethodology}
+                </div>
+              </div>
+            </div>
+
+            {/* Data Safety Assurance */}
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-zinc-300 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>100% Data Safe</span>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                Applying this new split only updates your weekly routine. Completed workout logs, PRs, and bodyweight stats will never be deleted.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={() => setPendingRecommendation(null)}
+                disabled={isApplyingRecommendation}
+              >
+                Keep Current Schedule
+              </Button>
+              <Button
+                variant="primary"
+                fullWidth
+                disabled={isApplyingRecommendation}
+                onClick={async () => {
+                  setIsApplyingRecommendation(true);
+                  try {
+                    const activeUserId = currentUser?.id || 'guest';
+                    await applyWorkoutTemplate(activeUserId, pendingRecommendation.id);
+                  } finally {
+                    setIsApplyingRecommendation(false);
+                    setPendingRecommendation(null);
+                  }
+                }}
+              >
+                {isApplyingRecommendation ? 'Applying...' : 'Apply Recommended Split'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

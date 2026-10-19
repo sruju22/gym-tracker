@@ -589,6 +589,149 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       sunday: { name: 'Rest Day', isRest: true, muscleGroups: [] },
     },
   },
+  {
+    id: 'strength-5day-powerbuilding',
+    name: 'Five-Day Strength Specialization — 5-Day',
+    category: 'strength',
+    goal: 'Strength & Power',
+    daysPerWeek: 5,
+    experienceLevel: 'Intermediate to Advanced',
+    equipment: 'Barbell, Squat Rack & Full Gym',
+    shortDescription: 'Dedicated 5-day strength program organizing sessions around Squat, Bench Press, Deadlift, Overhead Press, and accessory strength weak points.',
+    progressionMethodology: 'Linear Periodization & Top Set + Backoff: Work up to a heavy single/triple at RPE 8-9, followed by 4x4-6 back-off volume at 80% of top load.',
+    setRepGuidance: 'Primary compound lifts: 3-5 reps with 3-5 minutes rest. Strength accessories: 6-8 reps with 2 minutes rest.',
+    recoveryNotes: 'Dedicated Wednesday and Sunday rest days strategically split the heavy leg and back sessions to allow CNS replenishment.',
+    weeklySchedule: {
+      monday: {
+        name: 'Heavy Squat & Quads',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Squat (Primary 3-5 reps)', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Leg Press / Front Squat', subAreas: ['quads'] },
+          { name: 'calves', displayName: 'Calf Strength', subAreas: ['calves'] },
+          { name: 'core', displayName: 'Heavy Core Bracing', subAreas: ['upper_abs'] },
+        ],
+      },
+      tuesday: {
+        name: 'Heavy Bench Press & Triceps',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Bench Press (Primary 3-5 reps)', subAreas: ['mid_chest'] },
+          { name: 'chest', displayName: 'Close-Grip Bench Press', subAreas: ['upper_chest'] },
+          { name: 'triceps', displayName: 'Heavy Tricep Extensions', subAreas: ['long_head_tricep'] },
+          { name: 'shoulders', displayName: 'Face Pulls / Rear Delts', subAreas: ['rear_delts'] },
+        ],
+      },
+      wednesday: { name: 'CNS Recovery / Rest', isRest: true, muscleGroups: [] },
+      thursday: {
+        name: 'Heavy Deadlift & Posterior Chain',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Deadlift (Primary 1-5 reps)', subAreas: ['lower_back'] },
+          { name: 'legs', displayName: 'Romanian Deadlift / Hamstring Curls', subAreas: ['hamstrings'] },
+          { name: 'back', displayName: 'Heavy Barbell Rows', subAreas: ['upper_back', 'lats'] },
+          { name: 'core', displayName: 'Hanging Leg Raises', subAreas: ['lower_abs'] },
+        ],
+      },
+      friday: {
+        name: 'Overhead Press & Upper Power',
+        isRest: false,
+        muscleGroups: [
+          { name: 'shoulders', displayName: 'Standing Overhead Press', subAreas: ['front_delts'] },
+          { name: 'back', displayName: 'Weighted Pull-Ups', subAreas: ['lats'] },
+          { name: 'chest', displayName: 'Incline Dumbbell Press', subAreas: ['upper_chest'] },
+          { name: 'biceps', displayName: 'Heavy Barbell Curls', subAreas: ['long_head_bicep'] },
+        ],
+      },
+      saturday: {
+        name: 'Strength Accessory & Weak Points',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Pause Squats / Bulgarian Split Squat', subAreas: ['quads'] },
+          { name: 'chest', displayName: 'Dips / Floor Press', subAreas: ['mid_chest'] },
+          { name: 'back', displayName: 'Chest-Supported Rows / Shrugs', subAreas: ['traps', 'upper_back'] },
+          { name: 'forearms', displayName: 'Forearms & Grip', subAreas: ['forearm_flexors', 'forearm_extensors'] },
+        ],
+      },
+      sunday: { name: 'Total Rest & Nutrition', isRest: true, muscleGroups: [] },
+    },
+  },
+  {
+    id: 'strength-6day-high-frequency',
+    name: 'High-Frequency Strength & Power — 6-Day',
+    category: 'strength',
+    goal: 'Strength & Power',
+    daysPerWeek: 6,
+    experienceLevel: 'Advanced',
+    equipment: 'Barbell, Power Rack & Full Gym',
+    shortDescription: 'High-frequency 6-day strength regimen using daily undulating intensity to practice core barbell movements frequently without CNS breakdown.',
+    progressionMethodology: 'Daily Undulating Periodization (DUP): Rotates Heavy (3-5 reps at RPE 8), Speed/Dynamic Effort (3 reps at 65-70% with explosive intent), and Accessory Volume (6-8 reps). Strictly caps RPE to manage systemic fatigue.',
+    setRepGuidance: 'Main compound lifts: 3-5 sets of 3-5 reps (RPE 7.5-8.5). Explosive dynamic sets: 6x2-3 reps. Rest 3-4 minutes on heavy sets.',
+    recoveryNotes: 'High-frequency training demands 8+ hours of sleep, adequate sodium/hydration, and strict adherence to leaving 1-2 reps in reserve.',
+    weeklySchedule: {
+      monday: {
+        name: 'Squat Heavy & Push Accessories',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Heavy Back Squat', subAreas: ['quads'] },
+          { name: 'chest', displayName: 'Dumbbell Bench Press', subAreas: ['mid_chest'] },
+          { name: 'triceps', displayName: 'Tricep Pushdowns', subAreas: ['lateral_head_tricep'] },
+          { name: 'core', displayName: 'Abdominal Bracing', subAreas: ['upper_abs'] },
+        ],
+      },
+      tuesday: {
+        name: 'Bench Press Heavy & Pull Accessories',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Heavy Barbell Bench Press', subAreas: ['mid_chest'] },
+          { name: 'back', displayName: 'Barbell Bent-Over Row', subAreas: ['lats'] },
+          { name: 'biceps', displayName: 'Hammer Curls', subAreas: ['long_head_bicep'] },
+          { name: 'shoulders', displayName: 'Face Pulls', subAreas: ['rear_delts'] },
+        ],
+      },
+      wednesday: {
+        name: 'Deadlift Focus & Legs',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Conventional Deadlift', subAreas: ['lower_back'] },
+          { name: 'legs', displayName: 'Front Squats / Bulgarian Split Squats', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Hamstring Curls', subAreas: ['hamstrings'] },
+          { name: 'core', displayName: 'Hanging Leg Raises', subAreas: ['lower_abs'] },
+        ],
+      },
+      thursday: {
+        name: 'Dynamic Squat & Overhead Press',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Speed Squats (Dynamic Effort)', subAreas: ['quads'] },
+          { name: 'shoulders', displayName: 'Overhead Press (Heavy)', subAreas: ['front_delts'] },
+          { name: 'back', displayName: 'Lat Pulldowns', subAreas: ['lats'] },
+          { name: 'triceps', displayName: 'Dips / Skullcrushers', subAreas: ['long_head_tricep'] },
+        ],
+      },
+      friday: {
+        name: 'Bench Press Volume & Upper Back',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Incline Bench Press', subAreas: ['upper_chest'] },
+          { name: 'back', displayName: 'Weighted Pull-Ups', subAreas: ['lats', 'upper_back'] },
+          { name: 'shoulders', displayName: 'Lateral Raises', subAreas: ['side_delts'] },
+          { name: 'biceps', displayName: 'Barbell Curls', subAreas: ['short_head_bicep'] },
+        ],
+      },
+      saturday: {
+        name: 'Deadlift Speed & Posterior Power',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Speed Deadlifts / Block Pulls', subAreas: ['lower_back'] },
+          { name: 'legs', displayName: 'Romanian Deadlifts', subAreas: ['hamstrings'] },
+          { name: 'glutes', displayName: 'Barbell Hip Thrusts', subAreas: ['glutes'] },
+          { name: 'calves', displayName: 'Standing Calf Raises', subAreas: ['calves'] },
+        ],
+      },
+      sunday: { name: 'Full Nervous System Reset', isRest: true, muscleGroups: [] },
+    },
+  },
 
   // ==========================================
   // C. FAT LOSS & CONDITIONING
@@ -872,6 +1015,149 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       sunday: { name: 'Rest & Recovery', isRest: true, muscleGroups: [] },
     },
   },
+  {
+    id: 'fatloss-5day-metabolic-split',
+    name: 'Balanced Resistance Training & Conditioning — 5-Day',
+    category: 'fat_loss',
+    goal: 'Fat Loss & Conditioning',
+    daysPerWeek: 5,
+    experienceLevel: 'Intermediate',
+    equipment: 'Commercial Gym / Dumbbells & Cardio',
+    shortDescription: 'Balanced 5-day split blending muscle-preserving resistance training with post-lift metabolic conditioning to maximize calorie expenditure and improve cardiovascular fitness.',
+    progressionMethodology: 'Density Progression & Escalating Work Capacity: Complete targeted sets with fixed weight while gradually decreasing rest periods from 60s down to 40s before increasing external load.',
+    setRepGuidance: 'Resistance: 3-4 sets of 10-15 reps with 45-60s rest. Conditioning: 15-20 min post-workout intervals (Zone 3-4).',
+    recoveryNotes: 'Preserve muscle mass by consuming adequate protein (1.8-2.2g/kg) and prioritizing Wednesday and Sunday for active rest.',
+    weeklySchedule: {
+      monday: {
+        name: 'Upper Push & High-Intensity Intervals',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Dumbbell Bench Press', subAreas: ['mid_chest'] },
+          { name: 'shoulders', displayName: 'Overhead Dumbbell Press', subAreas: ['front_delts'] },
+          { name: 'triceps', displayName: 'Tricep Dips / Rope Pushdowns', subAreas: ['lateral_head_tricep'] },
+          { name: 'core', displayName: 'Plank Intervals', subAreas: ['upper_abs'] },
+        ],
+      },
+      tuesday: {
+        name: 'Lower Quads/Glutes & Core Density',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Goblet / Barbell Squats', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Walking Lunges', subAreas: ['quads'] },
+          { name: 'glutes', displayName: 'Hip Thrusts', subAreas: ['glutes'] },
+          { name: 'core', displayName: 'Bicycle Crunches', subAreas: ['obliques'] },
+        ],
+      },
+      wednesday: { name: 'Active Recovery & Mobility', isRest: true, muscleGroups: [] },
+      thursday: {
+        name: 'Upper Pull & Row Conditioning',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Seated Cable Rows', subAreas: ['lats'] },
+          { name: 'back', displayName: 'Lat Pulldowns', subAreas: ['upper_back'] },
+          { name: 'biceps', displayName: 'Dumbbell Hammer Curls', subAreas: ['long_head_bicep'] },
+          { name: 'shoulders', displayName: 'Rear Delt Flyes', subAreas: ['rear_delts'] },
+        ],
+      },
+      friday: {
+        name: 'Lower Hamstrings & Calves Finisher',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Romanian Deadlifts', subAreas: ['hamstrings'] },
+          { name: 'legs', displayName: 'Hamstring Curls', subAreas: ['hamstrings'] },
+          { name: 'calves', displayName: 'Calf Raises', subAreas: ['calves'] },
+          { name: 'core', displayName: 'Hanging Knee Raises', subAreas: ['lower_abs'] },
+        ],
+      },
+      saturday: {
+        name: 'Full Body Functional Metabolic Complex',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Dumbbell Thrusters / Leg Press', subAreas: ['quads'] },
+          { name: 'chest', displayName: 'Push-Up Density Sets', subAreas: ['mid_chest'] },
+          { name: 'back', displayName: 'Kettlebell / Dumbbell Swings', subAreas: ['lower_back'] },
+          { name: 'core', displayName: 'Mountain Climbers & Planks', subAreas: ['upper_abs'] },
+        ],
+      },
+      sunday: { name: 'Total Recovery & Hydration', isRest: true, muscleGroups: [] },
+    },
+  },
+  {
+    id: 'fatloss-6day-athletic-conditioning',
+    name: 'Athletic Conditioning & Hypertrophy — 6-Day',
+    category: 'fat_loss',
+    goal: 'Fat Loss & Conditioning',
+    daysPerWeek: 6,
+    experienceLevel: 'Advanced',
+    equipment: 'Full Commercial Gym & Cardio Equipment',
+    shortDescription: 'Sustainable 6-day athletic split alternating push, pull, and leg hypertrophy with energy system development, maintaining lean mass while driving high weekly caloric burn.',
+    progressionMethodology: 'Wave Density Overload: Alternate heavier compound days (8-10 reps) with metabolic density days (12-15 reps) and cardio threshold work. Keep rests strictly timed.',
+    setRepGuidance: '3-4 sets of 10-15 reps per exercise with 45s rest; supersets used to keep heart rate elevated throughout.',
+    recoveryNotes: 'High volume requires strict 8+ hours sleep and electrolyte supplementation to maintain recovery in a caloric deficit.',
+    weeklySchedule: {
+      monday: {
+        name: 'Push Strength & Sprint Intervals',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Barbell Bench Press', subAreas: ['mid_chest'] },
+          { name: 'shoulders', displayName: 'Dumbbell Shoulder Press', subAreas: ['front_delts'] },
+          { name: 'triceps', displayName: 'Overhead Cable Extensions', subAreas: ['long_head_tricep'] },
+          { name: 'core', displayName: 'Ab Rollouts', subAreas: ['upper_abs'] },
+        ],
+      },
+      tuesday: {
+        name: 'Pull Hypertrophy & Core Endurance',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Barbell Rows', subAreas: ['upper_back'] },
+          { name: 'back', displayName: 'Neutral-Grip Pulldowns', subAreas: ['lats'] },
+          { name: 'biceps', displayName: 'Incline Dumbbell Curls', subAreas: ['long_head_bicep'] },
+          { name: 'core', displayName: 'Hanging Leg Raises', subAreas: ['lower_abs'] },
+        ],
+      },
+      wednesday: {
+        name: 'Legs Power & Aerobic Threshold',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Barbell Back Squats', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Romanian Deadlifts', subAreas: ['hamstrings'] },
+          { name: 'glutes', displayName: 'Glute Bridges', subAreas: ['glutes'] },
+          { name: 'calves', displayName: 'Seated Calf Raises', subAreas: ['calves'] },
+        ],
+      },
+      thursday: {
+        name: 'Push Volume & Shoulder Conditioning',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Incline Dumbbell Press', subAreas: ['upper_chest'] },
+          { name: 'shoulders', displayName: 'Lateral Raises', subAreas: ['side_delts'] },
+          { name: 'triceps', displayName: 'Rope Tricep Pushdowns', subAreas: ['lateral_head_tricep'] },
+          { name: 'core', displayName: 'Side Planks', subAreas: ['obliques'] },
+        ],
+      },
+      friday: {
+        name: 'Pull Density & Arms',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Chest-Supported Rows', subAreas: ['mid_back'] },
+          { name: 'back', displayName: 'Straight-Arm Pulldowns', subAreas: ['lats'] },
+          { name: 'biceps', displayName: 'Preacher Curls', subAreas: ['short_head_bicep'] },
+          { name: 'shoulders', displayName: 'Reverse Pec Deck', subAreas: ['rear_delts'] },
+        ],
+      },
+      saturday: {
+        name: 'Legs & Functional Conditioning Complex',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Leg Press', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Lying Leg Curls', subAreas: ['hamstrings'] },
+          { name: 'calves', displayName: 'Standing Calf Raises', subAreas: ['calves'] },
+          { name: 'core', displayName: 'Russian Twists', subAreas: ['obliques'] },
+        ],
+      },
+      sunday: { name: 'Total Rest & Nutritional Refueling', isRest: true, muscleGroups: [] },
+    },
+  },
 
   // ==========================================
   // D. GENERAL FITNESS & LONGEVITY
@@ -1088,6 +1374,147 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       sunday: { name: 'Total Recovery', isRest: true, muscleGroups: [] },
     },
   },
+  {
+    id: 'longevity-5day-balanced',
+    name: 'Balanced Strength, Mobility & Conditioning — 5-Day',
+    category: 'longevity',
+    goal: 'General Fitness & Longevity',
+    daysPerWeek: 5,
+    experienceLevel: 'All Levels',
+    equipment: 'Gym / Free Weights & Cables',
+    shortDescription: 'Balanced 5-day longevity plan distributing upper and lower resistance training with dedicated Zone 2 aerobic base work and mobility flows to support healthspan, joint durability, and lifelong fitness.',
+    progressionMethodology: 'Healthspan Quality Progression: Prioritize smooth movement cadence (3-second eccentrics, 1-second pause in full stretch) and joint comfort. Add weight only when all sets are performed with zero joint strain at RPE 7-8.',
+    setRepGuidance: 'Resistance: 3 sets of 10-12 controlled reps. Cardio: 25-35 minutes continuous Zone 2 (conversational pace).',
+    recoveryNotes: 'Includes Saturday and Sunday for family, outdoor recreational walking, and deep sleep recovery.',
+    weeklySchedule: {
+      monday: {
+        name: 'Upper Body Strength & Scapular Control',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Dumbbell Flat Press', subAreas: ['mid_chest'] },
+          { name: 'back', displayName: 'Cable Neutral-Grip Rows', subAreas: ['lats', 'upper_back'] },
+          { name: 'shoulders', displayName: 'Face Pulls & External Rotation', subAreas: ['rear_delts'] },
+          { name: 'core', displayName: 'Anti-Extension Plank', subAreas: ['upper_abs'] },
+        ],
+      },
+      tuesday: {
+        name: 'Lower Body Knee & Hip Stability',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Goblet Squats (Full Depth)', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Romanian Deadlifts (Tempo)', subAreas: ['hamstrings'] },
+          { name: 'glutes', displayName: 'Glute Bridges / Hip Abduction', subAreas: ['glutes'] },
+          { name: 'calves', displayName: 'Calf & Tibialis Strength', subAreas: ['calves'] },
+        ],
+      },
+      wednesday: {
+        name: 'Zone 2 Cardiovascular Base & Core Flow',
+        isRest: false,
+        muscleGroups: [
+          { name: 'core', displayName: 'Paloff Press & Core Bracing', subAreas: ['obliques'] },
+          { name: 'core', displayName: 'Deadbugs & Bird Dogs', subAreas: ['lower_abs'] },
+          { name: 'back', displayName: 'Thoracic Mobility & Hangs', subAreas: ['lats'] },
+        ],
+      },
+      thursday: {
+        name: 'Upper Body Posture & Back Durability',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Lat Pulldowns', subAreas: ['lats'] },
+          { name: 'chest', displayName: 'Incline Push-Ups / Dumbbell Press', subAreas: ['upper_chest'] },
+          { name: 'shoulders', displayName: 'Overhead Dumbbell Press', subAreas: ['front_delts'] },
+          { name: 'biceps', displayName: 'Biceps & Triceps Longevity', subAreas: ['long_head_bicep'] },
+        ],
+      },
+      friday: {
+        name: 'Lower Body Foot, Ankle & Leg Strength',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Step-Ups / Bulgarian Split Squat', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Hamstring Curls', subAreas: ['hamstrings'] },
+          { name: 'calves', displayName: 'Standing Calf Raises', subAreas: ['calves'] },
+          { name: 'core', displayName: 'Farmer Carries / Grip', subAreas: ['upper_abs'] },
+        ],
+      },
+      saturday: { name: 'Gentle Walk / Mobility Restoration', isRest: true, muscleGroups: [] },
+      sunday: { name: 'Full Recovery & Family Time', isRest: true, muscleGroups: [] },
+    },
+  },
+  {
+    id: 'longevity-6day-varied-longevity',
+    name: 'Varied Movement, Durability & Longevity — 6-Day',
+    category: 'longevity',
+    goal: 'General Fitness & Longevity',
+    daysPerWeek: 6,
+    experienceLevel: 'All Levels',
+    equipment: 'Gym / Free Weights / Bodyweight',
+    shortDescription: 'High-frequency, low-fatigue 6-day split designed to maintain daily active movement habits, joint mobility, cardiovascular health, and bone mineral density without chronic soreness or burnout.',
+    progressionMethodology: 'Daily Movement Waves: Keeps systemic fatigue very low by keeping daily volume moderate (3-4 exercises) and strictly stopping sets 2-3 reps before failure. Focus on daily consistency and movement variety.',
+    setRepGuidance: 'Resistance: 2-3 sets of 10-12 reps at RPE 7-8. Cardio/Mobility: 25-35 minutes low-impact steady state (Zone 2).',
+    recoveryNotes: 'Because fatigue is distributed lightly across 6 days, soreness is minimal. Sunday is dedicated to total rest and mental decompression.',
+    weeklySchedule: {
+      monday: {
+        name: 'Upper Push & Rotator Cuff Durability',
+        isRest: false,
+        muscleGroups: [
+          { name: 'chest', displayName: 'Dumbbell Chest Press', subAreas: ['mid_chest'] },
+          { name: 'shoulders', displayName: 'Dumbbell Lateral Raises', subAreas: ['side_delts'] },
+          { name: 'triceps', displayName: 'Rope Tricep Extensions', subAreas: ['lateral_head_tricep'] },
+          { name: 'core', displayName: 'Plank Holds', subAreas: ['upper_abs'] },
+        ],
+      },
+      tuesday: {
+        name: 'Upper Pull & Spine Health',
+        isRest: false,
+        muscleGroups: [
+          { name: 'back', displayName: 'Chest-Supported Rows', subAreas: ['upper_back'] },
+          { name: 'back', displayName: 'Lat Pulldowns', subAreas: ['lats'] },
+          { name: 'biceps', displayName: 'Dumbbell Curls', subAreas: ['long_head_bicep'] },
+          { name: 'shoulders', displayName: 'Rear Delt Flyes', subAreas: ['rear_delts'] },
+        ],
+      },
+      wednesday: {
+        name: 'Lower Body Hip/Knee Longevity',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Full Range Goblet Squats', subAreas: ['quads'] },
+          { name: 'legs', displayName: 'Romanian Deadlifts', subAreas: ['hamstrings'] },
+          { name: 'glutes', displayName: 'Glute Hip Thrusts', subAreas: ['glutes'] },
+          { name: 'calves', displayName: 'Calf Raises', subAreas: ['calves'] },
+        ],
+      },
+      thursday: {
+        name: 'Zone 2 Cardiovascular Foundation & Core',
+        isRest: false,
+        muscleGroups: [
+          { name: 'core', displayName: 'Anti-Rotation Core (Paloff)', subAreas: ['obliques'] },
+          { name: 'core', displayName: 'Deadbugs & Bird Dogs', subAreas: ['lower_abs'] },
+          { name: 'back', displayName: 'Hangs & Postural Stretch', subAreas: ['lats'] },
+        ],
+      },
+      friday: {
+        name: 'Functional Full Body Resistance',
+        isRest: false,
+        muscleGroups: [
+          { name: 'legs', displayName: 'Dumbbell Lunges / Split Squats', subAreas: ['quads'] },
+          { name: 'chest', displayName: 'Incline Dumbbell Press', subAreas: ['upper_chest'] },
+          { name: 'back', displayName: 'Seated Cable Rows', subAreas: ['mid_back'] },
+          { name: 'core', displayName: 'Suitcase Carries', subAreas: ['obliques'] },
+        ],
+      },
+      saturday: {
+        name: 'Lower Body Balance, Glutes & Durability',
+        isRest: false,
+        muscleGroups: [
+          { name: 'glutes', displayName: 'Glute Kickbacks / Abductions', subAreas: ['glutes'] },
+          { name: 'legs', displayName: 'Hamstring Curls', subAreas: ['hamstrings'] },
+          { name: 'legs', displayName: 'Leg Press (Moderate Load)', subAreas: ['quads'] },
+          { name: 'calves', displayName: 'Standing Calf Raises', subAreas: ['calves'] },
+        ],
+      },
+      sunday: { name: 'Total Rest & Nervous System Reset', isRest: true, muscleGroups: [] },
+    },
+  },
 ];
 
 /**
@@ -1107,21 +1534,27 @@ export function getRecommendedTemplate(
     if (days >= 6) return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-ppl-6day')!;
     if (days === 5) return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-bro-split-5day')!;
     if (days === 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-upper-lower-4day')!;
-    return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-ppl-3day')!;
+    return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-full-body-3day') || WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-ppl-3day')!;
   }
 
   if (normalizedGoal.includes('strength') || normalizedGoal.includes('power')) {
-    if (days >= 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'strength-531-inspired-4day')!;
-    return WORKOUT_TEMPLATES.find((t) => t.id === 'strength-texas-method-3day')!;
+    if (days >= 6) return WORKOUT_TEMPLATES.find((t) => t.id === 'strength-6day-high-frequency')!;
+    if (days === 5) return WORKOUT_TEMPLATES.find((t) => t.id === 'strength-5day-powerbuilding')!;
+    if (days === 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'strength-531-inspired-4day')!;
+    return WORKOUT_TEMPLATES.find((t) => t.id === 'strength-texas-method-3day') || WORKOUT_TEMPLATES.find((t) => t.id === 'strength-full-body-3day')!;
   }
 
   if (normalizedGoal.includes('fat') || normalizedGoal.includes('conditioning') || normalizedGoal.includes('loss')) {
-    if (days >= 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'fatloss-upper-lower-conditioning-4day')!;
-    return WORKOUT_TEMPLATES.find((t) => t.id === 'fatloss-full-body-conditioning-3day')!;
+    if (days >= 6) return WORKOUT_TEMPLATES.find((t) => t.id === 'fatloss-6day-athletic-conditioning')!;
+    if (days === 5) return WORKOUT_TEMPLATES.find((t) => t.id === 'fatloss-5day-metabolic-split')!;
+    if (days === 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'fatloss-upper-lower-conditioning-4day')!;
+    return WORKOUT_TEMPLATES.find((t) => t.id === 'fatloss-full-body-resistance-3day') || WORKOUT_TEMPLATES.find((t) => t.id === 'fatloss-full-body-conditioning-3day')!;
   }
 
   if (normalizedGoal.includes('longevity') || normalizedGoal.includes('general') || normalizedGoal.includes('health')) {
-    if (days >= 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'longevity-4day-balanced')!;
+    if (days >= 6) return WORKOUT_TEMPLATES.find((t) => t.id === 'longevity-6day-varied-longevity')!;
+    if (days === 5) return WORKOUT_TEMPLATES.find((t) => t.id === 'longevity-5day-balanced')!;
+    if (days === 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'longevity-upper-lower-4day') || WORKOUT_TEMPLATES.find((t) => t.id === 'longevity-4day-balanced')!;
     return WORKOUT_TEMPLATES.find((t) => t.id === 'longevity-full-body-3day')!;
   }
 
@@ -1129,7 +1562,7 @@ export function getRecommendedTemplate(
   if (days >= 6) return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-ppl-6day')!;
   if (days === 5) return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-bro-split-5day')!;
   if (days === 4) return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-upper-lower-4day')!;
-  return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-ppl-3day')!;
+  return WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-full-body-3day') || WORKOUT_TEMPLATES.find((t) => t.id === 'hypertrophy-ppl-3day')!;
 }
 
 export function getTemplateById(id: string): WorkoutTemplate | undefined {
@@ -1143,4 +1576,13 @@ export function getTemplatesByGoal(goal: string): WorkoutTemplate[] {
 
 export function getTemplatesByDays(days: number): WorkoutTemplate[] {
   return WORKOUT_TEMPLATES.filter((t) => t.daysPerWeek === days);
+}
+
+export function goalToCategory(goal?: string): 'hypertrophy' | 'strength' | 'fat_loss' | 'longevity' {
+  if (!goal) return 'hypertrophy';
+  const g = goal.toLowerCase();
+  if (g.includes('strength') || g.includes('power')) return 'strength';
+  if (g.includes('fat') || g.includes('conditioning') || g.includes('loss')) return 'fat_loss';
+  if (g.includes('longevity') || g.includes('health') || g.includes('general')) return 'longevity';
+  return 'hypertrophy';
 }
