@@ -31,6 +31,8 @@ interface WorkoutTemplatesModalProps {
   onTemplateApplied?: (template: WorkoutTemplate) => void;
   initialGoal?: string;
   initialDays?: number | 'all';
+  currentTemplateId?: string;
+  mode?: 'apply' | 'select';
 }
 
 const DAYS_ORDER: { id: DayOfWeek; label: string }[] = [
@@ -49,13 +51,15 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
   onTemplateApplied,
   initialGoal,
   initialDays,
+  currentTemplateId,
+  mode = 'apply',
 }) => {
   const { currentUser } = useAuthStore();
   const userId = currentUser?.id || 'guest';
   const { getUserData, applyWorkoutTemplate } = useWorkoutStore();
 
   const userData = getUserData(userId);
-  const activeTemplateId = userData.activeTemplateId || currentUser?.selectedTemplateId;
+  const activeTemplateId = currentTemplateId || userData.activeTemplateId || currentUser?.selectedTemplateId;
 
   // Active filters
   const [selectedGoal, setSelectedGoal] = useState<string>(() => (initialGoal ? goalToCategory(initialGoal) : 'all'));
@@ -126,6 +130,13 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
   }, [selectedGoal, selectedDays, searchQuery]);
 
   const handleApplyClick = (template: WorkoutTemplate) => {
+    if (mode === 'select') {
+      if (onTemplateApplied) {
+        onTemplateApplied(template);
+      }
+      onClose();
+      return;
+    }
     setConfirmTemplate(template);
   };
 
@@ -157,7 +168,7 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Training Split Templates" maxWidth="max-w-3xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={mode === 'select' ? 'Browse Workout Splits' : 'Training Split Templates'} maxWidth="max-w-3xl">
       <div className="space-y-4">
         {/* Toast Notification */}
         {appliedToast && (
@@ -168,19 +179,25 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
         )}
 
         {/* Header / Intro banner */}
-        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-start gap-3.5">
-          <div className="w-9 h-9 rounded-xl bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
-            <Sparkles className="w-5 h-5" />
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1 text-xs">
-            <div className="font-bold text-white text-sm">Established Workout Programs & Splits</div>
-            <p className="text-zinc-400 mt-1 leading-relaxed">
-              Choose from recognizable splits tailored to hypertrophy, raw strength, conditioning, and longevity.
-            </p>
-            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold mt-2">
-              <ShieldCheck className="w-4 h-4 shrink-0" />
-              <span>100% Data Safe: Completed workouts, PRs, and history will NEVER be lost.</span>
+            <div className="font-bold text-white text-xs sm:text-sm">
+              {mode === 'select' ? 'Explore Workout Splits & Templates' : 'Established Workout Programs & Splits'}
             </div>
+            <p className="text-zinc-400 mt-0.5 leading-relaxed text-[11px] sm:text-xs">
+              {mode === 'select'
+                ? 'Select any training split to customize your recommended onboarding routine.'
+                : 'Choose from recognizable splits tailored to hypertrophy, raw strength, conditioning, and longevity.'}
+            </p>
+            {mode === 'apply' && (
+              <div className="flex items-center gap-1.5 text-emerald-400 font-semibold mt-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                <span>100% Data Safe: Completed workouts, PRs, and history will NEVER be lost.</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -317,19 +334,6 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
                       </p>
                     </div>
 
-                    {/* Progression Methodology Box */}
-                    <div className="p-3 rounded-xl bg-white/[0.025] border border-white/[0.06] text-xs">
-                      <div className="flex items-center gap-1.5 text-zinc-300 font-bold mb-1">
-                        <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span className="text-[11px] uppercase tracking-wider text-amber-400">
-                          Progression Methodology
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-300 leading-relaxed font-mono">
-                        {template.progressionMethodology}
-                      </p>
-                    </div>
-
                     {/* 7-Day Mini Schedule Strip */}
                     <div className="space-y-1.5 pt-1">
                       <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
@@ -364,6 +368,19 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
                     {/* Expandable Detailed Daily Plan */}
                     {isExpanded && (
                       <div className="pt-3 border-t border-white/[0.08] space-y-3 animate-fade-in text-xs">
+                        {/* Progression Methodology Box */}
+                        <div className="p-3 rounded-xl bg-white/[0.025] border border-white/[0.06] text-xs">
+                          <div className="flex items-center gap-1.5 text-zinc-300 font-bold mb-1">
+                            <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="text-[11px] uppercase tracking-wider text-amber-400">
+                              Progression Methodology
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-zinc-300 leading-relaxed font-mono">
+                            {template.progressionMethodology}
+                          </p>
+                        </div>
+
                         {/* Set/Rep Guidance */}
                         <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                           <div className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1">
@@ -451,7 +468,7 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
                       {isActive ? (
                         <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                           <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                          <span>Active Split</span>
+                          <span>{mode === 'select' ? 'Selected Split' : 'Active Split'}</span>
                         </div>
                       ) : (
                         <Button
@@ -460,7 +477,7 @@ export const WorkoutTemplatesModal: React.FC<WorkoutTemplatesModalProps> = ({
                           onClick={() => handleApplyClick(template)}
                           className="gap-1.5 text-xs font-black px-4 shadow-[0_2px_12px_rgba(239,68,68,0.3)]"
                         >
-                          <span>Select This Template</span>
+                          <span>{mode === 'select' ? 'Select This Split' : 'Select This Template'}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Button>
                       )}

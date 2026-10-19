@@ -15,6 +15,8 @@ import {
   RotateCcw,
   Calendar,
   ShieldCheck,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
@@ -57,6 +59,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
   // Workout Split Selection State
   const [selectedCustomTemplate, setSelectedCustomTemplate] = useState<WorkoutTemplate | null>(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [showProgression, setShowProgression] = useState(false);
 
   const goalOptions = [
     {
@@ -220,9 +223,38 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
     }
   };
 
+  const handleUnitChange = (newUnit: 'kg' | 'lbs') => {
+    if (newUnit === weightUnit) return;
+    if (currentWeight && !isNaN(Number(currentWeight))) {
+      const val = parseFloat(currentWeight);
+      if (newUnit === 'lbs') {
+        setCurrentWeight((val * 2.20462).toFixed(1));
+      } else {
+        setCurrentWeight((val / 2.20462).toFixed(1));
+      }
+    }
+    setWeightUnit(newUnit);
+  };
+
   const finishOnboarding = async (skipPhysicalStats = false) => {
-    const height = !skipPhysicalStats && heightCm ? parseFloat(heightCm) : null;
-    const weight = !skipPhysicalStats && currentWeight ? parseFloat(currentWeight) : null;
+    let height: number | null = null;
+    let weight: number | null = null;
+
+    if (!skipPhysicalStats) {
+      if (heightCm && !isNaN(Number(heightCm))) {
+        const parsedHeight = parseFloat(heightCm);
+        if (parsedHeight >= 40 && parsedHeight <= 300) {
+          height = Math.round(parsedHeight);
+        }
+      }
+      if (currentWeight && !isNaN(Number(currentWeight))) {
+        const parsedWeight = parseFloat(currentWeight);
+        if (parsedWeight >= 10 && parsedWeight <= 600) {
+          weight = Math.round(parsedWeight * 10) / 10;
+        }
+      }
+    }
+
     const activeUserId = currentUser?.id || 'guest';
     const finalTemplate = matchedTemplate;
 
@@ -600,26 +632,27 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
           </div>
         )}
 
-        {/* STEP 5: OPTIONAL BODY STATS */}
+        {/* STEP 5: PERSONALIZED WORKOUT SPLIT & OPTIONAL BODY STATS */}
         {step === 5 && (
-          <div className="flex-1 flex flex-col justify-between my-auto animate-fade-in py-1">
-            <div className="mb-2">
-              <span className="text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                Final Step · Optional
+          <div className="flex-1 min-h-full flex flex-col justify-between animate-fade-in py-1 pb-2">
+            <div className="mb-2 sm:mb-3">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                Step 5 of 5 · Final Step
               </span>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mt-0.5 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                Body Stats (Optional)
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                Your Recommended Split
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-300 mt-1 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                Optional metrics for tracking bodyweight progress and relative strength. You can update or hide these anytime in Settings.
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 sm:mt-1.5 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                Programmed for <span className="text-white font-bold">{fitnessGoal}</span> at <span className="text-white font-bold">{matchedTemplate.daysPerWeek} days/week</span>.
               </p>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center py-2 space-y-3 sm:space-y-4">
-              {/* Tailored Workout Plan Preview Card */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-[var(--primary)]/35 bg-[#0c0e17]/70 backdrop-blur-md shadow-[0_10px_35px_rgba(220,38,38,0.2)] space-y-3.5">
+            <div className="space-y-3 sm:space-y-3.5 my-auto py-1">
+              {/* PRIMARY SECTION: Tailored Workout Plan Recommendation */}
+              <div className="rounded-2xl border border-[var(--primary)]/35 bg-[#0c0e17]/70 backdrop-blur-md shadow-[0_10px_35px_rgba(220,38,38,0.2)] p-4 sm:p-5 space-y-3">
+                {/* Header / Badges */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[var(--primary)]">
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[var(--primary)]">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>{selectedCustomTemplate ? 'Custom Selected Split' : 'Tailored Split Recommendation'}</span>
                   </div>
@@ -628,28 +661,27 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                   </span>
                 </div>
 
+                {/* Split Name and Short Description */}
                 <div>
-                  <div className="text-base sm:text-lg font-black text-white tracking-tight flex items-center justify-between gap-2">
-                    <span>{matchedTemplate.name}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+                      {matchedTemplate.name}
+                    </h3>
                     {selectedCustomTemplate && (
                       <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full shrink-0">
                         Custom Pick
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] font-bold text-zinc-400 mt-0.5 flex items-center gap-1.5">
-                    <span>Target:</span>
-                    <span className="text-zinc-200">{fitnessGoal}</span>
-                  </div>
                   <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
                     {matchedTemplate.shortDescription}
                   </p>
                 </div>
 
-                {/* 7-Day Mini Schedule Strip */}
-                <div className="space-y-1.5">
+                {/* Compact Weekly Schedule Chips */}
+                <div className="space-y-1.5 pt-0.5">
                   <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400 flex items-center justify-between">
-                    <span>Weekly Schedule Breakdown</span>
+                    <span>Weekly Routine</span>
                     <span className="text-emerald-400 font-bold">{matchedTemplate.daysPerWeek} Active Days</span>
                   </div>
                   <div className="grid grid-cols-7 gap-1">
@@ -659,7 +691,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                       return (
                         <div
                           key={id}
-                          className={`p-1.5 rounded-xl text-center border transition-all flex flex-col justify-between min-h-[58px] ${
+                          className={`p-1.5 rounded-xl text-center border transition-all flex flex-col justify-between min-h-[52px] ${
                             isRest
                               ? 'bg-black/30 border-white/[0.05] text-zinc-500'
                               : 'bg-gradient-to-b from-red-500/20 to-red-600/10 border-red-500/40 text-white shadow-[0_2px_10px_rgba(220,38,38,0.15)]'
@@ -680,64 +712,84 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                   </div>
                 </div>
 
-                {/* Progression Rule Box */}
-                <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-start gap-2">
-                  <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <div className="min-w-0 flex-1 text-[11px] text-zinc-300 leading-snug">
-                    <span className="font-bold text-amber-300">Progression Strategy: </span>
-                    {matchedTemplate.progressionMethodology}
-                  </div>
-                </div>
-
-                {/* Actions: Browse Alternatives or Reset to Default */}
-                <div className="flex items-center gap-2 pt-0.5">
+                {/* Small Expandable Progression Strategy Section */}
+                <div className="border-t border-white/[0.08] pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsTemplateModalOpen(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-bold text-zinc-200 hover:text-white border border-white/[0.1] transition-all cursor-pointer active:scale-[0.99]"
+                    onClick={() => setShowProgression(!showProgression)}
+                    className="w-full flex items-center justify-between text-xs font-bold text-zinc-300 hover:text-white transition-colors cursor-pointer py-0.5"
                   >
-                    <Sliders className="w-3.5 h-3.5 text-[var(--primary)]" />
-                    <span>Browse Alternative Splits ({matchedTemplate.daysPerWeek}-Day & More)</span>
+                    <span className="flex items-center gap-1.5 text-amber-400">
+                      <Zap className="w-3.5 h-3.5" />
+                      <span className="text-[11px] uppercase tracking-wider">Progression Strategy</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px] text-zinc-400">
+                      <span>{showProgression ? 'Hide' : 'View'}</span>
+                      {showProgression ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </span>
                   </button>
-                  {selectedCustomTemplate && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCustomTemplate(null)}
-                      className="px-2.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-bold text-zinc-400 hover:text-white border border-white/[0.06] transition-all cursor-pointer active:scale-95"
-                      title="Reset to recommended split"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
+                  {showProgression && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[11px] text-zinc-300 leading-relaxed font-mono animate-fade-in">
+                      {matchedTemplate.progressionMethodology}
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.1] bg-[#0c0e17]/65 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] space-y-4">
-                {/* Preferred Unit Segmented Selector */}
-                <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              {/* BROWSE ALTERNATIVE SPLITS ACTION */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsTemplateModalOpen(true)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.99] border border-white/[0.1] text-xs font-bold text-zinc-200 hover:text-white transition-all cursor-pointer shadow-xs"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-[var(--primary)]" />
+                  <span>Browse Alternative Splits ({matchedTemplate.daysPerWeek}-Day & More)</span>
+                </button>
+                {selectedCustomTemplate && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCustomTemplate(null)}
+                    className="px-3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 border border-white/[0.08] text-xs font-bold text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                    title="Reset to recommended split"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </button>
+                )}
+              </div>
+
+              {/* SIMPLIFIED OPTIONAL BODY STATISTICS */}
+              <div className="p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] bg-[#0c0e17]/55 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.35)] space-y-2.5">
+                <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-extrabold text-white">Preferred Weight Unit</div>
-                    <div className="text-[11px] text-zinc-400">Used for bodyweight and exercise load logs</div>
+                    <div className="text-xs font-extrabold text-white flex items-center gap-1.5">
+                      <span>Body Stats</span>
+                      <span className="text-[10px] font-normal text-zinc-400 uppercase tracking-wider">(Optional)</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">Used for relative strength & bodyweight tracking</p>
                   </div>
-                  <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/[0.08]">
+
+                  {/* Compact KG/LBS Segmented Control */}
+                  <div className="flex gap-0.5 bg-black/40 p-0.5 rounded-lg border border-white/[0.08]">
                     <button
                       type="button"
-                      onClick={() => setWeightUnit('kg')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      onClick={() => handleUnitChange('kg')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-black transition-all cursor-pointer ${
                         weightUnit === 'kg'
-                          ? 'bg-[var(--primary)] text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]'
-                          : 'text-zinc-400 hover:text-white'
+                          ? 'bg-[var(--primary)] text-white shadow-xs'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
                       KG
                     </button>
                     <button
                       type="button"
-                      onClick={() => setWeightUnit('lbs')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      onClick={() => handleUnitChange('lbs')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-black transition-all cursor-pointer ${
                         weightUnit === 'lbs'
-                          ? 'bg-[var(--primary)] text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]'
-                          : 'text-zinc-400 hover:text-white'
+                          ? 'bg-[var(--primary)] text-white shadow-xs'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
                       LBS
@@ -745,47 +797,61 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                   </div>
                 </div>
 
-                {/* Metric Inputs */}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <Input
-                    label={`Current Weight (${weightUnit})`}
-                    type="number"
-                    placeholder={weightUnit === 'kg' ? 'e.g. 75.5' : 'e.g. 165'}
-                    value={currentWeight}
-                    onChange={(e) => setCurrentWeight(e.target.value)}
-                    unit={weightUnit}
-                  />
+                {/* Two compact inputs side-by-side */}
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      Current Weight
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder={weightUnit === 'kg' ? 'e.g. 75.5' : 'e.g. 165'}
+                        value={currentWeight}
+                        onChange={(e) => setCurrentWeight(e.target.value)}
+                        className="w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-3 py-2 text-xs font-medium text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--primary)] transition-colors pr-9"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-400 uppercase pointer-events-none">
+                        {weightUnit}
+                      </span>
+                    </div>
+                  </div>
 
-                  <Input
-                    label="Height (cm)"
-                    type="number"
-                    placeholder="e.g. 178"
-                    value={heightCm}
-                    onChange={(e) => setHeightCm(e.target.value)}
-                    unit="cm"
-                  />
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      Height
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="1"
+                        placeholder="e.g. 178"
+                        value={heightCm}
+                        onChange={(e) => setHeightCm(e.target.value)}
+                        className="w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-3 py-2 text-xs font-medium text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--primary)] transition-colors pr-9"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-400 uppercase pointer-events-none">
+                        cm
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Cloud Sync Assurance Note */}
-              <div className="p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] flex items-center gap-3 text-xs text-zinc-400">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                  <Check className="w-4 h-4 stroke-[2.5]" />
+                {/* Skip for now / assurance footer */}
+                <div className="flex items-center justify-between pt-0.5 text-[11px] text-zinc-400">
+                  <span className="flex items-center gap-1 text-zinc-400">
+                    <Check className="w-3 h-3 text-emerald-400" />
+                    <span>Modifiable anytime in Settings</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => finishOnboarding(true)}
+                    className="text-zinc-400 hover:text-white font-semibold transition-colors cursor-pointer"
+                  >
+                    Skip stats for now
+                  </button>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <span className="font-bold text-zinc-200">100% Private & Synchronized</span>
-                  <p className="text-[11px] text-zinc-400 mt-0.5">Your stats are securely stored in your personal profile and can be modified anytime.</p>
-                </div>
-              </div>
-
-              <div className="text-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => finishOnboarding(true)}
-                  className="text-xs font-bold text-zinc-400 hover:text-[var(--primary)] transition-colors cursor-pointer py-1.5 px-3 rounded-xl hover:bg-white/5 active:scale-95"
-                >
-                  Skip physical stats and continue to dashboard →
-                </button>
               </div>
             </div>
           </div>
@@ -829,6 +895,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         onClose={() => setIsTemplateModalOpen(false)}
         initialGoal={fitnessGoal}
         initialDays={trainingDays}
+        currentTemplateId={matchedTemplate.id}
+        mode="select"
         onTemplateApplied={(template) => {
           setSelectedCustomTemplate(template);
           setTrainingDays(template.daysPerWeek);

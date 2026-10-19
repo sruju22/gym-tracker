@@ -36,7 +36,7 @@ export const Modal: React.FC<ModalProps> = ({
         onClick={onClose}
       />
 
-      <div className={`relative w-full ${maxWidth} bg-[var(--bg-surface)] border-t sm:border border-[var(--border-subtle)] rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col z-10 animate-fade-in shadow-2xl overflow-hidden text-[var(--text-main)]`}>
+      <div className={`relative w-full ${maxWidth} bg-[var(--bg-surface)] border-t sm:border border-[var(--border-subtle)] rounded-t-3xl sm:rounded-2xl max-h-[90dvh] sm:max-h-[88vh] flex flex-col z-10 animate-fade-in shadow-2xl overflow-hidden text-[var(--text-main)]`}>
         {/* Mobile handle indicator */}
         <div className="w-10 h-1 bg-[var(--border-strong)] rounded-full mx-auto my-2.5 sm:hidden" />
 
