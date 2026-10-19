@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore, ThemeMode } from '../../store/themeStore';
-import { Sun, Moon, Laptop } from 'lucide-react';
+import { Sun, Moon, Laptop, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { ProfileAvatarButton } from './ProfileAvatarButton';
@@ -20,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   action,
 }) => {
   const navigate = useNavigate();
-  const { currentUser } = useAuthStore();
+  const { currentUser, openAccountModal } = useAuthStore();
   const { theme, setTheme, resolvedTheme } = useThemeStore();
 
   const cycleTheme = () => {
@@ -76,6 +76,20 @@ export const Header: React.FC<HeaderProps> = ({
               <Sun className="w-4 h-4" />
             )}
           </button>
+
+          {/* Visible Sign In CTA for Guest Users */}
+          {!currentUser && (
+            <button
+              type="button"
+              onClick={openAccountModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white text-xs font-bold transition-all shadow-sm shadow-red-500/20 cursor-pointer shrink-0"
+              aria-label="Sign In"
+              title="Sign In to GymTrackie"
+            >
+              <LogIn className="w-3.5 h-3.5 stroke-[2.4]" />
+              <span>Sign In</span>
+            </button>
+          )}
 
           {/* Global Profile / Account Button */}
           <ProfileAvatarButton />

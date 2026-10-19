@@ -29,8 +29,8 @@ export const ProfileAvatarButton: React.FC<ProfileAvatarButtonProps> = ({
 
   const sizeClasses =
     size === 'sm'
-      ? 'w-7 h-7 text-[11px]'
-      : 'w-8 h-8 sm:w-8.5 sm:h-8.5 text-xs';
+      ? 'w-8 h-8 text-xs'
+      : 'w-8.5 h-8.5 text-xs';
 
   if (!currentUser) {
     // Guest Mode: Neutral profile outline icon
@@ -38,24 +38,15 @@ export const ProfileAvatarButton: React.FC<ProfileAvatarButtonProps> = ({
       <button
         type="button"
         onClick={handleClick}
-        className={`flex items-center gap-2 rounded-full cursor-pointer select-none active:scale-95 transition-all group ${
-          showName
-            ? 'pl-1.5 pr-3 py-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)]'
-            : ''
-        } ${className}`}
-        aria-label="User Account & Sign In"
-        title="Guest Mode — Tap to Sign In or Create Account"
+        className={`rounded-full cursor-pointer select-none active:scale-95 transition-all group shrink-0 ${className}`}
+        aria-label="User Account"
+        title="Guest Account — Tap to open account options"
       >
         <div
-          className={`${sizeClasses} rounded-full flex items-center justify-center bg-[var(--bg-surface)] text-[var(--text-secondary)] group-hover:text-[var(--text-main)] border border-[var(--border-subtle)] shadow-xs transition-colors shrink-0`}
+          className={`${sizeClasses} rounded-full flex items-center justify-center bg-[var(--bg-surface)] text-[var(--text-secondary)] group-hover:text-[var(--text-main)] group-hover:border-[var(--border-strong)] border border-[var(--border-subtle)] shadow-xs transition-colors shrink-0`}
         >
           <User className="w-3.5 h-3.5 stroke-[2.2]" />
         </div>
-        {showName && (
-          <span className="text-xs font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-main)] transition-colors">
-            Sign In
-          </span>
-        )}
       </button>
     );
   }
