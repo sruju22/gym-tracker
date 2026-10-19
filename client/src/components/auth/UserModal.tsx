@@ -325,7 +325,7 @@ export const UserModal: React.FC<UserModalProps> = ({
               <div className="relative flex items-center justify-center my-1.5">
                 <div className="w-full border-t border-[var(--border-subtle)]" />
                 <span className="absolute bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest select-none">
-                  or with password
+                  OR CONTINUE WITH EMAIL
                 </span>
               </div>
 
@@ -401,7 +401,7 @@ export const UserModal: React.FC<UserModalProps> = ({
               <div className="relative flex items-center justify-center my-1.5">
                 <div className="w-full border-t border-[var(--border-subtle)]" />
                 <span className="absolute bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest select-none">
-                  or with password
+                  OR CONTINUE WITH EMAIL
                 </span>
               </div>
             </>
@@ -486,7 +486,7 @@ export const UserModal: React.FC<UserModalProps> = ({
           <div className="relative flex items-center justify-center my-1.5">
             <div className="w-full border-t border-[var(--border-subtle)]" />
             <span className="absolute bg-[var(--bg-surface)] px-2.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest select-none">
-              or with email
+              OR CONTINUE WITH EMAIL
             </span>
           </div>
 

@@ -104,6 +104,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         // Clear existing children before re-rendering
         if (buttonRef.current) {
           buttonRef.current.innerHTML = '';
+          buttonRef.current.style.colorScheme = 'light';
         }
 
         // Dynamically compute responsive button width matching container without overflow
@@ -111,7 +112,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         const parentWidth =
           buttonRef.current?.parentElement?.clientWidth ||
           (typeof window !== 'undefined' ? window.innerWidth - 48 : 280);
-        const buttonWidth = Math.min(360, Math.max(220, parentWidth));
+        const buttonWidth = Math.min(360, Math.max(220, Math.floor(parentWidth)));
 
         // Always use 'filled_black' to match GymTrackie's dark charcoal aesthetics (#131314)
         // and 'pill' shape for smooth rounded capsule alignment
@@ -169,7 +170,11 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   }
 
   return (
-    <div className="relative w-full flex justify-center items-center py-0.5">
+    <div
+      data-gsi-container
+      className="relative w-full flex justify-center items-center py-0.5"
+      style={{ colorScheme: 'light' }}
+    >
       {isLoading && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-card)]/80 backdrop-blur-xs rounded-full">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--primary)]">
@@ -182,10 +187,11 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       {/* Official Google Identity Services Render Container */}
       <div
         ref={buttonRef}
+        data-gsi-target
         className={`w-full flex justify-center items-center overflow-visible transition-opacity duration-150 ${
           disabled || isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'
         }`}
-        style={{ minHeight: '44px' }}
+        style={{ minHeight: '44px', colorScheme: 'light' }}
       />
     </div>
   );

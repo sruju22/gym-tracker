@@ -153,3 +153,11 @@ input[type="number"] {
 .animate-fade-in {
   animation: fadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Google Identity Services Dark Mode Iframe Canvas Fix */
+/* Prevents WebKit/Safari and cross-origin iframes from rendering contrasting white canvas backgrounds around dark buttons */
+[data-gsi-container],
+[data-gsi-target],
+iframe[src*="accounts.google.com/gsi/button"] {
+  color-scheme: light !important;
+}
