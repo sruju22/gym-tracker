@@ -7,6 +7,7 @@ import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { formatVolume } from '../utils/formatters';
 import { GoalsList } from '../components/goals/GoalsList';
+import { BodyWeightCard } from '../components/weight/BodyWeightCard';
 import { ProgressionChart } from '../components/progress/ProgressionChart';
 import { PersonalRecordsWall } from '../components/progress/PersonalRecordsWall';
 
@@ -85,6 +86,9 @@ export const ProgressPage: React.FC = () => {
           <div className="text-[10px] sm:text-[11px] text-amber-400 font-semibold mt-0.5">Records</div>
         </Card>
       </div>
+
+      {/* Body Weight Logging Section */}
+      <BodyWeightCard />
 
       {/* Fitness Goals Section */}
       <GoalsList />

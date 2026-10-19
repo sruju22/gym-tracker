@@ -16,6 +16,8 @@ import {
   PreviousPerformance,
   Goal,
   GoalType,
+  GoalStatus,
+  WeightLog,
   MuscleGroupConfig,
   SavedCombination,
   CombinationType,
@@ -47,6 +49,14 @@ import {
   fetchPersonalRecordsApi,
   fetchProgressSummaryApi,
   fetchVolumeTrendApi,
+  fetchGoalsApi,
+  createGoalApi,
+  updateGoalApi,
+  deleteGoalApi,
+  updateGoalStatusApi,
+  fetchWeightLogsApi,
+  logWeightApi,
+  deleteWeightLogApi,
   ProgressSummaryResponse,
   VolumeTrendPoint,
 } from '../api/progressApi';
@@ -71,6 +81,7 @@ export interface UserWorkoutData {
   editingSession?: WorkoutSession | null;
   editingOriginalSession?: WorkoutSession | null;
   goals: Goal[];
+  weightLogs: WeightLog[];
   currentWeight?: number;
   progressSummary?: ProgressSummaryResponse;
   volumeTrend?: VolumeTrendPoint[];
@@ -196,23 +207,21 @@ interface WorkoutStore {
 
   deleteCustomExercise: (userId: string, exerciseId: string) => void;
 
-  // Actions - Fitness Goals (CRUD)
-  addGoal: (
-    userId: string,
-    goalData: {
-      title: string;
-      type: GoalType;
-      exerciseId?: string;
-      exerciseName?: string;
-      startValue: number;
-      currentValue: number;
-      targetValue: number;
-      unit: 'kg' | 'lbs';
-    }
-  ) => Goal;
+  // Actions - Fitness Goals
+  fetchGoals: (userId: string) => Promise<Goal[]>;
+  addGoal: (userId: string, goalData: Partial<Goal>) => Promise<Goal>;
+  updateGoal: (userId: string, goalId: string, goalData: Partial<Goal>) => Promise<void>;
+  deleteGoal: (userId: string, goalId: string) => Promise<void>;
+  updateGoalStatus: (userId: string, goalId: string, status: GoalStatus) => Promise<void>;
 
-  updateGoal: (userId: string, goalId: string, goalData: Partial<Goal>) => void;
-  deleteGoal: (userId: string, goalId: string) => void;
+  // Actions - Body Weight Tracking
+  getWeightLogs: (userId: string) => WeightLog[];
+  fetchWeightLogs: (userId: string) => Promise<WeightLog[]>;
+  logWeight: (
+    userId: string,
+    payload: { weight: number; unit?: 'kg' | 'lbs'; date?: string; notes?: string }
+  ) => Promise<WeightLog>;
+  deleteWeightLog: (userId: string, logId: string) => Promise<void>;
   updateCurrentWeight: (userId: string, newWeight: number) => void;
 
   // Actions - Plan Settings & User Settings
@@ -243,6 +252,7 @@ const createDefaultUserData = (): UserWorkoutData => {
     editingOriginalSession: null,
     currentWeight: 70,
     goals: [],
+    weightLogs: [],
   };
 };
 
@@ -703,6 +713,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const [summaryRes, trendRes] = await Promise.all([
             fetchProgressSummaryApi(),
             fetchVolumeTrendApi(),
+            get().fetchGoals(userId),
+            get().fetchWeightLogs(userId),
           ]);
 
           set((state) => ({
@@ -1984,8 +1996,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
                       // Update strength goal for this exercise if present
                       updatedGoals.forEach((g) => {
-                        if (g.type === 'exercise_strength' && g.exerciseId === st.exerciseId) {
-                          g.currentValue = Math.max(g.currentValue, weight);
+                        if ((g.type === 'exercise_strength' || g.type === 'strength') && g.exerciseId === st.exerciseId) {
+                          g.currentValue = Math.max(Number(g.currentValue) || 0, weight);
                           g.updatedAt = new Date().toISOString();
                         }
                       });
@@ -2039,8 +2051,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
                   // Update strength goal for this exercise if present
                   updatedGoals.forEach((g) => {
-                    if (g.type === 'exercise_strength' && g.exerciseId === ex.exerciseId) {
-                      g.currentValue = Math.max(g.currentValue, weight);
+                    if ((g.type === 'exercise_strength' || g.type === 'strength') && g.exerciseId === ex.exerciseId) {
+                      g.currentValue = Math.max(Number(g.currentValue) || 0, weight);
                       g.updatedAt = new Date().toISOString();
                     }
                   });
@@ -2278,18 +2290,61 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       // Goals Actions
-      addGoal: (userId, goalData) => {
+      fetchGoals: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) {
+          return get().getGoals(userId);
+        }
+        try {
+          const res = await fetchGoalsApi();
+          if (res && Array.isArray(res.goals)) {
+            set((state) => ({
+              userDataMap: {
+                ...state.userDataMap,
+                [userId]: {
+                  ...state.getUserData(userId),
+                  goals: res.goals,
+                  currentWeight: res.context?.latestWeight ?? state.getUserData(userId).currentWeight,
+                },
+              },
+            }));
+            return res.goals;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch backend goals:', err);
+        }
+        return get().getGoals(userId);
+      },
+
+      addGoal: async (userId, goalData) => {
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            const res = await createGoalApi(goalData);
+            if (res && res.goal) {
+              await get().fetchGoals(userId);
+              return res.goal;
+            }
+          } catch (err) {
+            console.warn('Failed to create goal via API, falling back to local store:', err);
+          }
+        }
+
         const userData = get().getUserData(userId);
         const newGoal: Goal = {
           id: `goal_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-          title: goalData.title,
-          type: goalData.type,
+          title: goalData.title || 'Goal',
+          type: goalData.type || 'weight_gain',
           exerciseId: goalData.exerciseId,
           exerciseName: goalData.exerciseName,
-          startValue: goalData.startValue,
-          currentValue: goalData.currentValue,
-          targetValue: goalData.targetValue,
-          unit: goalData.unit,
+          startValue: Number(goalData.startValue) || 0,
+          currentValue: goalData.currentValue !== undefined ? Number(goalData.currentValue) : null,
+          targetValue: Number(goalData.targetValue) || 0,
+          unit: goalData.unit || 'kg',
+          targetDate: goalData.targetDate || null,
+          status: goalData.status || 'active',
+          isPrimary: goalData.isPrimary || false,
+          notes: goalData.notes || '',
+          progressPercentage: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -2309,10 +2364,21 @@ export const useWorkoutStore = create<WorkoutStore>()(
         return newGoal;
       },
 
-      updateGoal: (userId, goalId, goalData) => {
+      updateGoal: async (userId, goalId, goalData) => {
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            await updateGoalApi(goalId, goalData);
+            await get().fetchGoals(userId);
+            return;
+          } catch (err) {
+            console.warn('Failed to update goal via API, falling back to local store:', err);
+          }
+        }
+
         const userData = get().getUserData(userId);
-        const updatedGoals = userData.goals.map((g) => {
-          if (g.id !== goalId) return g;
+        const updatedGoals = (userData.goals || []).map((g) => {
+          if (g.id !== goalId && g._id !== goalId) return g;
           return {
             ...g,
             ...goalData,
@@ -2331,9 +2397,22 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
       },
 
-      deleteGoal: (userId, goalId) => {
+      deleteGoal: async (userId, goalId) => {
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            await deleteGoalApi(goalId);
+            await get().fetchGoals(userId);
+            return;
+          } catch (err) {
+            console.warn('Failed to delete goal via API, falling back to local store:', err);
+          }
+        }
+
         const userData = get().getUserData(userId);
-        const filteredGoals = userData.goals.filter((g) => g.id !== goalId);
+        const filteredGoals = (userData.goals || []).filter(
+          (g) => g.id !== goalId && g._id !== goalId
+        );
 
         set((state) => ({
           userDataMap: {
@@ -2346,9 +2425,169 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
       },
 
+      updateGoalStatus: async (userId, goalId, status) => {
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            await updateGoalStatusApi(goalId, status);
+            await get().fetchGoals(userId);
+            return;
+          } catch (err) {
+            console.warn('Failed to update goal status via API, falling back to local store:', err);
+          }
+        }
+
+        const userData = get().getUserData(userId);
+        const updatedGoals = (userData.goals || []).map((g) => {
+          if (g.id !== goalId && g._id !== goalId) return g;
+          return {
+            ...g,
+            status,
+            updatedAt: new Date().toISOString(),
+          };
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              goals: updatedGoals,
+            },
+          },
+        }));
+      },
+
+      // Body Weight Tracking Actions
+      getWeightLogs: (userId: string) => {
+        const userData = get().getUserData(userId);
+        return userData.weightLogs || [];
+      },
+
+      fetchWeightLogs: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) {
+          return get().getWeightLogs(userId);
+        }
+        try {
+          const res = await fetchWeightLogsApi();
+          if (res && Array.isArray(res.logs)) {
+            set((state) => ({
+              userDataMap: {
+                ...state.userDataMap,
+                [userId]: {
+                  ...state.getUserData(userId),
+                  weightLogs: res.logs,
+                  currentWeight: res.latestWeight ?? state.getUserData(userId).currentWeight,
+                },
+              },
+            }));
+            return res.logs;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch backend weight logs:', err);
+        }
+        return get().getWeightLogs(userId);
+      },
+
+      logWeight: async (userId, payload) => {
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            const res = await logWeightApi(payload);
+            if (res && res.log) {
+              await Promise.all([
+                get().fetchWeightLogs(userId),
+                get().fetchGoals(userId),
+              ]);
+              return res.log;
+            }
+          } catch (err) {
+            console.warn('Failed to log weight via API, falling back to local store:', err);
+          }
+        }
+
+        // Local fallback
+        const userData = get().getUserData(userId);
+        const dateStr = payload.date || new Date().toISOString().slice(0, 10);
+        const existingLogs = userData.weightLogs || [];
+        const existingIdx = existingLogs.findIndex((l) => l.date === dateStr);
+
+        const newLog: WeightLog = {
+          id: `weight_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          weight: payload.weight,
+          unit: payload.unit || 'kg',
+          date: dateStr,
+          notes: payload.notes || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        let updatedLogs: WeightLog[];
+        if (existingIdx >= 0) {
+          updatedLogs = [...existingLogs];
+          updatedLogs[existingIdx] = {
+            ...updatedLogs[existingIdx],
+            weight: payload.weight,
+            unit: payload.unit || updatedLogs[existingIdx].unit,
+            notes: payload.notes !== undefined ? payload.notes : updatedLogs[existingIdx].notes,
+            updatedAt: new Date().toISOString(),
+          };
+        } else {
+          updatedLogs = [newLog, ...existingLogs].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+        }
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              weightLogs: updatedLogs,
+              currentWeight: payload.weight,
+            },
+          },
+        }));
+
+        return newLog;
+      },
+
+      deleteWeightLog: async (userId, logId) => {
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            await deleteWeightLogApi(logId);
+            await Promise.all([
+              get().fetchWeightLogs(userId),
+              get().fetchGoals(userId),
+            ]);
+            return;
+          } catch (err) {
+            console.warn('Failed to delete weight log via API, falling back to local store:', err);
+          }
+        }
+
+        const userData = get().getUserData(userId);
+        const updatedLogs = (userData.weightLogs || []).filter(
+          (l) => l.id !== logId && l._id !== logId
+        );
+        const latestWeight = updatedLogs.length > 0 ? updatedLogs[0].weight : userData.currentWeight;
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              weightLogs: updatedLogs,
+              currentWeight: latestWeight,
+            },
+          },
+        }));
+      },
+
       updateCurrentWeight: (userId, newWeight) => {
         const userData = get().getUserData(userId);
-        const updatedGoals = userData.goals.map((g) => {
+        const updatedGoals = (userData.goals || []).map((g) => {
           if (g.type === 'body_weight') {
             return {
               ...g,

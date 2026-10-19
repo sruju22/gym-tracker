@@ -33,6 +33,8 @@ export const SettingsPage: React.FC = () => {
     settings,
     updateUserSettings,
     updateCurrentWeight,
+    fetchWeightLogs,
+    fetchGoals,
     getActiveTemplate,
     getUserData,
     applyWorkoutTemplate,
@@ -115,6 +117,8 @@ export const SettingsPage: React.FC = () => {
 
       if (currentUser?.id && weight) {
         updateCurrentWeight(currentUser.id, weight);
+        fetchWeightLogs(currentUser.id);
+        fetchGoals(currentUser.id);
       }
 
       setSaveSuccess(true);

@@ -193,18 +193,49 @@ export interface PersonalRecord {
 }
 
 // ===== Fitness Goals =====
-export type GoalType = 'body_weight' | 'exercise_strength';
+export type GoalType =
+  | 'weight_gain'
+  | 'weight_loss'
+  | 'strength'
+  | 'consistency'
+  | 'body_weight'
+  | 'exercise_strength';
+
+export type GoalStatus = 'active' | 'completed' | 'paused' | 'archived';
 
 export interface Goal {
   id: string;
+  _id?: string;
+  userId?: string;
   title: string;
   type: GoalType;
   exerciseId?: string;
   exerciseName?: string;
   startValue: number;
-  currentValue: number;
+  currentValue?: number | null;
   targetValue: number;
+  unit: 'kg' | 'lbs' | 'workouts';
+  targetDate?: string | null;
+  status: GoalStatus;
+  isPrimary?: boolean;
+  notes?: string;
+  progressPercentage?: number | null;
+  remainingDistance?: number | null;
+  statusMessage?: string;
+  isAchieved?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ===== Body Weight Tracking =====
+export interface WeightLog {
+  id: string;
+  _id?: string;
+  userId?: string;
+  weight: number;
   unit: 'kg' | 'lbs';
+  date: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }

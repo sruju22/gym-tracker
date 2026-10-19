@@ -5,6 +5,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User';
 import Workout from '../models/Workout';
+import WeightLog from '../models/WeightLog';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -301,6 +302,32 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     if (!updatedUser) {
       res.status(404).json({ error: 'User not found' });
       return;
+    }
+
+    // Synchronize latest WeightLog entry if currentWeight was provided
+    if (updateFields.currentWeight) {
+      try {
+        const today = new Date();
+        const startOfDay = new Date(today);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+        const endOfDay = new Date(today);
+        endOfDay.setUTCHours(23, 59, 59, 999);
+
+        await WeightLog.findOneAndUpdate(
+          { userId: req.user._id, date: { $gte: startOfDay, $lte: endOfDay } },
+          {
+            $set: {
+              userId: req.user._id,
+              weight: updateFields.currentWeight,
+              unit: updateFields.weightUnit || updatedUser.weightUnit || 'kg',
+              date: today,
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } catch (logErr) {
+        console.error('Failed to auto-sync WeightLog in updateUserProfile:', logErr);
+      }
     }
 
     res.status(200).json({
