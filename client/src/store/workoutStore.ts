@@ -20,15 +20,22 @@ import {
   SavedCombination,
   CombinationType,
   WorkoutSetStage,
+  WorkoutTemplate,
 } from '../types';
 import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
+import { getTemplateById } from '../data/workoutTemplates';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getTodayDayOfWeek, isSameLocalDay } from '../utils/formatters';
 import { calculate1RM } from '../utils/oneRM';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
-import { fetchWorkoutPlan, updateWorkoutPlanApi, createWorkoutPlanApi } from '../api/workoutPlanApi';
+import {
+  fetchWorkoutPlan,
+  updateWorkoutPlanApi,
+  createWorkoutPlanApi,
+  applyWorkoutTemplateApi,
+} from '../api/workoutPlanApi';
 import {
   fetchWorkoutHistoryApi,
   createWorkoutHistoryApi,
@@ -56,6 +63,10 @@ export interface UserWorkoutData {
   savedCombinations: SavedCombination[];
   weeklyPlan: WeeklySchedule;
   workoutPlanDocId?: string;
+  activeTemplateId?: string;
+  templateName?: string;
+  fitnessGoal?: string;
+  progressionRule?: string;
   activeSession: WorkoutSession | null;
   editingSession?: WorkoutSession | null;
   editingOriginalSession?: WorkoutSession | null;
@@ -208,6 +219,9 @@ interface WorkoutStore {
   fetchWeeklyPlan: (userId: string) => Promise<WeeklySchedule>;
   updateWeeklyPlan: (userId: string, newPlan: WeeklySchedule) => Promise<void>;
   resetWeeklyPlan: (userId: string) => Promise<void>;
+  getActiveTemplateId: (userId: string) => string | undefined;
+  getActiveTemplate: (userId: string) => WorkoutTemplate | undefined;
+  applyWorkoutTemplate: (userId: string, templateId: string) => Promise<boolean>;
   updateUserSettings: (newSettings: Partial<UserSettings>) => void;
   handleUserLogout: () => void;
 }
@@ -220,6 +234,10 @@ const createDefaultUserData = (): UserWorkoutData => {
     customExercises: [],
     savedCombinations: [],
     weeklyPlan: JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN)),
+    activeTemplateId: 'hypertrophy-ppl-6day',
+    templateName: 'Push / Pull / Legs (PPL) — 6-Day',
+    fitnessGoal: 'Muscle Building & Hypertrophy',
+    progressionRule: 'Double Progression: Keep weight constant until reaching top of rep range, then increase load by 2.5–5 kg.',
     activeSession: null,
     editingSession: null,
     editingOriginalSession: null,
@@ -2361,7 +2379,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         try {
           const res = await fetchWorkoutPlan();
           if (res && res.plan) {
-            const { _id, weeklyPlan } = res.plan;
+            const { _id, weeklyPlan, templateId, templateName, fitnessGoal, progressionRule } = res.plan;
             set((state) => ({
               userDataMap: {
                 ...state.userDataMap,
@@ -2369,6 +2387,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
                   ...state.getUserData(userId),
                   weeklyPlan,
                   workoutPlanDocId: _id,
+                  activeTemplateId: templateId || state.getUserData(userId).activeTemplateId,
+                  templateName: templateName || state.getUserData(userId).templateName,
+                  fitnessGoal: fitnessGoal || state.getUserData(userId).fitnessGoal,
+                  progressionRule: progressionRule || state.getUserData(userId).progressionRule,
                 },
               },
             }));
@@ -2435,6 +2457,70 @@ export const useWorkoutStore = create<WorkoutStore>()(
       resetWeeklyPlan: async (userId) => {
         const defaultPlan = JSON.parse(JSON.stringify(DEFAULT_WORKOUT_PLAN));
         await get().updateWeeklyPlan(userId, defaultPlan);
+      },
+
+      getActiveTemplateId: (userId: string) => {
+        return get().getUserData(userId).activeTemplateId;
+      },
+
+      getActiveTemplate: (userId: string) => {
+        const activeId = get().getUserData(userId).activeTemplateId;
+        if (activeId) {
+          return getTemplateById(activeId);
+        }
+        return undefined;
+      },
+
+      applyWorkoutTemplate: async (userId: string, templateId: string) => {
+        const template = getTemplateById(templateId);
+        if (!template) {
+          console.warn(`Template with id ${templateId} not found`);
+          return false;
+        }
+
+        const newWeeklyPlan = JSON.parse(JSON.stringify(template.weeklySchedule));
+
+        // Optimistic local store update:
+        // CRITICAL REQUIREMENT: Completed workout history, PRs, custom exercises, and bodyweight stats
+        // are NEVER wiped or overwritten when switching templates.
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              weeklyPlan: newWeeklyPlan,
+              activeTemplateId: template.id,
+              templateName: template.name,
+              fitnessGoal: template.goal,
+              progressionRule: template.progressionMethodology,
+            },
+          },
+        }));
+
+        if (userId && userId !== 'guest' && getStoredToken()) {
+          try {
+            const res = await applyWorkoutTemplateApi(templateId);
+            if (res && res.plan) {
+              set((state) => ({
+                userDataMap: {
+                  ...state.userDataMap,
+                  [userId]: {
+                    ...state.getUserData(userId),
+                    workoutPlanDocId: res.plan._id,
+                    activeTemplateId: res.plan.templateId || template.id,
+                    templateName: res.plan.templateName || template.name,
+                    fitnessGoal: res.plan.fitnessGoal || template.goal,
+                    progressionRule: res.plan.progressionRule || template.progressionMethodology,
+                  },
+                },
+              }));
+            }
+          } catch (err) {
+            console.error('Failed to apply workout template to backend:', err);
+          }
+        }
+
+        return true;
       },
 
       updateUserSettings: (newSettings) =>

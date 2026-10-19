@@ -5,7 +5,8 @@ import { DayOfWeek, WeeklySchedule, DayConfig, MuscleGroup } from '../../types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { MUSCLE_GROUPS } from '../../data/muscleGroups';
-import { Plus, Trash2, RotateCcw, Save, Dumbbell } from 'lucide-react';
+import { Plus, Trash2, RotateCcw, Save, Dumbbell, Sparkles, Layers } from 'lucide-react';
+import { WorkoutTemplatesModal } from './WorkoutTemplatesModal';
 
 interface EditPlanModalProps {
   isOpen: boolean;
@@ -26,11 +27,16 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
   const { currentUser } = useAuthStore();
   const userId = currentUser?.id || 'guest';
 
-  const { getWeeklyPlan, updateWeeklyPlan, resetWeeklyPlan } = useWorkoutStore();
+  const { getWeeklyPlan, updateWeeklyPlan, resetWeeklyPlan, getUserData } = useWorkoutStore();
 
   const [activeDay, setActiveDay] = useState<DayOfWeek>('monday');
   const [editedPlan, setEditedPlan] = useState<WeeklySchedule>(() => getWeeklyPlan(userId));
   const [selectedMuscleToAdd, setSelectedMuscleToAdd] = useState<MuscleGroup>('chest');
+  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
+
+  const userData = getUserData(userId);
+  const currentTemplateName = userData.templateName || 'Customized Schedule';
+  const currentGoal = userData.fitnessGoal || currentUser?.fitnessGoal || 'Muscle Building & Hypertrophy';
 
   useEffect(() => {
     if (isOpen) {
@@ -108,9 +114,36 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Customize Workout Plan">
-      <div className="space-y-4">
-        {/* Day Selector Tabs */}
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title="Customize Workout Plan">
+        <div className="space-y-4">
+          {/* Active Split Banner & Template Switcher */}
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-red-500/10 via-[var(--primary)]/5 to-transparent border border-[var(--primary)]/25 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Active Split Template</span>
+              </div>
+              <div className="text-xs sm:text-sm font-extrabold text-[var(--text-main)] truncate mt-0.5">
+                {currentTemplateName}
+              </div>
+              <div className="text-[11px] text-[var(--text-secondary)] truncate">
+                Goal: {currentGoal}
+              </div>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsTemplatesModalOpen(true)}
+              className="gap-1.5 text-xs font-bold shrink-0 self-start sm:self-center border-[var(--primary)]/30 hover:border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)]/10"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Browse 20 Splits</span>
+            </Button>
+          </div>
+
+          {/* Day Selector Tabs */}
         <div className="flex gap-1 overflow-x-auto pb-2 no-scrollbar">
           {DAYS_OF_WEEK.map(({ id, shortLabel }) => {
             const dayCfg = editedPlan[id];
@@ -259,5 +292,16 @@ export const EditPlanModal: React.FC<EditPlanModalProps> = ({ isOpen, onClose })
         </div>
       </div>
     </Modal>
+
+      {/* 20 Workout Splits Template Browser Modal */}
+      <WorkoutTemplatesModal
+        isOpen={isTemplatesModalOpen}
+        onClose={() => setIsTemplatesModalOpen(false)}
+        onTemplateApplied={(template) => {
+          setEditedPlan(JSON.parse(JSON.stringify(template.weeklySchedule)));
+          setIsTemplatesModalOpen(false);
+        }}
+      />
+    </>
   );
 };

@@ -12,6 +12,7 @@ export interface IUser {
   experienceLevel?: string;
   trainingDaysPerWeek?: number;
   equipmentPreference?: string;
+  selectedTemplateId?: string;
   heightCm?: number;
   currentWeight?: number;
   weightUnit?: 'kg' | 'lbs';
@@ -79,6 +80,11 @@ const userSchema = new Schema<IUserDocument>(
     equipmentPreference: {
       type: String,
       default: '',
+    },
+    selectedTemplateId: {
+      type: String,
+      default: '',
+      trim: true,
     },
     heightCm: {
       type: Number,

@@ -222,6 +222,7 @@ export interface User {
   experienceLevel?: string;
   trainingDaysPerWeek?: number;
   equipmentPreference?: string;
+  selectedTemplateId?: string;
   heightCm?: number | null;
   currentWeight?: number | null;
   weightUnit?: 'kg' | 'lbs';
@@ -233,6 +234,23 @@ export interface UserSettings {
   theme: 'dark' | 'light' | 'system';
   defaultSetsPerExercise: number;
   rotationWindowDays: number;
+}
+
+// ===== Workout Template Types =====
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  category: 'hypertrophy' | 'strength' | 'fat_loss' | 'longevity';
+  goal: string;
+  daysPerWeek: number;
+  experienceLevel: string;
+  equipment: string;
+  shortDescription: string;
+  progressionMethodology: string;
+  setRepGuidance: string;
+  recoveryNotes: string;
+  conditioningNotes?: string;
+  weeklySchedule: WeeklySchedule;
 }
 
 

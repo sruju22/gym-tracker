@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Award,
   Dumbbell,
@@ -16,6 +16,7 @@ import { Input } from '../ui/Input';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { useAuthStore } from '../../store/authStore';
 import { useWorkoutStore } from '../../store/workoutStore';
+import { getRecommendedTemplate } from '../../data/workoutTemplates';
 
 interface OnboardingFlowProps {
   onCompleted?: () => void;
@@ -23,7 +24,7 @@ interface OnboardingFlowProps {
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) => {
   const { currentUser, completeOnboarding, isLoading } = useAuthStore();
-  const { updateCurrentWeight, updateUserSettings } = useWorkoutStore();
+  const { updateCurrentWeight, updateUserSettings, applyWorkoutTemplate } = useWorkoutStore();
 
   const [step, setStep] = useState(1);
   const totalSteps = 5;
@@ -159,9 +160,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
     }
   };
 
+  const matchedTemplate = useMemo(() => {
+    return getRecommendedTemplate(fitnessGoal, trainingDays);
+  }, [fitnessGoal, trainingDays]);
+
   const finishOnboarding = async (skipPhysicalStats = false) => {
     const height = !skipPhysicalStats && heightCm ? parseFloat(heightCm) : null;
     const weight = !skipPhysicalStats && currentWeight ? parseFloat(currentWeight) : null;
+    const matched = getRecommendedTemplate(fitnessGoal, trainingDays);
 
     try {
       await completeOnboarding({
@@ -172,7 +178,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         heightCm: height,
         currentWeight: weight,
         weightUnit,
+        selectedTemplateId: matched.id,
       });
+
+      // Automatically apply the tailored template to the user's weekly schedule
+      const activeUserId = currentUser?.id || 'guest';
+      await applyWorkoutTemplate(activeUserId, matched.id);
 
       // Synchronize weight & unit to local workout store
       if (currentUser?.id && weight) {
@@ -187,6 +198,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
       }
     } catch (err) {
       console.error('[Onboarding] Failed to save onboarding preferences:', err);
+      const activeUserId = currentUser?.id || 'guest';
+      await applyWorkoutTemplate(activeUserId, matched.id);
       if (onCompleted) {
         onCompleted();
       } else {
@@ -548,7 +561,29 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
               </p>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center py-2 space-y-4">
+            <div className="flex-1 flex flex-col justify-center py-2 space-y-3 sm:space-y-4">
+              {/* Matched Training Split Card */}
+              <div className="p-3.5 sm:p-4 rounded-2xl border border-[var(--primary)]/30 bg-[#12141c]/90 backdrop-blur-md shadow-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Tailored Workout Plan Ready</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-white">
+                    {matchedTemplate.daysPerWeek} Days / Week
+                  </span>
+                </div>
+                <div className="text-sm sm:text-base font-extrabold text-white">
+                  {matchedTemplate.name}
+                </div>
+                <p className="text-[11px] text-zinc-300 leading-relaxed line-clamp-2">
+                  {matchedTemplate.shortDescription}
+                </p>
+                <div className="text-[10px] text-amber-400 font-mono bg-white/[0.03] p-2 rounded-xl border border-white/[0.05] line-clamp-2">
+                  Progression: {matchedTemplate.progressionMethodology}
+                </div>
+              </div>
+
               <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.08] bg-[#12141c]/80 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] space-y-4">
                 {/* Preferred Unit Segmented Selector */}
                 <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">

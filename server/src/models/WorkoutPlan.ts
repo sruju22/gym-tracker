@@ -26,6 +26,11 @@ export interface IWeeklySchedule {
 export interface IWorkoutPlan {
   userId: Types.ObjectId;
   weeklyPlan: IWeeklySchedule;
+  templateId?: string;
+  templateName?: string;
+  fitnessGoal?: string;
+  trainingDaysPerWeek?: number;
+  progressionRule?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -76,6 +81,30 @@ const workoutPlanSchema = new Schema<IWorkoutPlanDocument>(
     weeklyPlan: {
       type: weeklyScheduleSchema,
       required: [true, 'Weekly schedule plan is required'],
+    },
+    templateId: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    templateName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    fitnessGoal: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    trainingDaysPerWeek: {
+      type: Number,
+      default: 4,
+    },
+    progressionRule: {
+      type: String,
+      default: '',
+      trim: true,
     },
   },
   {
