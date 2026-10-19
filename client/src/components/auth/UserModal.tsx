@@ -20,14 +20,30 @@ import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface UserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
+export const UserModal: React.FC<UserModalProps> = ({
+  isOpen: propIsOpen,
+  onClose: propOnClose,
+}) => {
   const navigate = useNavigate();
-  const { currentUser, login, signup, logout, linkGoogle, isLoading, error, clearError } =
-    useAuthStore();
+  const {
+    currentUser,
+    login,
+    signup,
+    logout,
+    linkGoogle,
+    isLoading,
+    error,
+    clearError,
+    isAccountModalOpen,
+    closeAccountModal,
+  } = useAuthStore();
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : isAccountModalOpen;
+  const onClose = propOnClose !== undefined ? propOnClose : closeAccountModal;
 
   const [mode, setMode] = useState<'view' | 'login' | 'signup'>('view');
   const [nameInput, setNameInput] = useState('');
@@ -35,6 +51,14 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [formError, setFormError] = useState('');
   const [pendingGoogleCredential, setPendingGoogleCredential] = useState<string | null>(null);
+
+  const handleClose = () => {
+    setMode('view');
+    setFormError('');
+    setPendingGoogleCredential(null);
+    clearError();
+    onClose();
+  };
 
   const handleOpenLogin = () => {
     setEmailInput('');
@@ -140,12 +164,15 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
+      maxWidth="max-w-md"
       title={
         mode === 'signup'
           ? 'Create Account'
           : mode === 'login'
           ? 'Sign In to Account'
+          : currentUser
+          ? 'My Account'
           : 'User Account'
       }
     >
@@ -165,17 +192,18 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
           )}
 
           {currentUser ? (
+            /* ================= AUTHENTICATED ACCOUNT PANEL ================= */
             <>
-              {/* Authenticated User Overview */}
+              {/* User Identity Card */}
               <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border-subtle)]">
                 {currentUser.avatarUrl ? (
                   <img
                     src={currentUser.avatarUrl}
                     alt={currentUser.name}
-                    className="w-11 h-11 rounded-full object-cover border border-[var(--border-subtle)] shrink-0 shadow-sm"
+                    className="w-12 h-12 rounded-full object-cover border border-[var(--border-subtle)] shrink-0 shadow-sm"
                   />
                 ) : (
-                  <div className="w-11 h-11 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-base font-black shadow-sm shrink-0 border border-red-400">
+                  <div className="w-12 h-12 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-lg font-black shadow-sm shrink-0 border border-red-400">
                     {currentUser.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -184,107 +212,72 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
                     <h3 className="text-sm font-black text-[var(--text-main)] truncate">
                       {currentUser.name}
                     </h3>
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)]">
-                      Active
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Signed In
                     </span>
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)] truncate">
+                  <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
                     {currentUser.email}
                   </p>
-                  <div className="flex items-center gap-1 mt-0.5 text-[10px] text-[var(--text-muted)]">
+                  <div className="flex items-center gap-1 mt-1 text-[10px] text-[var(--text-muted)]">
                     <ShieldCheck className="w-3 h-3 text-[var(--success)]" />
-                    <span>MongoDB Atlas Sync Active</span>
+                    <span>MongoDB Atlas Cloud Sync Active</span>
                   </div>
                 </div>
               </div>
 
+              {/* Linked Accounts Status */}
               {currentUser.googleLinked ? (
                 <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs">
                   <div className="flex items-center gap-2 text-emerald-400 font-semibold text-[11px]">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Google Account Linked</span>
+                    <span>Google Account Connected</span>
                   </div>
                   <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/15 px-1.5 py-0.5 rounded">
-                    Connected
+                    1-Tap Ready
                   </span>
                 </div>
               ) : (
-                <div className="px-3 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-1.5">
-                  <div className="flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-2">
+                  <div>
                     <div className="text-xs font-bold text-[var(--text-main)]">Link Google Account</div>
-                    <span className="text-[10px] text-[var(--text-muted)]">1-tap sign-in</span>
+                    <div className="text-[10px] text-[var(--text-secondary)]">
+                      Connect Google for 1-tap sign-in next time
+                    </div>
                   </div>
-                  <GoogleSignInButton
-                    mode="link"
-                    text="continue_with"
-                    onSuccess={() => {
-                      setFormError('');
-                      clearError();
-                    }}
-                    onError={handleGoogleError}
-                  />
+                  <div className="pt-0.5">
+                    <GoogleSignInButton
+                      mode="link"
+                      text="continue_with"
+                      onSuccess={() => {
+                        setFormError('');
+                        clearError();
+                      }}
+                      onError={handleGoogleError}
+                    />
+                  </div>
                 </div>
               )}
-            </>
-          ) : (
-            /* Compact Guest Mode Card */
-            <div className="bg-[var(--bg-card)] px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0 text-[var(--text-muted)]">
-                <User className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-[var(--text-main)]">Guest Mode</span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
-                    Local only
+
+              {/* Preferences, Goals & Themes Row */}
+              <button
+                type="button"
+                onClick={goToSettings}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] active:bg-[var(--bg-card-subtle)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[44px]"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
+                    <Settings className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                    Preferences, Goals & Themes
                   </span>
                 </div>
-                <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
-                  Sign in to save workouts & PRs to MongoDB Atlas
-                </p>
-              </div>
-            </div>
-          )}
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </button>
 
-          {/* Preferences, Goals & Themes — Compact Row with Chevron */}
-          <button
-            type="button"
-            onClick={goToSettings}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] active:bg-[var(--bg-card-subtle)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[44px]"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
-                <Settings className="w-3.5 h-3.5" />
-              </div>
-              <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                Preferences, Goals & Themes
-              </span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
-          </button>
-
-          {currentUser ? (
-            <div className="space-y-2 pt-0.5">
-              <Button
-                variant="outline"
-                fullWidth
-                onClick={handleOpenLogin}
-                className="justify-start gap-2.5 border-dashed h-10 min-h-[40px] text-xs font-bold"
-              >
-                <LogIn className="w-3.5 h-3.5 text-[var(--primary)]" />
-                <span>Switch Account / Sign In</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                fullWidth
-                onClick={handleOpenSignup}
-                className="justify-start gap-2.5 border-dashed h-10 min-h-[40px] text-xs font-bold"
-              >
-                <UserPlus className="w-3.5 h-3.5 text-[var(--primary)]" />
-                <span>Register New Account</span>
-              </Button>
-
+              {/* Prominent Sign Out Button */}
               <Button
                 variant="danger"
                 fullWidth
@@ -292,20 +285,41 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
                   logout();
                   setMode('view');
                 }}
-                className="justify-start gap-2.5 h-10 min-h-[40px] text-xs font-bold mt-2"
+                className="justify-center gap-2 h-11 min-h-[44px] text-xs font-bold mt-2"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out</span>
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out of Account</span>
               </Button>
-            </div>
+            </>
           ) : (
-            <div className="space-y-2 pt-0.5">
+            /* ================= GUEST ACCOUNT PANEL ================= */
+            <>
+              {/* Compact Guest Mode Explanation */}
+              <div className="bg-[var(--bg-card)] px-3 py-2 rounded-xl border border-[var(--border-subtle)] flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0 text-[var(--text-muted)]">
+                  <User className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-[var(--text-main)]">Guest Mode</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
+                      Local only
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-secondary)] truncate">
+                    Sign in to save and sync workouts to MongoDB Atlas
+                  </p>
+                </div>
+              </div>
+
               {/* Official Google Identity Services Button */}
-              <GoogleSignInButton
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                text="continue_with"
-              />
+              <div className="pt-0.5">
+                <GoogleSignInButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  text="continue_with"
+                />
+              </div>
 
               {/* Subtle Refined Divider */}
               <div className="relative flex items-center justify-center my-1.5">
@@ -336,7 +350,22 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose }) => {
                   <span className="truncate">Create Account</span>
                 </Button>
               </div>
-            </div>
+
+              {/* Secondary Row: Preferences, Goals & Themes */}
+              <button
+                type="button"
+                onClick={goToSettings}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)]/60 hover:bg-[var(--bg-card)] active:bg-[var(--bg-card-subtle)] border border-[var(--border-subtle)]/80 transition-all cursor-pointer group text-left mt-1"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Settings className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+                  <span className="text-[11px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-main)] truncate">
+                    Preferences, Goals & Themes
+                  </span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors shrink-0" />
+              </button>
+            </>
           )}
         </div>
       )}

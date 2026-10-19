@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Lock, LogIn } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -9,11 +9,9 @@ import { formatVolume } from '../utils/formatters';
 import { GoalsList } from '../components/goals/GoalsList';
 import { ProgressionChart } from '../components/progress/ProgressionChart';
 import { PersonalRecordsWall } from '../components/progress/PersonalRecordsWall';
-import { UserModal } from '../components/auth/UserModal';
 
 export const ProgressPage: React.FC = () => {
-  const { currentUser } = useAuthStore();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { currentUser, openAccountModal } = useAuthStore();
 
   const { getUserData, getHistory, getPersonalRecords, getExercises } = useWorkoutStore();
 
@@ -33,7 +31,7 @@ export const ProgressPage: React.FC = () => {
             <Button
               variant="primary"
               size="md"
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => openAccountModal()}
               className="gap-2 mx-auto font-bold px-6"
             >
               <LogIn className="w-4 h-4" />
@@ -41,7 +39,6 @@ export const ProgressPage: React.FC = () => {
             </Button>
           </div>
         </div>
-        <UserModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       </div>
     );
   }

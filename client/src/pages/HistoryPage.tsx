@@ -22,7 +22,6 @@ import { useAuthStore } from '../store/authStore';
 import { formatDateShort, formatDayName } from '../utils/formatters';
 import { WorkoutSession } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { UserModal } from '../components/auth/UserModal';
 import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 
 type DateRangeFilter = 'all' | 'week' | 'month' | '3months';
@@ -58,8 +57,7 @@ const isDateInRange = (dateStr: string, range: DateRangeFilter): boolean => {
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuthStore();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { currentUser, openAccountModal } = useAuthStore();
 
   const { startEditingWorkout, deleteWorkout } = useWorkoutStore();
   const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(null);
@@ -192,7 +190,7 @@ export const HistoryPage: React.FC = () => {
             <Button
               variant="primary"
               size="md"
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => openAccountModal()}
               className="gap-2 mx-auto font-bold px-6"
             >
               <LogIn className="w-4 h-4" />
@@ -200,7 +198,6 @@ export const HistoryPage: React.FC = () => {
             </Button>
           </div>
         </div>
-        <UserModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       </div>
     );
   }

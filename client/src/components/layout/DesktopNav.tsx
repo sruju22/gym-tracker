@@ -14,10 +14,10 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore, ThemeMode } from '../../store/themeStore';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
+import { ProfileAvatarButton } from './ProfileAvatarButton';
 
 export const DesktopNav: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuthStore();
   const { theme, setTheme, resolvedTheme } = useThemeStore();
 
   const navLinks = [
@@ -34,8 +34,6 @@ export const DesktopNav: React.FC = () => {
       theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark';
     setTheme(next);
   };
-
-  const initialLetter = currentUser ? currentUser.name.charAt(0).toUpperCase() : 'A';
 
   return (
     <header className="hidden md:block sticky top-0 z-40 w-full bg-[var(--bg-surface)]/95 backdrop-blur-md border-b border-[var(--border-subtle)] shadow-xs transition-colors">
@@ -90,17 +88,8 @@ export const DesktopNav: React.FC = () => {
             )}
           </button>
 
-          <button
-            onClick={() => navigate('/settings')}
-            className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-all cursor-pointer group"
-          >
-            <div className="w-7 h-7 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-xs font-black shadow-xs">
-              {initialLetter}
-            </div>
-            <span className="text-xs font-bold text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors max-w-[120px] truncate">
-              {currentUser?.name || 'Athlete'}
-            </span>
-          </button>
+          {/* Global Profile / Account Button */}
+          <ProfileAvatarButton showName size="sm" />
         </div>
       </div>
     </header>

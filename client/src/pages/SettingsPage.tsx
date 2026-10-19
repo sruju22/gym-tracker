@@ -18,14 +18,12 @@ import { Modal } from '../components/ui/Modal';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore, ThemeMode } from '../store/themeStore';
 import { useWorkoutStore } from '../store/workoutStore';
-import { UserModal } from '../components/auth/UserModal';
 
 export const SettingsPage: React.FC = () => {
-  const { currentUser, updateProfile, logout } = useAuthStore();
+  const { currentUser, updateProfile, logout, openAccountModal } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
   const { settings, updateUserSettings, updateCurrentWeight } = useWorkoutStore();
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   // Edit Profile Form
@@ -182,7 +180,7 @@ export const SettingsPage: React.FC = () => {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => openAccountModal()}
               className="gap-1.5 shrink-0"
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -338,7 +336,7 @@ export const SettingsPage: React.FC = () => {
               <Button
                 variant="outline"
                 fullWidth
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={() => openAccountModal()}
                 className="justify-start gap-3"
               >
                 <LogIn className="w-4 h-4 text-[var(--primary)]" />
@@ -360,7 +358,7 @@ export const SettingsPage: React.FC = () => {
               <Button
                 variant="secondary"
                 fullWidth
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={() => openAccountModal()}
                 className="gap-2"
               >
                 <LogIn className="w-4 h-4" />
@@ -369,7 +367,7 @@ export const SettingsPage: React.FC = () => {
               <Button
                 variant="primary"
                 fullWidth
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={() => openAccountModal()}
                 className="gap-2"
               >
                 <UserPlus className="w-4 h-4" />
@@ -482,9 +480,6 @@ export const SettingsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
-
-      {/* Auth Modal for Login/Signup */}
-      <UserModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

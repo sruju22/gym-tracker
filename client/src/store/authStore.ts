@@ -29,6 +29,11 @@ interface AuthState {
   clearError: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
   completeOnboarding: (data: Partial<User>) => Promise<void>;
+
+  // Global Account Sheet / Modal State
+  isAccountModalOpen: boolean;
+  openAccountModal: () => void;
+  closeAccountModal: () => void;
 }
 
 const getCachedProfile = (): User | null => {
@@ -60,6 +65,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   isInitializing: true,
   error: null,
+  isAccountModalOpen: false,
+
+  openAccountModal: () => set({ isAccountModalOpen: true }),
+  closeAccountModal: () => set({ isAccountModalOpen: false }),
 
   restoreAuth: async () => {
     const token = getStoredToken();

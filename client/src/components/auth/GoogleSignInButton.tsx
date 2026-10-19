@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { useThemeStore } from '../../store/themeStore';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface GoogleSignInButtonProps {
@@ -43,7 +42,6 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   disabled = false,
 }) => {
   const { loginWithGoogle, linkGoogle } = useAuthStore();
-  const { resolvedTheme } = useThemeStore();
   const buttonRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false);
 
@@ -103,24 +101,23 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           cancel_on_tap_outside: true,
         });
 
-        // Determine if light theme is explicitly requested on document
-        const isLightMode =
-          typeof document !== 'undefined' &&
-          (document.documentElement.getAttribute('data-theme') === 'light' ||
-            document.documentElement.classList.contains('light'));
-
-        // Clear existing children before re-rendering (e.g. on theme or width change)
+        // Clear existing children before re-rendering
         if (buttonRef.current) {
           buttonRef.current.innerHTML = '';
         }
 
-        // Compute responsive width that comfortably fits mobile modal without overflow
-        const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 360;
-        const buttonWidth = Math.max(220, Math.min(290, viewportWidth - 64));
+        // Dynamically compute responsive button width matching container without overflow
+        // Google GIS allows width between 200px and 400px
+        const parentWidth =
+          buttonRef.current?.parentElement?.clientWidth ||
+          (typeof window !== 'undefined' ? window.innerWidth - 48 : 280);
+        const buttonWidth = Math.min(360, Math.max(220, parentWidth));
 
+        // Always use 'filled_black' to match GymTrackie's dark charcoal aesthetics (#131314)
+        // and 'pill' shape for smooth rounded capsule alignment
         window.google.accounts.id.renderButton(buttonRef.current, {
           type: 'standard',
-          theme: isLightMode ? 'outline' : 'filled_black',
+          theme: 'filled_black',
           size: 'large',
           text,
           shape: 'pill',
@@ -147,11 +144,20 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       }, 100);
     }
 
+    // Re-render button on window resize to ensure fluid responsive fit
+    const handleResize = () => {
+      if (window.google?.accounts?.id && buttonRef.current) {
+        setupGoogleButton();
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
       isCancelled = true;
       if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('resize', handleResize);
     };
-  }, [clientId, resolvedTheme, text, mode, disabled, loginWithGoogle, linkGoogle, onSuccess, onError]);
+  }, [clientId, text, mode, disabled, loginWithGoogle, linkGoogle, onSuccess, onError]);
 
   if (configError) {
     return (
@@ -163,7 +169,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   }
 
   return (
-    <div className="relative w-full flex flex-col items-center justify-center my-0.5">
+    <div className="relative w-full flex justify-center items-center py-0.5">
       {isLoading && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-card)]/80 backdrop-blur-xs rounded-full">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--primary)]">
@@ -176,7 +182,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       {/* Official Google Identity Services Render Container */}
       <div
         ref={buttonRef}
-        className={`w-full flex justify-center items-center overflow-visible transition-opacity duration-200 ${
+        className={`w-full flex justify-center items-center overflow-visible transition-opacity duration-150 ${
           disabled || isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'
         }`}
         style={{ minHeight: '44px' }}

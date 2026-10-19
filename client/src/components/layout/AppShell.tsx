@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { DesktopNav } from './DesktopNav';
+import { UserModal } from '../auth/UserModal';
 
 interface AppShellProps {
   children?: React.ReactNode;
@@ -17,6 +18,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       </main>
 
       <BottomNav />
+      <UserModal />
     </div>
   );
 };
