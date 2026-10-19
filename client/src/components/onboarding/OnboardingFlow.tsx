@@ -267,33 +267,32 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
 
   return (
     <div className="relative min-h-[100dvh] h-[100dvh] max-h-[100dvh] w-full max-w-full bg-[#050608] text-white flex flex-col justify-between overflow-x-hidden overflow-y-hidden select-none">
-      {/* 1. Cinematic Background Layer: Muscular Athlete Image + Layered Black-to-Crimson Atmosphere */}
+      {/* 1. Cinematic Background Layer: Muscular Athlete Image + Refined Single Gradient Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none">
-        {/* High-res Hero Image with cover positioning and tuned visibility */}
+        {/* High-res Hero Image with cover positioning and high opacity */}
         <div
           className="absolute inset-0 bg-cover bg-no-repeat transition-all duration-700"
           style={{
-            backgroundImage: `url('/images/gym-onboarding-hero.jpg')`,
-            backgroundPosition: 'center 14%',
-            opacity: 0.38,
+            backgroundImage: `url('/images/gym-onboarding-hero.png')`,
+            backgroundPosition: 'center 6%',
+            opacity: 0.92,
           }}
         />
 
-        {/* Base Layered Vignette: Near-black at top & bottom for pristine contrast, deep charcoal in center */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050608]/92 via-[#080910]/70 to-[#040507]/96" />
+        {/* Refined Single Gradient Overlay: Darker behind header & text, clear around athlete center & sides */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(5,6,8,0.82) 0%, rgba(5,6,8,0.55) 15%, rgba(5,6,8,0.22) 32%, rgba(5,6,8,0.28) 55%, rgba(5,6,8,0.68) 80%, rgba(5,6,8,0.92) 100%)',
+          }}
+        />
 
-        {/* Deep atmospheric red glow positioned behind the central bodybuilder */}
-        <div className="absolute top-[28%] left-1/2 -translate-x-1/2 w-[520px] h-[340px] bg-[#991b1b]/18 rounded-full blur-[120px] pointer-events-none" />
+        {/* Subtle deep burgundy ambient glow near lower left side */}
+        <div className="absolute -bottom-10 -left-16 w-[300px] h-[300px] bg-[#581014]/28 rounded-full blur-[90px] pointer-events-none" />
 
-        {/* Lower selection area subtle crimson glow */}
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 w-[580px] h-[280px] bg-[#dc2626]/12 rounded-full blur-[110px] pointer-events-none" />
-
-        {/* Ambient red edge highlights mirroring the gym photo's rim lighting */}
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[360px] bg-red-600/15 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-1/3 -right-28 w-[360px] h-[360px] bg-red-600/12 rounded-full blur-[95px] pointer-events-none" />
-
-        {/* Edge Vignette darkening the corners and outer boundary */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_#040507_95%)] pointer-events-none" />
+        {/* Subtle deep crimson/burgundy ambient glow near lower right side matching gym rim lighting */}
+        <div className="absolute bottom-6 -right-16 w-[320px] h-[320px] bg-[#6e1219]/25 rounded-full blur-[95px] pointer-events-none" />
       </div>
 
       {/* 2. Pinned Top Bar: Brand Logo, Step Indicator, Skip Button & Progress Bar */}
@@ -332,13 +331,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         {step === 1 && (
           <div className="flex-1 min-h-full flex flex-col justify-between animate-fade-in py-1 pb-2">
             <div className="mb-2 sm:mb-4">
-              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Welcome, {currentUser?.name?.toUpperCase() || 'Athlete'}
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 What is your primary fitness goal?
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-1.5 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 sm:mt-1.5 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                 We'll tailor your daily workout focus, volume targets, and progression curve.
               </p>
             </div>
@@ -354,8 +353,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                     onClick={() => handleSelectGoal(opt.label)}
                     className={`group relative w-full text-left flex items-center gap-3.5 sm:gap-4.5 p-4 sm:p-5 min-h-[105px] sm:min-h-[114px] rounded-2xl border transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-gradient-to-br from-[#231016]/95 via-[#1a0c12]/92 to-[#130910]/90 border-2 border-red-500/85 shadow-[0_10px_32px_rgba(220,38,38,0.24),0_2px_10px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.22)]'
-                        : 'bg-gradient-to-br from-[#13151f]/85 via-[#10121a]/80 to-[#170e14]/75 hover:from-[#171a26]/90 hover:via-[#141620]/85 hover:to-[#1c1119]/80 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_8px_24px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.07)]'
+                        ? 'bg-gradient-to-br from-[#280c12]/85 via-[#1a0a0f]/80 to-[#12080c]/75 backdrop-blur-md border-2 border-red-500/90 shadow-[0_10px_32px_rgba(220,38,38,0.28),inset_0_1px_0_rgba(255,255,255,0.25)]'
+                        : 'bg-[#0c0e17]/60 backdrop-blur-md hover:bg-[#121522]/70 border border-white/[0.1] hover:border-white/[0.22] shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]'
                     }`}
                   >
                     {/* Icon Container */}
@@ -363,7 +362,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                       className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
                         isSelected
                           ? 'bg-gradient-to-b from-red-500 to-rose-600 text-white shadow-[0_4px_18px_rgba(239,68,68,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] border border-red-400/50'
-                          : 'bg-gradient-to-b from-white/[0.08] to-white/[0.02] text-zinc-400 group-hover:text-zinc-200 border border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                          : 'bg-white/[0.06] text-zinc-300 group-hover:text-white border border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
                       }`}
                     >
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
@@ -374,7 +373,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                       <h3 className="text-sm sm:text-base md:text-lg font-black text-white tracking-tight leading-snug">
                         {opt.label}
                       </h3>
-                      <p className="text-xs sm:text-sm text-zinc-400 group-hover:text-zinc-300 mt-1 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-zinc-300 group-hover:text-zinc-200 mt-1 leading-relaxed">
                         {opt.desc}
                       </p>
                     </div>
@@ -400,13 +399,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         {step === 2 && (
           <div className="flex-1 min-h-full flex flex-col justify-between animate-fade-in py-1 pb-2">
             <div className="mb-2 sm:mb-4">
-              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Training Background
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 How much lifting experience do you have?
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-1.5 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 sm:mt-1.5 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                 Calibrates baseline volume, exercise selection, and progression curves.
               </p>
             </div>
@@ -422,15 +421,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                     onClick={() => setExperienceLevel(`${opt.label} (${opt.sub})`)}
                     className={`group relative w-full text-left flex items-center gap-3.5 sm:gap-4.5 p-4 sm:p-5 min-h-[105px] sm:min-h-[118px] rounded-2xl border transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-gradient-to-br from-[#231016]/95 via-[#1a0c12]/92 to-[#130910]/90 border-2 border-red-500/85 shadow-[0_10px_32px_rgba(220,38,38,0.24),0_2px_10px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.22)]'
-                        : 'bg-gradient-to-br from-[#13151f]/85 via-[#10121a]/80 to-[#170e14]/75 hover:from-[#171a26]/90 hover:via-[#141620]/85 hover:to-[#1c1119]/80 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_8px_24px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.07)]'
+                        ? 'bg-gradient-to-br from-[#280c12]/85 via-[#1a0a0f]/80 to-[#12080c]/75 backdrop-blur-md border-2 border-red-500/90 shadow-[0_10px_32px_rgba(220,38,38,0.28),inset_0_1px_0_rgba(255,255,255,0.25)]'
+                        : 'bg-[#0c0e17]/60 backdrop-blur-md hover:bg-[#121522]/70 border border-white/[0.1] hover:border-white/[0.22] shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]'
                     }`}
                   >
                     <div
                       className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
                         isSelected
                           ? 'bg-gradient-to-b from-red-500 to-rose-600 text-white shadow-[0_4px_18px_rgba(239,68,68,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] border border-red-400/50'
-                          : 'bg-gradient-to-b from-white/[0.08] to-white/[0.02] text-zinc-400 group-hover:text-zinc-200 border border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                          : 'bg-white/[0.06] text-zinc-300 group-hover:text-white border border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
                       }`}
                     >
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
@@ -445,7 +444,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                           {opt.badge}
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-zinc-400 group-hover:text-zinc-300 mt-1 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-zinc-300 group-hover:text-zinc-200 mt-1 leading-relaxed">
                         {opt.desc}
                       </p>
                     </div>
@@ -470,13 +469,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         {step === 3 && (
           <div className="flex-1 min-h-full flex flex-col justify-between animate-fade-in py-1 pb-2">
             <div className="mb-2 sm:mb-4">
-              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Weekly Schedule
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 How many days per week do you plan to train?
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-1.5 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 sm:mt-1.5 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                 Your weekly split and rest days will adapt to this frequency target.
               </p>
             </div>
@@ -492,8 +491,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                       onClick={() => handleSelectDays(opt.days)}
                       className={`group relative text-left p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between min-h-[125px] sm:min-h-[148px] active:scale-[0.99] ${
                         isSelected
-                          ? 'bg-gradient-to-br from-[#231016]/95 via-[#1a0c12]/92 to-[#130910]/90 border-2 border-red-500/85 shadow-[0_10px_32px_rgba(220,38,38,0.24),0_2px_10px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.22)]'
-                          : 'bg-gradient-to-br from-[#13151f]/85 via-[#10121a]/80 to-[#170e14]/75 hover:from-[#171a26]/90 hover:via-[#141620]/85 hover:to-[#1c1119]/80 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_8px_24px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.07)]'
+                          ? 'bg-gradient-to-br from-[#280c12]/85 via-[#1a0a0f]/80 to-[#12080c]/75 backdrop-blur-md border-2 border-red-500/90 shadow-[0_10px_32px_rgba(220,38,38,0.28),inset_0_1px_0_rgba(255,255,255,0.25)]'
+                          : 'bg-[#0c0e17]/60 backdrop-blur-md hover:bg-[#121522]/70 border border-white/[0.1] hover:border-white/[0.22] shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]'
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -540,13 +539,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         {step === 4 && (
           <div className="flex-1 min-h-full flex flex-col justify-between animate-fade-in py-1 pb-2">
             <div className="mb-2 sm:mb-4">
-              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Equipment & Environment
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 Where will you be working out?
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-1.5 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 sm:mt-1.5 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                 We'll prioritize movements and exercise substitutions compatible with your gear.
               </p>
             </div>
@@ -562,15 +561,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                     onClick={() => setEquipmentPreference(opt.label)}
                     className={`group relative w-full text-left flex items-center gap-3.5 sm:gap-4.5 p-4 sm:p-5 min-h-[105px] sm:min-h-[114px] rounded-2xl border transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-gradient-to-br from-[#231016]/95 via-[#1a0c12]/92 to-[#130910]/90 border-2 border-red-500/85 shadow-[0_10px_32px_rgba(220,38,38,0.24),0_2px_10px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.22)]'
-                        : 'bg-gradient-to-br from-[#13151f]/85 via-[#10121a]/80 to-[#170e14]/75 hover:from-[#171a26]/90 hover:via-[#141620]/85 hover:to-[#1c1119]/80 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_8px_24px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.07)]'
+                        ? 'bg-gradient-to-br from-[#280c12]/85 via-[#1a0a0f]/80 to-[#12080c]/75 backdrop-blur-md border-2 border-red-500/90 shadow-[0_10px_32px_rgba(220,38,38,0.28),inset_0_1px_0_rgba(255,255,255,0.25)]'
+                        : 'bg-[#0c0e17]/60 backdrop-blur-md hover:bg-[#121522]/70 border border-white/[0.1] hover:border-white/[0.22] shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]'
                     }`}
                   >
                     <div
                       className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
                         isSelected
                           ? 'bg-gradient-to-b from-red-500 to-rose-600 text-white shadow-[0_4px_18px_rgba(239,68,68,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] border border-red-400/50'
-                          : 'bg-gradient-to-b from-white/[0.08] to-white/[0.02] text-zinc-400 group-hover:text-zinc-200 border border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                          : 'bg-white/[0.06] text-zinc-300 group-hover:text-white border border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
                       }`}
                     >
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
@@ -580,7 +579,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                       <h3 className="text-sm sm:text-base md:text-lg font-black text-white tracking-tight leading-snug">
                         {opt.label}
                       </h3>
-                      <p className="text-xs sm:text-sm text-zinc-400 group-hover:text-zinc-300 mt-1 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-zinc-300 group-hover:text-zinc-200 mt-1 leading-relaxed">
                         {opt.desc}
                       </p>
                     </div>
@@ -605,20 +604,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         {step === 5 && (
           <div className="flex-1 flex flex-col justify-between my-auto animate-fade-in py-1">
             <div className="mb-2">
-              <span className="text-[11px] font-black uppercase text-[var(--primary)] tracking-widest">
+              <span className="text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Final Step · Optional
               </span>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mt-0.5 leading-tight">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mt-0.5 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 Body Stats (Optional)
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                 Optional metrics for tracking bodyweight progress and relative strength. You can update or hide these anytime in Settings.
               </p>
             </div>
 
             <div className="flex-1 flex flex-col justify-center py-2 space-y-3 sm:space-y-4">
               {/* Tailored Workout Plan Preview Card */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-[var(--primary)]/35 bg-[#12141c]/90 backdrop-blur-md shadow-[0_10px_35px_rgba(220,38,38,0.18)] space-y-3.5">
+              <div className="p-4 sm:p-5 rounded-2xl border border-[var(--primary)]/35 bg-[#0c0e17]/70 backdrop-blur-md shadow-[0_10px_35px_rgba(220,38,38,0.2)] space-y-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[var(--primary)]">
                     <Sparkles className="w-3.5 h-3.5" />
@@ -713,7 +712,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.08] bg-[#12141c]/80 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] space-y-4">
+              <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.1] bg-[#0c0e17]/65 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] space-y-4">
                 {/* Preferred Unit Segmented Selector */}
                 <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                   <div>
