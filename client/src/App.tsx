@@ -14,6 +14,10 @@ import { prewarmBackend } from './api/authApi';
 
 const router = createBrowserRouter([
   {
+    path: '/onboarding',
+    element: <OnboardingFlow />,
+  },
+  {
     path: '/',
     element: <AppShell />,
     children: [
