@@ -55,6 +55,7 @@ export interface IWorkoutSession {
   duration?: number;
   exercises: IWorkoutExercise[];
   notes?: string;
+  rating?: 'easy' | 'good' | 'hard' | null;
   totalVolume: number;
   totalSets: number;
   createdAt?: Date;
@@ -247,6 +248,11 @@ const workoutSchema = new Schema<IWorkoutDocument>(
       type: String,
       default: '',
       trim: true,
+    },
+    rating: {
+      type: String,
+      enum: ['easy', 'good', 'hard', null],
+      default: null,
     },
     totalVolume: {
       type: Number,

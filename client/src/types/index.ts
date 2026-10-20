@@ -138,7 +138,10 @@ export interface WorkoutSession {
   status: 'planned' | 'in_progress' | 'completed';
   startedAt?: string;
   completedAt?: string;
+  duration?: number;
   exercises: WorkoutExercise[];
+  notes?: string;
+  rating?: 'easy' | 'good' | 'hard' | null;
   totalVolume: number;
   totalSets: number;
   newPRs?: PersonalRecord[];
@@ -183,11 +186,13 @@ export interface PersonalRecord {
   exerciseId: string;
   exerciseName: string;
   type: 'max_weight' | 'max_reps' | 'max_1rm' | 'max_volume';
+  prCategory?: 'max_weight' | 'max_reps' | 'max_1rm' | 'baseline';
   value: number; // Max weight
   weight: number;
   reps: number;
   estimated1RM: number;
   highestVolume?: number;
+  previousValue?: number;
   date: string;
   details?: string;
 }

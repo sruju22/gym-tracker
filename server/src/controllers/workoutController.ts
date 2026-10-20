@@ -162,6 +162,7 @@ export const createWorkout = async (req: AuthenticatedRequest, res: Response): P
       duration,
       exercises,
       notes,
+      rating,
     } = req.body;
 
     if (!workoutName || typeof workoutName !== 'string' || !workoutName.trim()) {
@@ -203,6 +204,7 @@ export const createWorkout = async (req: AuthenticatedRequest, res: Response): P
       duration: typeof duration === 'number' ? duration : 0,
       exercises: Array.isArray(exercises) ? exercises : [],
       notes: notes || '',
+      rating: rating || null,
       totalVolume,
       totalSets,
     });
@@ -259,6 +261,7 @@ export const updateWorkout = async (req: AuthenticatedRequest, res: Response): P
       duration,
       exercises,
       notes,
+      rating,
     } = req.body;
 
     if (workoutPlanId !== undefined) workout.workoutPlanId = workoutPlanId;
@@ -270,6 +273,7 @@ export const updateWorkout = async (req: AuthenticatedRequest, res: Response): P
     if (completedAt) workout.completedAt = new Date(completedAt);
     if (duration !== undefined) workout.duration = duration;
     if (notes !== undefined) workout.notes = notes;
+    if (rating !== undefined) workout.rating = rating;
 
     if (exercises && Array.isArray(exercises)) {
       workout.exercises = exercises;

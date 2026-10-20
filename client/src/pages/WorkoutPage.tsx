@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
-import { Play, Plus, Check, AlertTriangle, Edit3, BookOpen, Eye, Coffee, Layers } from 'lucide-react';
+import { Play, Plus, Check, AlertTriangle, Edit3, BookOpen, Eye, Coffee, Layers, Trophy } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { ExerciseCard } from '../components/workout/ExerciseCard';
@@ -9,6 +9,7 @@ import { CreateCombinationModal } from '../components/workout/CreateCombinationM
 import { CoverageIndicator } from '../components/workout/CoverageIndicator';
 import { AddExerciseSheet } from '../components/workout/AddExerciseSheet';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
+import { WorkoutCompletionScreen } from '../components/workout/WorkoutCompletionScreen';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
@@ -43,6 +44,8 @@ export const WorkoutPage: React.FC = () => {
     finishWorkout,
     isFinishing,
     saveError,
+    lastCompletedSession,
+    clearLastCompletedSession,
   } = useWorkoutStore();
 
   const activeSession = getActiveSession(userId);
@@ -55,6 +58,7 @@ export const WorkoutPage: React.FC = () => {
   const todayConfig = (weeklyPlan && weeklyPlan[todayDay]) || DEFAULT_WORKOUT_PLAN[todayDay];
 
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [showCompletionSummaryModal, setShowCompletionSummaryModal] = useState(false);
 
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -222,6 +226,25 @@ export const WorkoutPage: React.FC = () => {
   };
 
   if (!currentSession) {
+    // 0. A workout was just finished and saved: Render dedicated completion celebration view
+    if (lastCompletedSession) {
+      return (
+        <div className="pb-12 animate-auth-entrance">
+          <WorkoutCompletionScreen
+            session={lastCompletedSession}
+            onDone={() => {
+              clearLastCompletedSession();
+              navigate('/');
+            }}
+            onViewHistory={() => {
+              clearLastCompletedSession();
+              navigate('/history');
+            }}
+          />
+        </div>
+      );
+    }
+
     // 1. TODAY'S SCHEDULED WORKOUT HAS BEEN COMPLETED AND SAVED
     if (todayCompleted) {
       const finishedTime = formatCompletionTime(todayCompleted.completedAt || todayCompleted.date);
@@ -275,28 +298,28 @@ export const WorkoutPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Actions: Edit Workout & Review Details */}
-            <div className="flex items-center gap-2.5 mb-3">
+            {/* Actions: Edit Workout & Completion Summary */}
+            <div className="grid grid-cols-2 gap-2.5 mb-3">
               <Button
                 variant="secondary"
                 size="md"
                 fullWidth
                 onClick={() => startEditingWorkout(userId, todayCompleted)}
-                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px]"
+                className="font-bold flex items-center justify-center gap-1.5 min-h-[44px]"
               >
                 <Edit3 className="w-4 h-4 text-[var(--primary)]" />
                 <span>Edit Workout</span>
               </Button>
 
               <Button
-                variant="secondary"
+                variant="primary"
                 size="md"
                 fullWidth
-                onClick={() => setIsReviewOpen(true)}
-                className="font-bold flex items-center justify-center gap-1.5 min-h-[46px]"
+                onClick={() => setShowCompletionSummaryModal(true)}
+                className="font-bold flex items-center justify-center gap-1.5 min-h-[44px]"
               >
-                <Eye className="w-4 h-4 text-[var(--text-secondary)]" />
-                <span>Review Details</span>
+                <Trophy className="w-4 h-4 text-white" />
+                <span>Summary</span>
               </Button>
             </div>
 
@@ -827,6 +850,25 @@ export const WorkoutPage: React.FC = () => {
         isOpen={isSummaryOpen}
         onClose={() => setIsSummaryOpen(false)}
       />
+
+      {showCompletionSummaryModal && todayCompleted && (
+        <Modal
+          isOpen={showCompletionSummaryModal}
+          onClose={() => setShowCompletionSummaryModal(false)}
+          maxWidth="max-w-xl"
+          title="Workout Complete"
+        >
+          <WorkoutCompletionScreen
+            session={todayCompleted}
+            isModal={true}
+            onDone={() => setShowCompletionSummaryModal(false)}
+            onViewHistory={() => {
+              setShowCompletionSummaryModal(false);
+              navigate('/history');
+            }}
+          />
+        </Modal>
+      )}
 
       {/* Add Muscle Group Modal */}
       <Modal

@@ -92,6 +92,13 @@ interface WorkoutStore {
   settings: UserSettings;
   isFinishing: boolean;
   saveError: string | null;
+  lastCompletedSession: WorkoutSession | null;
+  clearLastCompletedSession: () => void;
+  updateWorkoutFeedback: (
+    userId: string,
+    sessionId: string,
+    feedback: { rating?: 'easy' | 'good' | 'hard' | null; notes?: string }
+  ) => Promise<boolean>;
 
   // Selectors for active user ID
   getUserData: (userId: string) => UserWorkoutData;
@@ -268,6 +275,56 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
       isFinishing: false,
       saveError: null,
+      lastCompletedSession: null,
+
+      clearLastCompletedSession: () => set({ lastCompletedSession: null }),
+
+      updateWorkoutFeedback: async (userId: string, sessionId: string, feedback: { rating?: 'easy' | 'good' | 'hard' | null; notes?: string }) => {
+        const userData = get().getUserData(userId);
+        const history = userData.history || [];
+        const updatedHistory = history.map((w) => {
+          if (w.id === sessionId || w.clientSessionId === sessionId) {
+            return {
+              ...w,
+              ...(feedback.rating !== undefined ? { rating: feedback.rating } : {}),
+              ...(feedback.notes !== undefined ? { notes: feedback.notes } : {}),
+            };
+          }
+          return w;
+        });
+
+        const lastComp = get().lastCompletedSession;
+        const updatedLastComp =
+          lastComp && (lastComp.id === sessionId || lastComp.clientSessionId === sessionId)
+            ? {
+                ...lastComp,
+                ...(feedback.rating !== undefined ? { rating: feedback.rating } : {}),
+                ...(feedback.notes !== undefined ? { notes: feedback.notes } : {}),
+              }
+            : lastComp;
+
+        set((state) => ({
+          lastCompletedSession: updatedLastComp,
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              history: updatedHistory,
+            },
+          },
+        }));
+
+        const token = getStoredToken();
+        if (userId !== 'guest' && token && sessionId) {
+          try {
+            await updateWorkoutHistoryApi(sessionId, feedback);
+            return true;
+          } catch (err) {
+            console.warn('Failed to update workout feedback on backend:', err);
+          }
+        }
+        return true;
+      },
 
       handleUserLogout: () => {
         set((state) => {
@@ -1964,24 +2021,54 @@ export const useWorkoutStore = create<WorkoutStore>()(
                     const prIndex = updatedPRs.findIndex((p) => p.exerciseId === st.exerciseId);
                     const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-                    const isNewPR =
-                      !existingPR ||
-                      weight > existingPR.weight ||
-                      est1RM > existingPR.estimated1RM ||
-                      (weight === existingPR.weight && reps > existingPR.reps);
+                    let isNewPR = false;
+                    let prCategory: 'max_weight' | 'max_reps' | 'max_1rm' | 'baseline' = 'max_weight';
+                    let prType: 'max_weight' | 'max_reps' | 'max_1rm' = 'max_weight';
+                    let details = '';
+                    let previousValue: number | undefined = undefined;
+
+                    if (!existingPR) {
+                      isNewPR = true;
+                      prCategory = 'baseline';
+                      prType = 'max_weight';
+                      details = `${weight} kg × ${reps} reps (First Record)`;
+                    } else if (weight > existingPR.weight) {
+                      isNewPR = true;
+                      prCategory = 'max_weight';
+                      prType = 'max_weight';
+                      previousValue = existingPR.weight;
+                      const diff = (weight - existingPR.weight).toFixed(1).replace(/\.0$/, '');
+                      details = `${weight} kg × ${reps} reps (+${diff} kg Heaviest Weight)`;
+                    } else if (weight === existingPR.weight && reps > existingPR.reps) {
+                      isNewPR = true;
+                      prCategory = 'max_reps';
+                      prType = 'max_reps';
+                      previousValue = existingPR.reps;
+                      const diff = reps - existingPR.reps;
+                      details = `${weight} kg × ${reps} reps (+${diff} rep${diff > 1 ? 's' : ''} at ${weight} kg)`;
+                    } else if (est1RM > existingPR.estimated1RM) {
+                      isNewPR = true;
+                      prCategory = 'max_1rm';
+                      prType = 'max_1rm';
+                      previousValue = existingPR.estimated1RM;
+                      const diff = (est1RM - existingPR.estimated1RM).toFixed(1).replace(/\.0$/, '');
+                      details = `Est. 1RM ${est1RM} kg (+${diff} kg Strength Improvement)`;
+                    }
 
                     if (isNewPR) {
                       const prRecord: PersonalRecord = {
                         id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
                         exerciseId: st.exerciseId,
                         exerciseName: st.exerciseName,
-                        type: 'max_weight',
+                        type: prType,
+                        prCategory,
+                        previousValue,
                         value: weight,
                         weight,
                         reps,
                         estimated1RM: est1RM,
                         date: new Date().toISOString(),
-                        details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                        details,
                       };
 
                       if (prIndex >= 0) {
@@ -2019,24 +2106,54 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
                 const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-                const isNewPR =
-                  !existingPR ||
-                  weight > existingPR.weight ||
-                  est1RM > existingPR.estimated1RM ||
-                  (weight === existingPR.weight && reps > existingPR.reps);
+                let isNewPR = false;
+                let prCategory: 'max_weight' | 'max_reps' | 'max_1rm' | 'baseline' = 'max_weight';
+                let prType: 'max_weight' | 'max_reps' | 'max_1rm' = 'max_weight';
+                let details = '';
+                let previousValue: number | undefined = undefined;
+
+                if (!existingPR) {
+                  isNewPR = true;
+                  prCategory = 'baseline';
+                  prType = 'max_weight';
+                  details = `${weight} kg × ${reps} reps (First Record)`;
+                } else if (weight > existingPR.weight) {
+                  isNewPR = true;
+                  prCategory = 'max_weight';
+                  prType = 'max_weight';
+                  previousValue = existingPR.weight;
+                  const diff = (weight - existingPR.weight).toFixed(1).replace(/\.0$/, '');
+                  details = `${weight} kg × ${reps} reps (+${diff} kg Heaviest Weight)`;
+                } else if (weight === existingPR.weight && reps > existingPR.reps) {
+                  isNewPR = true;
+                  prCategory = 'max_reps';
+                  prType = 'max_reps';
+                  previousValue = existingPR.reps;
+                  const diff = reps - existingPR.reps;
+                  details = `${weight} kg × ${reps} reps (+${diff} rep${diff > 1 ? 's' : ''} at ${weight} kg)`;
+                } else if (est1RM > existingPR.estimated1RM) {
+                  isNewPR = true;
+                  prCategory = 'max_1rm';
+                  prType = 'max_1rm';
+                  previousValue = existingPR.estimated1RM;
+                  const diff = (est1RM - existingPR.estimated1RM).toFixed(1).replace(/\.0$/, '');
+                  details = `Est. 1RM ${est1RM} kg (+${diff} kg Strength Improvement)`;
+                }
 
                 if (isNewPR) {
                   const prRecord: PersonalRecord = {
                     id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
                     exerciseId: ex.exerciseId,
                     exerciseName: ex.exercise.name,
-                    type: 'max_weight',
+                    type: prType,
+                    prCategory,
+                    previousValue,
                     value: weight,
                     weight,
                     reps,
                     estimated1RM: est1RM,
                     date: new Date().toISOString(),
-                    details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                    details,
                   };
 
                   if (prIndex >= 0) {
@@ -2136,6 +2253,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             clientSessionId: activeSession.id,
             status: 'completed',
             completedAt: new Date().toISOString(),
+            duration: apiPayload.duration,
             totalVolume,
             totalSets: totalCompletedSets,
             newPRs: newPRsInSession,
@@ -2169,6 +2287,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           set((state) => ({
             isFinishing: false,
             saveError: null,
+            lastCompletedSession: completedSession,
             userDataMap: {
               ...state.userDataMap,
               [userId]: {
@@ -2190,6 +2309,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         } catch (error: any) {
           set({
             isFinishing: false,
+            lastCompletedSession: null,
             saveError: error.message || 'Failed to save workout session',
           });
           return false;
