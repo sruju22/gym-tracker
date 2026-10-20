@@ -11,7 +11,10 @@ import { AuthenticatedRequest } from '../middleware/authMiddleware';
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const generateToken = (userId: string, email: string): string => {
-  const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is missing');
+  }
   const options: SignOptions = {
     expiresIn: '7d',
   };

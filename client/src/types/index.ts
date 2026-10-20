@@ -32,7 +32,7 @@ export type Equipment =
 export type ExerciseType =
   | 'compound' | 'isolation' | 'bodyweight' | 'machine' | 'cable';
 
-export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
 export interface Exercise {
   id: string;

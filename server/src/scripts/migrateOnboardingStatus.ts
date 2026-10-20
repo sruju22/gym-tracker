@@ -6,9 +6,7 @@ import Workout from '../models/Workout';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  'mongodb+srv://srujangowda2217_db_user:srujan%402217@gymtrackerdb.vtqusce.mongodb.net/test?retryWrites=true&w=majority&appName=GymTrackerDB';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 export async function runOnboardingMigration(): Promise<{
   totalUsers: number;
@@ -16,6 +14,11 @@ export async function runOnboardingMigration(): Promise<{
   markedIncomplete: number;
   alreadySet: number;
 }> {
+  if (!MONGODB_URI) {
+    console.error('[Migration] CRITICAL: MONGODB_URI environment variable is not defined.');
+    throw new Error('MONGODB_URI environment variable is required to run migrations.');
+  }
+
   console.log('[Migration] Connecting to MongoDB Atlas...');
   await mongoose.connect(MONGODB_URI);
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getCombinationTemplates,
   createCombinationTemplate,
+  updateCombinationTemplate,
   deleteCombinationTemplate,
 } from '../controllers/combinationController';
 import { protect } from '../middleware/authMiddleware';
@@ -16,6 +17,7 @@ router.route('/')
   .post(createCombinationTemplate);
 
 router.route('/:id')
+  .put(updateCombinationTemplate)
   .delete(deleteCombinationTemplate);
 
 export default router;

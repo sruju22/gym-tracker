@@ -74,6 +74,73 @@ export const createCombinationTemplate = async (
 };
 
 /**
+ * @desc    Update/Rename a saved combination template for current authenticated user
+ * @route   PUT /api/combinations/:id
+ * @access  Private (JWT protected)
+ */
+export const updateCombinationTemplate = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const { id } = req.params;
+    const { name, type, techniqueLabel, rounds, stages } = req.body;
+
+    const updateFields: Record<string, any> = {};
+
+    if (name !== undefined) {
+      if (typeof name !== 'string' || !name.trim()) {
+        res.status(400).json({ error: 'Combination name cannot be empty' });
+        return;
+      }
+      updateFields.name = name.trim();
+    }
+
+    if (type !== undefined) {
+      updateFields.type = type;
+    }
+
+    if (techniqueLabel !== undefined) {
+      updateFields.techniqueLabel = typeof techniqueLabel === 'string' ? techniqueLabel.trim() : 'Custom Combination';
+    }
+
+    if (rounds !== undefined) {
+      updateFields.rounds = typeof rounds === 'number' && rounds >= 1 ? rounds : 3;
+    }
+
+    if (stages !== undefined) {
+      updateFields.stages = Array.isArray(stages) ? stages : [];
+    }
+
+    const updated = await CombinationTemplate.findOneAndUpdate(
+      { _id: id, userId: req.user._id },
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      res.status(404).json({ error: 'Combination template not found or unauthorized' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Combination template updated successfully',
+      template: updated,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      error: 'Failed to update combination template',
+      details: error.message,
+    });
+  }
+};
+
+/**
  * @desc    Delete a saved combination template for current authenticated user
  * @route   DELETE /api/combinations/:id
  * @access  Private (JWT protected)

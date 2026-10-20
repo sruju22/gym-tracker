@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Layers,
   ArrowRight,
@@ -13,6 +13,9 @@ import {
   Shuffle,
   TrendingDown,
   Edit2,
+  AlertTriangle,
+  Save,
+  X,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -42,6 +45,7 @@ interface BuilderStage {
   movementDescription: string;
   targetWeight: number | null;
   targetReps: number | null;
+  isMissing?: boolean;
 }
 
 export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
@@ -54,7 +58,9 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
 
   const {
     getSavedCombinations,
+    fetchSavedCombinations,
     saveCombinationTemplate,
+    updateCombinationTemplate,
     deleteCombinationTemplate,
     addCombinationToWorkout,
     getExercises,
@@ -68,12 +74,26 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
   const [selectedType, setSelectedType] = useState<CombinationType>('combine_exercises');
 
   // Builder state
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [rounds, setRounds] = useState<number>(3);
   const [stages, setStages] = useState<BuilderStage[]>([]);
   const [combinationName, setCombinationName] = useState<string>('');
   const [techniqueLabel, setTechniqueLabel] = useState<string>('Custom Combination');
   const [isEditingTechnique, setIsEditingTechnique] = useState<boolean>(false);
   const [saveAsTemplate, setSaveAsTemplate] = useState<boolean>(false);
+
+  // Saved templates management state
+  const [renamingTemplateId, setRenamingTemplateId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState<string>('');
+  const [deleteConfirmTemplateId, setDeleteConfirmTemplateId] = useState<string | null>(null);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Fetch saved templates when modal opens
+  useEffect(() => {
+    if (isOpen && userId && userId !== 'guest') {
+      fetchSavedCombinations(userId);
+    }
+  }, [isOpen, userId, fetchSavedCombinations]);
 
   // Exercise Picker sub-modal
   const [pickerStageIndex, setPickerStageIndex] = useState<number | null>(null);
@@ -82,6 +102,10 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
     setScreen('options');
     setIsEditingTechnique(false);
     setSaveAsTemplate(false);
+    setEditingTemplateId(null);
+    setRenamingTemplateId(null);
+    setDeleteConfirmTemplateId(null);
+    setSaveSuccessMsg(null);
     onClose();
   };
 
@@ -97,6 +121,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
   // Initialize shared builder based on chosen entry option
   const handleSelectOption = (type: CombinationType) => {
     setSelectedType(type);
+    setEditingTemplateId(null);
     setRounds(3);
     setSaveAsTemplate(false);
     setIsEditingTechnique(false);
@@ -323,26 +348,48 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
     }
   };
 
-  // Load an existing saved template into the active workout or builder
+  // Check for duplicate exercises in multi-exercise combination
+  const hasDuplicateExercises = useMemo(() => {
+    if (selectedType !== 'combine_exercises') return false;
+    const ids = stages.map((s) => s.exercise?.id).filter(Boolean);
+    return new Set(ids).size !== ids.length;
+  }, [stages, selectedType]);
+
+  // Quick Rename handlers
+  const handleStartRename = (template: SavedCombination) => {
+    setRenamingTemplateId(template.id);
+    setRenameValue(template.name);
+  };
+
+  const handleSaveRename = async (templateId: string) => {
+    if (!renameValue.trim()) return;
+    await updateCombinationTemplate(userId, templateId, {
+      name: renameValue.trim(),
+    });
+    setRenamingTemplateId(null);
+  };
+
+  // Load an existing saved template into the active workout
   const handleUseSavedTemplate = (template: SavedCombination) => {
     const templateStages = template.stages.map((s) => {
-      const foundEx = allExercises.find((e) => e.id === s.exerciseId) || {
+      const foundEx = allExercises.find((e) => e.id === s.exerciseId);
+      const resolvedEx: Exercise = foundEx || {
         id: s.exerciseId,
-        name: s.exerciseName,
+        name: s.exerciseName || 'Custom Exercise',
         primaryMuscle: 'chest',
         secondaryMuscles: [],
         muscleAreaEmphasis: [],
-        equipment: 'dumbbell',
+        equipment: 'other',
         exerciseType: 'isolation',
         difficulty: 'intermediate',
         instructions: [],
         imageUrl: '',
-        tags: [],
-        isCustom: false,
+        tags: ['custom'],
+        isCustom: true,
       };
 
       return {
-        exercise: foundEx as Exercise,
+        exercise: resolvedEx,
         movementDescription: s.movementDescription,
         targetWeight: s.targetWeight,
         targetReps: s.targetReps,
@@ -360,48 +407,89 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
     handleClose();
   };
 
+  // Enter builder in "Edit Template" mode
   const handleEditSavedTemplate = (template: SavedCombination) => {
+    setEditingTemplateId(template.id);
     setSelectedType(template.type);
     setRounds(template.rounds);
     setTechniqueLabel(template.techniqueLabel || 'Custom Combination');
     setCombinationName(template.name);
 
     const loadedStages: BuilderStage[] = template.stages.map((s, idx) => {
-      const foundEx = allExercises.find((e) => e.id === s.exerciseId) || {
+      const foundEx = allExercises.find((e) => e.id === s.exerciseId);
+      const isMissing = !foundEx;
+      const resolvedEx: Exercise = foundEx || {
         id: s.exerciseId,
-        name: s.exerciseName,
+        name: s.exerciseName || 'Missing Exercise',
         primaryMuscle: 'chest',
         secondaryMuscles: [],
         muscleAreaEmphasis: [],
-        equipment: 'dumbbell',
+        equipment: 'other',
         exerciseType: 'isolation',
         difficulty: 'intermediate',
         instructions: [],
         imageUrl: '',
-        tags: [],
-        isCustom: false,
+        tags: ['custom'],
+        isCustom: true,
       };
 
       return {
         id: `st_${Date.now()}_${idx}`,
-        exercise: foundEx as Exercise,
+        exercise: resolvedEx,
         movementDescription: s.movementDescription || '',
         targetWeight: s.targetWeight ?? null,
         targetReps: s.targetReps ?? null,
+        isMissing,
       };
     });
 
     setStages(loadedStages);
+    setSaveAsTemplate(false);
     setScreen('builder');
   };
 
   // Validation
   const isValid = useMemo(() => {
     if (stages.length === 0) return false;
-    return stages.every((s) => s.exercise !== null);
+    return stages.every((s) => s.exercise !== null && !s.isMissing);
   }, [stages]);
 
-  // Final Action: Save & Add to Workout
+  // Action: Save Template Changes Only (Does not affect historical workouts)
+  const handleSaveTemplateChanges = async () => {
+    if (!isValid || !editingTemplateId) return;
+
+    const finalName =
+      combinationName.trim() ||
+      generateDefaultCombinationName(
+        stages.map((s) => ({ exerciseName: s.exercise?.name })),
+        selectedType,
+        techniqueLabel
+      );
+
+    const stagesPayload = stages.map((s, idx) => ({
+      id: `stage_${idx + 1}`,
+      exerciseId: s.exercise!.id,
+      exerciseName: s.exercise!.name,
+      movementDescription: s.movementDescription.trim() || undefined,
+      targetWeight: s.targetWeight,
+      targetReps: s.targetReps,
+    }));
+
+    await updateCombinationTemplate(userId, editingTemplateId, {
+      name: finalName,
+      type: selectedType,
+      techniqueLabel,
+      rounds,
+      stages: stagesPayload,
+    });
+
+    setSaveSuccessMsg(`Template "${finalName}" updated successfully.`);
+    setTimeout(() => setSaveSuccessMsg(null), 3000);
+    setEditingTemplateId(null);
+    setScreen('saved');
+  };
+
+  // Action: Add to Workout (Optionally saving or updating template)
   const handleAddToWorkout = async () => {
     if (!isValid) return;
 
@@ -420,8 +508,24 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
       targetReps: s.targetReps,
     }));
 
-    // If user opted to save for future workouts, persist as template
-    if (saveAsTemplate) {
+    // If editing existing template, update it
+    if (editingTemplateId) {
+      await updateCombinationTemplate(userId, editingTemplateId, {
+        name: finalName,
+        type: selectedType,
+        techniqueLabel,
+        rounds,
+        stages: stagesPayload.map((s, idx) => ({
+          id: `stage_${idx + 1}`,
+          exerciseId: s.exercise.id,
+          exerciseName: s.exercise.name,
+          movementDescription: s.movementDescription,
+          targetWeight: s.targetWeight,
+          targetReps: s.targetReps,
+        })),
+      });
+    } else if (saveAsTemplate) {
+      // If user opted to save for future workouts, persist as new template
       await saveCombinationTemplate(userId, {
         name: finalName,
         type: selectedType,
@@ -607,14 +711,41 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
         {/* ============================================================ */}
         {screen === 'builder' && (
           <div className="space-y-4">
+            {/* Template Editing Banner if editing an existing reusable template */}
+            {editingTemplateId && (
+              <div className="bg-[var(--primary-subtle)] border border-[var(--primary-border)] rounded-xl p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bookmark className="w-4 h-4 text-[var(--primary)] shrink-0" />
+                  <div>
+                    <div className="text-[10px] font-black uppercase text-[var(--primary)]">
+                      Editing Reusable Template
+                    </div>
+                    <div className="text-xs font-bold text-[var(--text-main)] truncate max-w-[220px]">
+                      {combinationName || 'Saved Combination'}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] text-[var(--text-secondary)] font-medium">
+                  Updates template
+                </span>
+              </div>
+            )}
+
             {/* Header Navigation & Rounds Selector */}
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
               <button
-                onClick={() => setScreen('options')}
+                onClick={() => {
+                  if (editingTemplateId) {
+                    setEditingTemplateId(null);
+                    setScreen('saved');
+                  } else {
+                    setScreen('options');
+                  }
+                }}
                 className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Change Type</span>
+                <span>{editingTemplateId ? 'Back to Saved' : 'Change Type'}</span>
               </button>
 
               <div className="flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] px-2.5 py-1 rounded-xl">
@@ -638,6 +769,14 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Duplicate Exercise Warning (for multi-exercise combination) */}
+            {hasDuplicateExercises && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2.5 flex items-center gap-2 text-xs text-amber-500 font-semibold">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>Multiple stages use the same exercise. Consider picking distinct exercises or use &ldquo;Combine Movements&rdquo;.</span>
+              </div>
+            )}
 
             {/* Stages List */}
             <div className="space-y-2 max-h-[44vh] overflow-y-auto pr-1">
@@ -701,7 +840,11 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setPickerStageIndex(idx)}
-                      className="w-full text-left p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--primary)] flex items-center justify-between cursor-pointer transition-colors"
+                      className={`w-full text-left p-2.5 rounded-lg bg-[var(--bg-surface)] border ${
+                        stage.isMissing
+                          ? 'border-amber-500/50 bg-amber-500/5'
+                          : 'border-[var(--border-subtle)] hover:border-[var(--primary)]'
+                      } flex items-center justify-between cursor-pointer transition-colors`}
                     >
                       <div className="min-w-0 pr-2">
                         <div className="text-xs font-bold text-[var(--text-main)] truncate">
@@ -712,9 +855,15 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                             {stage.exercise.primaryMuscle} • {stage.exercise.equipment || 'Standard'}
                           </div>
                         )}
+                        {stage.isMissing && (
+                          <div className="text-[10px] text-amber-500 font-bold flex items-center gap-1 mt-0.5">
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>Original exercise missing — tap to select replacement</span>
+                          </div>
+                        )}
                       </div>
                       <span className="text-[10px] font-extrabold text-[var(--primary)] bg-[var(--primary-subtle)] px-2 py-0.5 rounded shrink-0">
-                        {stage.exercise ? 'Change' : 'Select'}
+                        {stage.exercise && !stage.isMissing ? 'Change' : 'Select'}
                       </span>
                     </button>
                   </div>
@@ -938,40 +1087,85 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                 />
               </div>
 
-              {/* Save As Template Checkbox */}
-              <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={saveAsTemplate}
-                  onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                  className="rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-0 focus:ring-offset-0 bg-[var(--bg-input)] w-4 h-4"
-                />
-                <span className="text-xs text-[var(--text-main)] font-medium">
-                  Save combination for future workouts
-                </span>
-              </label>
+              {/* Save As Template Checkbox (only when not editing an existing template) */}
+              {editingTemplateId ? (
+                <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)] flex items-center gap-2">
+                  <Bookmark className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
+                  <span>Saving will update this reusable template for future workouts.</span>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={saveAsTemplate}
+                    onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                    className="rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-0 focus:ring-offset-0 bg-[var(--bg-input)] w-4 h-4"
+                  />
+                  <span className="text-xs text-[var(--text-main)] font-medium">
+                    Save combination for future workouts
+                  </span>
+                </label>
+              )}
             </div>
 
             {/* Bottom Actions */}
             <div className="pt-2 border-t border-[var(--border-subtle)] flex gap-2">
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={handleClose}
-                className="flex-1 font-bold"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                disabled={!isValid}
-                onClick={handleAddToWorkout}
-                className="flex-1 font-black min-h-[44px]"
-              >
-                <Check className="w-4 h-4 mr-1.5 stroke-[3]" />
-                <span>Add to Workout</span>
-              </Button>
+              {editingTemplateId ? (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => {
+                      setEditingTemplateId(null);
+                      setScreen('saved');
+                    }}
+                    className="flex-1 font-bold"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    disabled={!isValid}
+                    onClick={handleSaveTemplateChanges}
+                    className="flex-1 font-bold border-[var(--primary-border)] text-[var(--primary)]"
+                  >
+                    <Save className="w-4 h-4 mr-1.5" />
+                    <span>Save Template</span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    disabled={!isValid}
+                    onClick={handleAddToWorkout}
+                    className="flex-1 font-black min-h-[44px]"
+                  >
+                    <Check className="w-4 h-4 mr-1.5 stroke-[3]" />
+                    <span>Save & Add</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={handleClose}
+                    className="flex-1 font-bold"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    disabled={!isValid}
+                    onClick={handleAddToWorkout}
+                    className="flex-1 font-black min-h-[44px]"
+                  >
+                    <Check className="w-4 h-4 mr-1.5 stroke-[3]" />
+                    <span>Add to Workout</span>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -994,56 +1188,145 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
               </span>
             </div>
 
+            {saveSuccessMsg && (
+              <div className="bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success)] text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>{saveSuccessMsg}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSaveSuccessMsg(null)}
+                  className="text-[var(--success)] hover:opacity-80"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
               {savedTemplates.map((template) => (
                 <div
                   key={template.id}
-                  className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2"
+                  className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2.5"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-black uppercase text-[var(--primary)] bg-[var(--primary-subtle)] px-1.5 py-0.2 rounded border border-[var(--primary-border)]">
-                          {template.techniqueLabel || 'COMBINATION'}
-                        </span>
-                        <h4 className="text-xs font-black text-[var(--text-main)]">
-                          {template.name}
-                        </h4>
-                      </div>
-                      <div className="text-[11px] text-[var(--text-secondary)] mt-1 font-medium">
-                        {template.stages.map((s) => s.exerciseName).join(' → ')}
-                      </div>
-                      <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                        {template.rounds} rounds • {template.stages.length} stages
+                  {renamingTemplateId === template.id ? (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-[var(--text-secondary)]">Rename Template</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          className="flex-1 bg-[var(--bg-input)] border border-[var(--primary)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] font-bold focus:outline-none"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveRename(template.id);
+                            if (e.key === 'Escape') setRenamingTemplateId(null);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveRename(template.id)}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white hover:opacity-90 cursor-pointer"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRenamingTemplateId(null)}
+                          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] px-2 py-1.5 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </div>
+                  ) : deleteConfirmTemplateId === template.id ? (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 space-y-2">
+                      <p className="text-xs text-red-400 font-bold">
+                        Delete template &ldquo;{template.name}&rdquo;?
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Historical workouts that used this combination will not be altered.
+                      </p>
+                      <div className="flex gap-2 justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmTemplateId(null)}
+                          className="text-[11px] font-bold px-2.5 py-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-main)] cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await deleteCombinationTemplate(userId, template.id);
+                            setDeleteConfirmTemplateId(null);
+                          }}
+                          className="text-[11px] font-black px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                        >
+                          Confirm Delete
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-black uppercase text-[var(--primary)] bg-[var(--primary-subtle)] px-1.5 py-0.2 rounded border border-[var(--primary-border)]">
+                              {template.techniqueLabel || 'COMBINATION'}
+                            </span>
+                            <h4 className="text-xs font-black text-[var(--text-main)] truncate">
+                              {template.name}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => handleStartRename(template)}
+                              className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                              title="Rename template"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div className="text-[11px] text-[var(--text-secondary)] mt-1 font-medium truncate">
+                            {template.stages.map((s) => s.exerciseName).join(' → ')}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                            {template.rounds} rounds • {template.stages.length} stages
+                          </div>
+                        </div>
 
-                    <button
-                      type="button"
-                      onClick={() => deleteCombinationTemplate(userId, template.id)}
-                      className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] cursor-pointer"
-                      title="Delete template"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmTemplateId(template.id)}
+                          className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] cursor-pointer"
+                          title="Delete template"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
 
-                  <div className="flex gap-2 pt-1 border-t border-[var(--border-subtle)]">
-                    <button
-                      type="button"
-                      onClick={() => handleEditSavedTemplate(template)}
-                      className="flex-1 py-1.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-card-hover)] text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)] transition-colors cursor-pointer"
-                    >
-                      Customize
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleUseSavedTemplate(template)}
-                      className="flex-1 py-1.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[11px] font-black text-white transition-colors cursor-pointer"
-                    >
-                      Use in Workout
-                    </button>
-                  </div>
+                      <div className="flex gap-2 pt-1 border-t border-[var(--border-subtle)]">
+                        <button
+                          type="button"
+                          onClick={() => handleEditSavedTemplate(template)}
+                          className="flex-1 py-1.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-card-hover)] text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)] transition-colors cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3 text-[var(--primary)]" />
+                          <span>Edit Template</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUseSavedTemplate(template)}
+                          className="flex-1 py-1.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[11px] font-black text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <Check className="w-3 h-3 stroke-[3]" />
+                          <span>Use in Workout</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
 
@@ -1052,7 +1335,7 @@ export const CreateCombinationModal: React.FC<CreateCombinationModalProps> = ({
                   <Bookmark className="w-6 h-6 mx-auto text-[var(--text-muted)] opacity-60" />
                   <p>No saved combination templates yet.</p>
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    Create a combination and check "Save combination for future workouts".
+                    Create a combination and check &ldquo;Save combination for future workouts&rdquo;.
                   </p>
                 </div>
               )}

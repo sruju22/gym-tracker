@@ -13,6 +13,13 @@ import combinationRoutes from './routes/combinationRoutes';
 
 dotenv.config();
 
+// Enforce required authentication configuration at startup
+if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
+  console.error('FATAL: JWT_SECRET environment variable is not defined.');
+  console.error('Server cannot start safely without a configured JWT secret.');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 

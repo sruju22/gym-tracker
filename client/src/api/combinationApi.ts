@@ -80,6 +80,42 @@ export const createSavedCombinationApi = async (
   };
 };
 
+export const updateSavedCombinationApi = async (
+  id: string,
+  template: Partial<Omit<SavedCombination, 'id' | 'createdAt'>>
+): Promise<SavedCombination> => {
+  const token = getStoredToken();
+  if (!token) throw new Error('Not authenticated');
+
+  const res = await fetch(`${API_BASE_URL}/combinations/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(template),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to update combination: ${res.statusText}`);
+  }
+
+  const data: CombinationApiResponse = await res.json();
+  const t = data.template;
+
+  return {
+    id: t._id || t.id,
+    userId: t.userId,
+    name: t.name,
+    type: t.type,
+    techniqueLabel: t.techniqueLabel,
+    rounds: t.rounds,
+    stages: t.stages,
+    createdAt: t.createdAt,
+  };
+};
+
 export const deleteSavedCombinationApi = async (id: string): Promise<boolean> => {
   const token = getStoredToken();
   if (!token) throw new Error('Not authenticated');

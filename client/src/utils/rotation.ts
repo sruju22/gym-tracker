@@ -1,94 +1,60 @@
 import { Exercise, MuscleGroup, WorkoutSession } from '../types';
-import { calculateMuscleCoverage } from './coverage';
+import {
+  getRecommendedExercises,
+  ScoredRecommendation,
+  RecommendationContext,
+  RecommendationExplanation,
+  RECOMMENDATION_WEIGHTS,
+} from './recommendationEngine';
 
 export interface ExerciseSuggestion {
   exercise: Exercise;
   reason: string;
-  score: number; // Higher is better
+  score: number; // Higher is better (0 - 100)
+  explanation?: RecommendationExplanation;
 }
 
 /**
- * Exercise Rotation Algorithm
+ * Exercise Rotation Algorithm (Upgraded Phase 2 Recommendation Engine Adapter)
  * Evaluates candidate exercises based on:
- * 1. Today's muscle group
- * 2. Uncovered muscle sub-areas (highest weight)
- * 3. Recent usage history (prioritizes unused / least recently used exercises)
- * 4. Frequency balancing
+ * 1. Today's target muscle group and uncovered sub-areas
+ * 2. Fitness goal alignment
+ * 3. Recent usage history & rotation cadence
+ * 4. Logged previous performance for progressive overload tracking
+ * 5. Equipment setup compatibility
  */
 export function getSmartExerciseSuggestions(
   muscleGroup: MuscleGroup,
   currentExercises: Exercise[],
   allExercises: Exercise[],
-  pastSessions: WorkoutSession[] = []
+  pastSessions: WorkoutSession[] = [],
+  userGoal?: string,
+  equipmentPreference?: string
 ): ExerciseSuggestion[] {
-  // Candidate pool: exercises matching muscle group, not already selected today
-  const candidates = allExercises.filter(
-    (ex) =>
-      ex.primaryMuscle === muscleGroup &&
-      !currentExercises.some((curr) => curr.id === ex.id)
-  );
-
-  const coverage = calculateMuscleCoverage(muscleGroup, currentExercises);
-  const uncoveredAreas = new Set(
-    coverage.areas.filter((a) => !a.covered).map((a) => a.area)
-  );
-
-  // Map of exerciseId -> last date performed (ISO timestamp)
-  const lastPerformedMap: Record<string, string> = {};
-  const frequencyMap: Record<string, number> = {};
-
-  pastSessions.forEach((session) => {
-    session.exercises.forEach((workEx) => {
-      const id = workEx.exerciseId;
-      frequencyMap[id] = (frequencyMap[id] || 0) + 1;
-      if (!lastPerformedMap[id] || new Date(session.date) > new Date(lastPerformedMap[id])) {
-        lastPerformedMap[id] = session.date;
-      }
-    });
+  const recommendations: ScoredRecommendation[] = getRecommendedExercises({
+    targetMuscleGroup: muscleGroup,
+    currentExercises,
+    allExercises,
+    pastSessions,
+    userGoal,
+    equipmentPreference,
+    maxRecommendations: 10,
   });
 
-  const suggestions: ExerciseSuggestion[] = candidates.map((ex) => {
-    let score = 50; // Base score
-    let reason = 'Solid choice for ' + muscleGroup;
-
-    // Check sub-area coverage priority
-    const targetsUncovered = ex.muscleAreaEmphasis.some((area) => uncoveredAreas.has(area));
-    if (targetsUncovered) {
-      score += 40;
-      const targetAreaName = ex.muscleAreaEmphasis
-        .filter((a) => uncoveredAreas.has(a))[0]
-        .replace(/_/g, ' ');
-      reason = `Suggested because you haven't trained ${targetAreaName} yet.`;
-    }
-
-    // Check rotation & history
-    const lastDate = lastPerformedMap[ex.id];
-    if (!lastDate) {
-      score += 20;
-      if (!targetsUncovered) {
-        reason = `Suggested because you haven't used this exercise recently in your ${muscleGroup} sessions.`;
-      }
-    } else {
-      const daysAgo = Math.floor(
-        (new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 3600 * 24)
-      );
-      if (daysAgo >= 7) {
-        score += 15;
-        if (!targetsUncovered) {
-          reason = `Last performed ${daysAgo} days ago — ready for rotation.`;
-        }
-      } else if (daysAgo < 3) {
-        score -= 25; // Reduce priority if used very recently
-      }
-    }
-
-    // Check frequency balancing
-    const count = frequencyMap[ex.id] || 0;
-    if (count === 0) score += 10;
-
-    return { exercise: ex, reason, score };
-  });
-
-  // Sort descending by score
-  return suggestions.sort((a, b) => b.score - a.score);
+  return recommendations.map((rec) => ({
+    exercise: rec.exercise,
+    score: rec.score,
+    reason: rec.explanation.primary,
+    explanation: rec.explanation,
+  }));
 }
+
+export {
+  getRecommendedExercises,
+  RECOMMENDATION_WEIGHTS,
+};
+export type {
+  ScoredRecommendation,
+  RecommendationContext,
+  RecommendationExplanation,
+};

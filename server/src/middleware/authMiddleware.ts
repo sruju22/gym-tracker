@@ -33,7 +33,13 @@ export const protect = async (
       return;
     }
 
-    const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      res.status(500).json({
+        error: 'Server configuration error: JWT_SECRET is not set',
+      });
+      return;
+    }
     const decoded = jwt.verify(token, secret) as JwtPayload;
 
     const user = await User.findById(decoded.id).select('-passwordHash');

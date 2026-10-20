@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { protect } from '../middleware/authMiddleware';
 import {
   getExercises,
   getExerciseById,
@@ -11,11 +12,11 @@ const router = Router();
 
 router.route('/')
   .get(getExercises)
-  .post(createExercise);
+  .post(protect, createExercise);
 
 router.route('/:id')
   .get(getExerciseById)
-  .put(updateExercise)
-  .delete(deleteExercise);
+  .put(protect, updateExercise)
+  .delete(protect, deleteExercise);
 
 export default router;

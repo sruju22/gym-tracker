@@ -63,6 +63,7 @@ import {
 import {
   fetchSavedCombinationsApi,
   createSavedCombinationApi,
+  updateSavedCombinationApi,
   deleteSavedCombinationApi,
 } from '../api/combinationApi';
 
@@ -118,6 +119,11 @@ interface WorkoutStore {
     userId: string,
     template: Omit<SavedCombination, 'id' | 'createdAt'>
   ) => Promise<SavedCombination>;
+  updateCombinationTemplate: (
+    userId: string,
+    templateId: string,
+    template: Partial<Omit<SavedCombination, 'id' | 'createdAt'>>
+  ) => Promise<SavedCombination | null>;
   deleteCombinationTemplate: (userId: string, templateId: string) => Promise<boolean>;
   addCombinationToWorkout: (
     userId: string,
@@ -599,6 +605,56 @@ export const useWorkoutStore = create<WorkoutStore>()(
         });
 
         return savedItem;
+      },
+
+      updateCombinationTemplate: async (userId: string, templateId: string, templateData) => {
+        let updatedItem: SavedCombination | null = null;
+        const userData = get().getUserData(userId);
+        const existing = userData.savedCombinations || [];
+        const target = existing.find((c) => c.id === templateId);
+
+        if (!target) {
+          console.warn(`Template with ID ${templateId} not found`);
+          return null;
+        }
+
+        updatedItem = {
+          ...target,
+          ...templateData,
+          name: templateData.name !== undefined ? templateData.name : target.name,
+          type: templateData.type !== undefined ? templateData.type : target.type,
+          techniqueLabel: templateData.techniqueLabel !== undefined ? templateData.techniqueLabel : target.techniqueLabel,
+          rounds: templateData.rounds !== undefined ? templateData.rounds : target.rounds,
+          stages: templateData.stages !== undefined ? templateData.stages : target.stages,
+        };
+
+        const token = getStoredToken();
+        if (userId && userId !== 'guest' && token) {
+          try {
+            const backendUpdated = await updateSavedCombinationApi(templateId, templateData);
+            if (backendUpdated && backendUpdated.id) {
+              updatedItem = backendUpdated;
+            }
+          } catch (err) {
+            console.warn('Could not update combination template on backend, updated locally:', err);
+          }
+        }
+
+        set((state) => {
+          const uData = state.getUserData(userId);
+          const currentList = uData.savedCombinations || [];
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...uData,
+                savedCombinations: currentList.map((c) => (c.id === templateId ? updatedItem! : c)),
+              },
+            },
+          };
+        });
+
+        return updatedItem;
       },
 
       deleteCombinationTemplate: async (userId: string, templateId: string) => {

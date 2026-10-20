@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test:recommendations": "npx --yes tsx src/utils/__tests__/testRecommendationEngine.ts",
+    "test:combinations": "npx --yes tsx src/utils/__tests__/testCombinationSupersets.ts",
+    "test:all": "npm run test:recommendations && npm run test:combinations",
     "lint": "oxlint",
     "preview": "vite preview"
   },

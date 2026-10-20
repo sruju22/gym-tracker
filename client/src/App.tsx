@@ -55,6 +55,7 @@ export function App() {
   const fetchHistory = useWorkoutStore((state) => state.fetchHistory);
   const fetchBackendPRs = useWorkoutStore((state) => state.fetchBackendPRs);
   const fetchProgressStats = useWorkoutStore((state) => state.fetchProgressStats);
+  const fetchSavedCombinations = useWorkoutStore((state) => state.fetchSavedCombinations);
 
   useEffect(() => {
     prewarmBackend();
@@ -70,8 +71,9 @@ export function App() {
       fetchHistory(currentUser.id);
       fetchBackendPRs(currentUser.id);
       fetchProgressStats(currentUser.id);
+      fetchSavedCombinations(currentUser.id);
     }
-  }, [currentUser?.id, fetchWeeklyPlan, fetchHistory, fetchBackendPRs, fetchProgressStats]);
+  }, [currentUser?.id, fetchWeeklyPlan, fetchHistory, fetchBackendPRs, fetchProgressStats, fetchSavedCombinations]);
 
   // Show onboarding ONLY when an authenticated user has explicitly not completed onboarding
   const needsOnboarding = currentUser !== null && currentUser.onboardingCompleted === false;
