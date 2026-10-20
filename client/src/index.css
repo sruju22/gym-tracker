@@ -154,6 +154,27 @@ input[type="number"] {
   animation: fadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Sign In screen subtle entrance fade (180ms pure opacity, zero vertical sliding, zero delays) */
+@keyframes authInitialFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-auth-entrance {
+  animation: authInitialFade 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-entrance {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
 /* Google Identity Services Dark Mode Iframe Canvas Fix */
 /* Prevents WebKit/Safari and cross-origin iframes from rendering contrasting white canvas backgrounds around dark buttons */
 [data-gsi-container],

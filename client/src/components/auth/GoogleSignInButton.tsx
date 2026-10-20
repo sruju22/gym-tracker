@@ -49,6 +49,27 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
   const [isGoogleRendered, setIsGoogleRendered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+  const pressTimeoutRef = useRef<any>(null);
+
+  const handlePressStart = () => {
+    if (disabled || isLoading) return;
+    setIsPressed(true);
+    if (pressTimeoutRef.current) clearTimeout(pressTimeoutRef.current);
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimeoutRef.current) clearTimeout(pressTimeoutRef.current);
+    pressTimeoutRef.current = setTimeout(() => {
+      setIsPressed(false);
+    }, 120);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pressTimeoutRef.current) clearTimeout(pressTimeoutRef.current);
+    };
+  }, []);
 
   const clientId =
     (typeof import.meta !== 'undefined' &&
@@ -182,7 +203,13 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   return (
     <div
       data-gsi-container
-      className="relative w-full flex justify-center items-center py-0.5 min-h-[44px]"
+      onPointerDownCapture={handlePressStart}
+      onPointerUpCapture={handlePressEnd}
+      onPointerCancelCapture={handlePressEnd}
+      onPointerLeave={handlePressEnd}
+      className={`relative w-full flex justify-center items-center py-0.5 min-h-[44px] select-none touch-manipulation cursor-pointer transition-transform duration-120 ease-out active:scale-[0.98] active:opacity-95 motion-reduce:transition-none motion-reduce:transform-none ${
+        isPressed ? 'scale-[0.98] opacity-95' : 'scale-100 opacity-100'
+      }`}
       style={{ colorScheme: 'light' }}
     >
       {isLoading && (
@@ -198,7 +225,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           Never removed or toggled off so there is zero empty void while Google's iframe downloads over the network. */}
       <div
         aria-hidden="true"
-        className="w-full max-w-[360px] h-[40px] rounded-full bg-[#131314] border border-zinc-700/70 flex items-center justify-center gap-3 px-4 shadow-sm select-none pointer-events-none"
+        className="w-full max-w-[360px] h-[40px] rounded-full bg-[#131314] border border-zinc-700/70 flex items-center justify-center gap-3 px-4 shadow-sm select-none pointer-events-none transition-all duration-120 ease-out"
       >
         <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
           <path
