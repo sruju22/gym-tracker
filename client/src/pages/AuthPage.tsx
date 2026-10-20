@@ -147,30 +147,33 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="relative min-h-[100dvh] w-full bg-[#07090d] text-white flex flex-col justify-between overflow-x-hidden selection:bg-red-500/30 selection:text-white">
-      {/* 1. Cinematic Background Layer: Upper Gym Hero Image + Refined Smooth Gradient */}
+      {/* 1. Full-screen Cinematic Gym Corridor Background Layer */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none">
-        {/* Visible Gym Atmosphere Image */}
+        {/* Full-screen high-res gym corridor background image */}
         <div
-          className="absolute top-0 left-0 right-0 h-[46vh] sm:h-[54vh] bg-cover bg-no-repeat transition-opacity duration-700"
+          className="absolute inset-0 bg-cover bg-no-repeat transition-opacity duration-700"
           style={{
-            backgroundImage: `url('/images/gym-onboarding-hero.png')`,
-            backgroundPosition: 'center 10%',
-            opacity: 0.65,
+            backgroundImage: `url('/images/gymtrackie-signin-bg.jpg')`,
+            backgroundPosition: 'center 20%',
+            opacity: 0.78,
           }}
         />
 
-        {/* Multi-stage Vertical Gradient for seamless transition into charcoal form background */}
+        {/* Multi-stop tuned dark gradient:
+            - Preserves architectural lines and red LED lights at top
+            - Smoothly darkens behind the form card for maximum contrast
+            - Seamlessly transitions into near-black (#07090d) at the bottom */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(180deg, rgba(7,9,13,0.40) 0%, rgba(7,9,13,0.18) 18%, rgba(7,9,13,0.68) 44%, #07090d 68%, #07090d 100%)',
+              'linear-gradient(180deg, rgba(7,9,13,0.40) 0%, rgba(7,9,13,0.20) 15%, rgba(7,9,13,0.50) 35%, rgba(7,9,13,0.82) 65%, #07090d 86%, #07090d 100%)',
           }}
         />
 
-        {/* Ambient burgundy and crimson rim glow */}
+        {/* Ambient burgundy and crimson rim glow matching the gym corridor's red lighting */}
         <div className="absolute top-1/4 -left-20 w-[260px] h-[260px] bg-[#6e1219]/25 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/3 -right-20 w-[280px] h-[280px] bg-[#581014]/22 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/3 -right-20 w-[280px] h-[280px] bg-[#581014]/25 rounded-full blur-[100px] pointer-events-none" />
       </div>
 
       {/* 2. Top Navigation Bar: Back Button only, no unnecessary clutter */}
@@ -229,7 +232,7 @@ export const AuthPage: React.FC = () => {
         )}
 
         {/* Form Card */}
-        <div className="bg-[#101319]/85 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3.5">
+        <div className="bg-[#0e1117]/85 backdrop-blur-xl border border-zinc-800/70 rounded-2xl p-4 sm:p-5 shadow-2xl shadow-black/60 space-y-3.5">
           {/* Official Google Sign-In Button */}
           {!pendingGoogleCredential && (
             <>
@@ -241,12 +244,13 @@ export const AuthPage: React.FC = () => {
                 />
               </div>
 
-              {/* Subtle Divider */}
-              <div className="relative flex items-center justify-center my-0.5">
-                <div className="w-full border-t border-zinc-800" />
-                <span className="absolute bg-[#101319] px-3 text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest select-none">
+              {/* Two-Line Balanced Flex Divider (Zero Text-Line Collision) */}
+              <div className="flex items-center w-full my-2.5 sm:my-3" role="separator" aria-label="Or continue with email">
+                <div className="flex-1 h-px bg-zinc-800/80" />
+                <span className="px-3 text-[10px] sm:text-[11px] font-bold text-zinc-400 uppercase tracking-wider shrink-0 select-none bg-[#0e1117] rounded-md">
                   OR CONTINUE WITH EMAIL
                 </span>
+                <div className="flex-1 h-px bg-zinc-800/80" />
               </div>
             </>
           )}
