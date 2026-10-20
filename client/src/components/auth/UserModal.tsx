@@ -33,6 +33,13 @@ export const UserModal: React.FC<UserModalProps> = ({
 
   const isQueryOpen = searchParams.get('account') === 'open';
   const isOpen = propIsOpen !== undefined ? propIsOpen : (isAccountModalOpen || isQueryOpen);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      const img = new Image();
+      img.src = '/images/gymtrackie-signin-bg.jpg';
+    }
+  }, [isOpen]);
   const onClose = propOnClose !== undefined ? propOnClose : () => {
     closeAccountModal();
     if (isQueryOpen) {
@@ -200,8 +207,16 @@ export const UserModal: React.FC<UserModalProps> = ({
               <Button
                 variant="primary"
                 onClick={() => handleNavigateToAuth('signin')}
+                onMouseEnter={() => {
+                  const img = new Image();
+                  img.src = '/images/gymtrackie-signin-bg.jpg';
+                }}
+                onTouchStart={() => {
+                  const img = new Image();
+                  img.src = '/images/gymtrackie-signin-bg.jpg';
+                }}
                 fullWidth
-                className="gap-2 text-xs sm:text-sm h-12 min-h-[48px] rounded-xl font-extrabold shadow-md shadow-red-600/20 justify-center"
+                className="gap-2 text-xs sm:text-sm h-12 min-h-[48px] rounded-xl font-extrabold shadow-md shadow-red-600/20 justify-center touch-manipulation"
               >
                 <LogIn className="w-4 h-4 stroke-[2.4]" />
                 <span>Sign In or Create Account</span>

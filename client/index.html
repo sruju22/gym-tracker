@@ -8,6 +8,9 @@
     <title>GymTrackie — Fitness & Workout Tracking</title>
     <!-- Preload Sign In background asset for immediate zero-latency screen paint -->
     <link rel="preload" as="image" href="/images/gymtrackie-signin-bg.jpg" fetchpriority="high" />
+    <!-- Preconnect to Google Identity Services domain -->
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+    <link rel="dns-prefetch" href="https://accounts.google.com" />
     <!-- Google Identity Services SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>

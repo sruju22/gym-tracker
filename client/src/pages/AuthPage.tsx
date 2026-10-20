@@ -147,9 +147,9 @@ export const AuthPage: React.FC = () => {
     <div className="relative min-h-[100dvh] w-full bg-[#07090d] text-white flex flex-col justify-between overflow-x-hidden selection:bg-red-500/30 selection:text-white">
       {/* 1. Full-screen Cinematic Gym Corridor Background Layer */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none">
-        {/* Full-screen high-res gym corridor background image */}
+        {/* Full-screen high-res gym corridor background image (zero delay, immediate paint) */}
         <div
-          className="absolute inset-0 bg-cover bg-no-repeat transition-opacity duration-700"
+          className="absolute inset-0 bg-cover bg-no-repeat"
           style={{
             backgroundImage: `url('/images/gymtrackie-signin-bg.jpg')`,
             backgroundPosition: 'center 20%',
@@ -169,9 +169,19 @@ export const AuthPage: React.FC = () => {
           }}
         />
 
-        {/* Ambient burgundy and crimson rim glow matching the gym corridor's red lighting */}
-        <div className="absolute top-1/4 -left-20 w-[260px] h-[260px] bg-[#6e1219]/25 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/3 -right-20 w-[280px] h-[280px] bg-[#581014]/25 rounded-full blur-[100px] pointer-events-none" />
+        {/* Hardware-accelerated ambient burgundy and crimson rim glows (zero Gaussian blur rasterization stall) */}
+        <div
+          className="absolute top-1/4 -left-20 w-[280px] h-[280px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(110, 18, 25, 0.28) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute top-1/3 -right-20 w-[300px] h-[300px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(88, 16, 20, 0.25) 0%, transparent 70%)',
+          }}
+        />
       </div>
 
       {/* 2. Top Navigation Bar: Back Button only, no unnecessary clutter */}

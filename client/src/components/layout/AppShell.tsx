@@ -9,6 +9,12 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  React.useEffect(() => {
+    // Warm up the sign in background image in the browser cache ahead of user interaction
+    const img = new Image();
+    img.src = '/images/gymtrackie-signin-bg.jpg';
+  }, []);
+
   return (
     <div className="min-h-[100dvh] w-full max-w-full min-w-0 bg-[var(--bg-main)] text-[var(--text-main)] font-sans flex flex-col transition-colors">
       <DesktopNav />
