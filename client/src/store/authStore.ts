@@ -63,7 +63,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   currentUser: getCachedProfile(),
   token: getStoredToken(),
   isLoading: false,
-  isInitializing: true,
+  isInitializing: !!getStoredToken(),
   error: null,
   isAccountModalOpen: false,
 

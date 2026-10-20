@@ -26,12 +26,10 @@ export const UserModal: React.FC<UserModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const {
-    currentUser,
-    logout,
-    isAccountModalOpen,
-    closeAccountModal,
-  } = useAuthStore();
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const logout = useAuthStore((state) => state.logout);
+  const isAccountModalOpen = useAuthStore((state) => state.isAccountModalOpen);
+  const closeAccountModal = useAuthStore((state) => state.closeAccountModal);
 
   const isQueryOpen = searchParams.get('account') === 'open';
   const isOpen = propIsOpen !== undefined ? propIsOpen : (isAccountModalOpen || isQueryOpen);
@@ -48,16 +46,13 @@ export const UserModal: React.FC<UserModalProps> = ({
   };
 
   const handleNavigateToAuth = (mode?: 'signup' | 'signin') => {
-    handleClose();
-    if (mode === 'signup') {
-      navigate('/login?mode=signup');
-    } else {
-      navigate('/login');
-    }
+    closeAccountModal();
+    const target = mode === 'signup' ? '/login?mode=signup' : '/login';
+    navigate(target);
   };
 
   const goToSettings = () => {
-    handleClose();
+    closeAccountModal();
     navigate('/settings');
   };
 

@@ -12,15 +12,13 @@ export const AuthPage: React.FC = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const {
-    currentUser,
-    login,
-    signup,
-    linkGoogle,
-    isLoading,
-    error,
-    clearError,
-  } = useAuthStore();
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const login = useAuthStore((state) => state.login);
+  const signup = useAuthStore((state) => state.signup);
+  const linkGoogle = useAuthStore((state) => state.linkGoogle);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+  const clearError = useAuthStore((state) => state.clearError);
 
   // Determine initial mode from URL (e.g. /login?mode=signup or pathname /signup or /register)
   const isInitialSignup =

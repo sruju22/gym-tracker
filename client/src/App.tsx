@@ -49,7 +49,8 @@ const router = createBrowserRouter([
 ]);
 
 export function App() {
-  const { currentUser, restoreAuth, isInitializing } = useAuthStore();
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const restoreAuth = useAuthStore((state) => state.restoreAuth);
   const fetchWeeklyPlan = useWorkoutStore((state) => state.fetchWeeklyPlan);
   const fetchHistory = useWorkoutStore((state) => state.fetchHistory);
   const fetchBackendPRs = useWorkoutStore((state) => state.fetchBackendPRs);
@@ -72,21 +73,7 @@ export function App() {
     }
   }, [currentUser?.id, fetchWeeklyPlan, fetchHistory, fetchBackendPRs, fetchProgressStats]);
 
-  // Handle initialization loading state to avoid flashing screens
-  if (isInitializing && !currentUser) {
-    return (
-      <div className="min-h-[100dvh] w-full bg-[var(--bg-main)] text-[var(--text-main)] flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin" />
-          <span className="text-xs font-semibold text-[var(--text-secondary)] tracking-wide">
-            Loading GymTrackie...
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // Show onboarding ONLY when the authenticated user has not completed onboarding
+  // Show onboarding ONLY when an authenticated user has explicitly not completed onboarding
   const needsOnboarding = currentUser !== null && currentUser.onboardingCompleted === false;
 
   if (needsOnboarding) {
