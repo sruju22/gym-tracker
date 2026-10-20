@@ -7,6 +7,7 @@ import { ExercisesPage } from './pages/ExercisesPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AuthPage } from './pages/AuthPage';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { useAuthStore } from './store/authStore';
 import { useWorkoutStore } from './store/workoutStore';
@@ -16,6 +17,22 @@ const router = createBrowserRouter([
   {
     path: '/onboarding',
     element: <OnboardingFlow />,
+  },
+  {
+    path: '/login',
+    element: <AuthPage />,
+  },
+  {
+    path: '/signin',
+    element: <AuthPage />,
+  },
+  {
+    path: '/signup',
+    element: <AuthPage />,
+  },
+  {
+    path: '/register',
+    element: <AuthPage />,
   },
   {
     path: '/',

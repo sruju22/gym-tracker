@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Sun,
   Moon,
@@ -27,6 +28,7 @@ import { getRecommendedTemplate } from '../data/workoutTemplates';
 import { WorkoutTemplate } from '../types';
 
 export const SettingsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser, updateProfile, logout, openAccountModal } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
   const {
@@ -221,7 +223,7 @@ export const SettingsPage: React.FC = () => {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => openAccountModal()}
+              onClick={() => navigate('/login')}
               className="gap-1.5 shrink-0"
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -451,7 +453,7 @@ export const SettingsPage: React.FC = () => {
               <Button
                 variant="secondary"
                 fullWidth
-                onClick={() => openAccountModal()}
+                onClick={() => navigate('/login?mode=signin')}
                 className="gap-2"
               >
                 <LogIn className="w-4 h-4" />
@@ -460,7 +462,7 @@ export const SettingsPage: React.FC = () => {
               <Button
                 variant="primary"
                 fullWidth
-                onClick={() => openAccountModal()}
+                onClick={() => navigate('/login?mode=signup')}
                 className="gap-2"
               >
                 <UserPlus className="w-4 h-4" />

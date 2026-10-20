@@ -94,7 +94,7 @@ export const DesktopNav: React.FC = () => {
           {!currentUser && (
             <button
               type="button"
-              onClick={openAccountModal}
+              onClick={() => navigate('/login')}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white text-xs font-bold transition-all shadow-sm shadow-red-500/20 cursor-pointer shrink-0"
               aria-label="Sign in to GymTrackie"
               title="Sign In / Register"

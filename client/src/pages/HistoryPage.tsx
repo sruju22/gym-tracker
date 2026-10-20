@@ -190,7 +190,7 @@ export const HistoryPage: React.FC = () => {
             <Button
               variant="primary"
               size="md"
-              onClick={() => openAccountModal()}
+              onClick={() => navigate('/login')}
               className="gap-2 mx-auto font-bold px-6"
             >
               <LogIn className="w-4 h-4" />

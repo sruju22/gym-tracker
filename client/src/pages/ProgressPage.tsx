@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Lock, LogIn } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -12,6 +13,7 @@ import { ProgressionChart } from '../components/progress/ProgressionChart';
 import { PersonalRecordsWall } from '../components/progress/PersonalRecordsWall';
 
 export const ProgressPage: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser, openAccountModal } = useAuthStore();
 
   const { getUserData, getHistory, getPersonalRecords, getExercises } = useWorkoutStore();
@@ -32,7 +34,7 @@ export const ProgressPage: React.FC = () => {
             <Button
               variant="primary"
               size="md"
-              onClick={() => openAccountModal()}
+              onClick={() => navigate('/login')}
               className="gap-2 mx-auto font-bold px-6"
             >
               <LogIn className="w-4 h-4" />
