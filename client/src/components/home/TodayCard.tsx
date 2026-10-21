@@ -6,6 +6,7 @@ import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { DayOfWeek, WorkoutSession } from '../../types';
 import { getTodayDayOfWeek, formatDayName, parseLocalDate } from '../../utils/formatters';
+import { isGenuinelyActiveSession } from '../../utils/sessionReconciliation';
 import { DEFAULT_WORKOUT_PLAN } from '../../data/workoutPlan';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -166,10 +167,16 @@ export const TodayCard: React.FC<TodayCardProps> = ({
     day: 'numeric',
   });
 
+  // Determine if today's workout has been completed
+  const effectiveTodayCompleted = isGuest ? (sessionsForDate[0] || null) : (todayCompleted || sessionsForDate[0] || null);
+  const hasCompletedToday = Boolean(effectiveTodayCompleted) || sessionsForDate.length > 0;
+  const isGenuinelyActive = isGenuinelyActiveSession(activeSession, history, effectiveTodayCompleted, now);
+
   // ==========================================
   // STATE 1: TODAY'S WORKOUT IN PROGRESS
+  // (Rendered ONLY if no completed workout today, and there is a genuinely active session)
   // ==========================================
-  if (isToday && activeSession) {
+  if (isToday && !hasCompletedToday && isGenuinelyActive && activeSession) {
     return (
       <Card className="w-full relative overflow-hidden border border-[var(--primary-border)] bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl shadow-lg shadow-red-500/5 text-[var(--text-main)] transition-all">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500" />
@@ -210,14 +217,38 @@ export const TodayCard: React.FC<TodayCardProps> = ({
   // ==========================================
   // STATE 2: TODAY'S WORKOUT COMPLETED
   // ==========================================
-  if (isToday && (todayCompleted || sessionsForDate.length > 0)) {
-    const displaySessions = sessionsForDate.length > 0 ? sessionsForDate : (todayCompleted ? [todayCompleted] : []);
+  if (isToday && hasCompletedToday) {
+    const displaySessions = sessionsForDate.length > 0 ? sessionsForDate : (effectiveTodayCompleted ? [effectiveTodayCompleted] : []);
 
     return (
       <>
         <div className="space-y-3 w-full">
           <Card className="w-full relative overflow-hidden border border-emerald-500/30 bg-[var(--bg-surface)] p-5 sm:p-6 rounded-3xl shadow-lg shadow-emerald-500/5 text-[var(--text-main)] transition-all">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
+
+            {/* Deliberate ongoing additional workout banner (if user started a real second workout with exercises) */}
+            {isGenuinelyActive && activeSession && activeSession.exercises.length > 0 && (
+              <div className="mb-4 p-3.5 rounded-2xl bg-[var(--primary-subtle)] border border-[var(--primary-border)] flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase text-[var(--primary)] tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
+                    Ongoing Additional Workout
+                  </div>
+                  <div className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight mt-0.5 truncate">
+                    {activeSession.workoutName || 'Additional Workout'} · {activeSession.exercises.length} exercise{activeSession.exercises.length === 1 ? '' : 's'}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => navigate('/workout')}
+                  className="gap-1.5 font-black text-xs uppercase shrink-0 py-2 px-3.5 rounded-xl shadow-md shadow-red-500/20"
+                >
+                  <Play className="w-3.5 h-3.5 fill-white stroke-[2.5]" />
+                  <span>Continue</span>
+                </Button>
+              </div>
+            )}
 
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
@@ -231,6 +262,10 @@ export const TodayCard: React.FC<TodayCardProps> = ({
 
             {displaySessions.map((sessionRecord, idx) => {
               const finishedTime = formatCompletionTime(sessionRecord.completedAt || sessionRecord.date);
+              const sessionWorkoutName = sessionRecord.workoutName || 'Completed Workout';
+              const isDifferentFromSchedule =
+                targetConfig?.name &&
+                sessionWorkoutName.trim().toLowerCase() !== targetConfig.name.trim().toLowerCase();
 
               return (
                 <div
@@ -239,11 +274,21 @@ export const TodayCard: React.FC<TodayCardProps> = ({
                 >
                   <div className="mb-3">
                     <div className="flex items-center justify-between mb-0.5">
-                      <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
-                        {sessionRecord.workoutName || targetConfig.name}
-                      </h2>
+                      <div className="min-w-0 pr-2">
+                        <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
+                          {sessionWorkoutName}
+                        </h2>
+                        {isDifferentFromSchedule && (
+                          <div className="mt-1">
+                            <span className="text-[10px] font-black text-[var(--text-secondary)] bg-[var(--bg-card)] px-2 py-0.5 rounded-md border border-[var(--border-subtle)] uppercase tracking-wider inline-flex items-center gap-1">
+                              <span>Scheduled:</span>
+                              <span className="text-[var(--text-main)] font-black">{targetConfig.name}</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       {finishedTime && (
-                        <span className="text-[11px] font-bold text-[var(--text-secondary)]">
+                        <span className="text-[11px] font-bold text-[var(--text-secondary)] shrink-0">
                           Finished at {finishedTime}
                         </span>
                       )}
@@ -402,11 +447,23 @@ export const TodayCard: React.FC<TodayCardProps> = ({
                   >
                     <div className="mb-3">
                       <div className="flex items-center justify-between mb-0.5">
-                        <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
-                          {pastRecord.workoutName || targetConfig.name}
-                        </h2>
+                        <div className="min-w-0 pr-2">
+                          <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
+                            {pastRecord.workoutName || 'Completed Workout'}
+                          </h2>
+                          {targetConfig?.name &&
+                            pastRecord.workoutName &&
+                            pastRecord.workoutName.trim().toLowerCase() !== targetConfig.name.trim().toLowerCase() && (
+                              <div className="mt-1">
+                                <span className="text-[10px] font-black text-[var(--text-secondary)] bg-[var(--bg-card)] px-2 py-0.5 rounded-md border border-[var(--border-subtle)] uppercase tracking-wider inline-flex items-center gap-1">
+                                  <span>Scheduled:</span>
+                                  <span className="text-[var(--text-main)] font-black">{targetConfig.name}</span>
+                                </span>
+                              </div>
+                            )}
+                        </div>
                         {finishedTime && (
-                          <span className="text-[11px] font-bold text-[var(--text-secondary)]">
+                          <span className="text-[11px] font-bold text-[var(--text-secondary)] shrink-0">
                             Finished at {finishedTime}
                           </span>
                         )}

@@ -265,9 +265,21 @@ export const WorkoutPage: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight mb-1 flex items-center gap-2">
-                <span>{todayCompleted.workoutName || todayConfig.name}</span>
-              </h2>
+              <div className="flex flex-col mb-1">
+                <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] uppercase tracking-tight flex items-center gap-2">
+                  <span>{todayCompleted.workoutName || 'Completed Workout'}</span>
+                </h2>
+                {todayConfig?.name &&
+                  todayCompleted.workoutName &&
+                  todayCompleted.workoutName.trim().toLowerCase() !== todayConfig.name.trim().toLowerCase() && (
+                    <div className="mt-1">
+                      <span className="text-[10px] font-black text-[var(--text-secondary)] bg-[var(--bg-card)] px-2 py-0.5 rounded-md border border-[var(--border-subtle)] uppercase tracking-wider inline-flex items-center gap-1">
+                        <span>Scheduled:</span>
+                        <span className="text-[var(--text-main)] font-black">{todayConfig.name}</span>
+                      </span>
+                    </div>
+                  )}
+              </div>
               <div className="text-xs font-bold text-[var(--success)] flex items-center gap-1.5">
                 <span>You're done for today!</span>
                 {finishedTime && (

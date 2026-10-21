@@ -32,6 +32,7 @@ import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getTodayDayOfWeek, isSameLocalDay } from '../utils/formatters';
 import { calculate1RM } from '../utils/oneRM';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
+import { reconcileActiveSession } from '../utils/sessionReconciliation';
 import {
   fetchWorkoutPlan,
   updateWorkoutPlanApi,
@@ -391,10 +392,27 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       getActiveSession: (userId: string) => {
         const userData = get().getUserData(userId);
-        if (userData.activeSession && userData.activeSession.exercises) {
-          userData.activeSession.exercises = normalizeCombinationExercises(userData.activeSession.exercises);
+        const active = userData.activeSession;
+        if (!active) return null;
+
+        const reconciled = reconcileActiveSession(active, userData.history || []);
+        if (reconciled !== active) {
+          // Stale, abandoned, or completed session was reconciled - update store state
+          set((state) => ({
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...state.getUserData(userId),
+                activeSession: reconciled,
+              },
+            },
+          }));
         }
-        return userData.activeSession;
+
+        if (reconciled && reconciled.exercises) {
+          reconciled.exercises = normalizeCombinationExercises(reconciled.exercises);
+        }
+        return reconciled;
       },
 
       getEditingSession: (userId: string) => {
@@ -805,12 +823,16 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 : [],
             }));
 
+            const currentActive = get().getUserData(userId).activeSession;
+            const reconciledActive = reconcileActiveSession(currentActive, backendHistory);
+
             set((state) => ({
               userDataMap: {
                 ...state.userDataMap,
                 [userId]: {
                   ...state.getUserData(userId),
                   history: backendHistory,
+                  activeSession: reconciledActive,
                 },
               },
             }));
@@ -875,8 +897,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       startTodayWorkout: (userId: string) => {
+        const active = get().getActiveSession(userId);
+        if (active) return;
         const userData = get().getUserData(userId);
-        if (userData.activeSession) return;
 
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
         const today = getTodayDayOfWeek();
@@ -915,8 +938,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       startScheduledWorkout: (userId: string, day: DayOfWeek) => {
+        const active = get().getActiveSession(userId);
+        if (active) return;
         const userData = get().getUserData(userId);
-        if (userData.activeSession) return;
 
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
         const dayConfig = plan[day] || DEFAULT_WORKOUT_PLAN[day];
@@ -954,8 +978,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       startCustomWorkout: (userId: string, muscleGroups: MuscleGroup[]) => {
-        const userData = get().getUserData(userId);
-        if (userData.activeSession) return;
+        const active = get().getActiveSession(userId);
+        if (active) return;
 
         const today = getTodayDayOfWeek();
 
@@ -2976,6 +3000,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
         if (state && state.userDataMap) {
           if ('user_srujan' in state.userDataMap) {
             delete state.userDataMap['user_srujan'];
+          }
+          // Reconcile active sessions on hydration across all users
+          for (const uId of Object.keys(state.userDataMap)) {
+            const uData = state.userDataMap[uId];
+            if (uData && uData.activeSession) {
+              uData.activeSession = reconcileActiveSession(uData.activeSession, uData.history || []);
+            }
           }
         }
       },
