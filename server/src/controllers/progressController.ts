@@ -45,36 +45,65 @@ const derivePRsFromHistory = async (userId: any): Promise<PRRecord[]> => {
 
   for (const session of completedSessions) {
     for (const ex of session.exercises) {
-      const completedSets = ex.sets.filter(
-        (s) => s.completed && s.weight && s.weight > 0 && s.reps && s.reps > 0
-      );
+      for (const s of ex.sets) {
+        if (Array.isArray(s.stages) && s.stages.length > 0) {
+          // Superset stages
+          for (const st of s.stages) {
+            if (st.completed && st.weight && st.weight > 0 && st.reps && st.reps > 0) {
+              const weight = st.weight;
+              const reps = st.reps;
+              const est1RM = calculate1RM(weight, reps);
+              const existingPR = prMap.get(st.exerciseId);
 
-      for (const s of completedSets) {
-        const weight = s.weight!;
-        const reps = s.reps!;
-        const est1RM = calculate1RM(weight, reps);
+              const isNewPR =
+                !existingPR ||
+                weight > existingPR.weight ||
+                est1RM > existingPR.estimated1RM ||
+                (weight === existingPR.weight && reps > existingPR.reps);
 
-        const existingPR = prMap.get(ex.exerciseId);
+              if (isNewPR) {
+                const details = `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`;
+                prMap.set(st.exerciseId, {
+                  exerciseId: st.exerciseId,
+                  exerciseName: st.exerciseName,
+                  type: 'max_weight',
+                  value: weight,
+                  weight,
+                  reps,
+                  estimated1RM: est1RM,
+                  date: session.date,
+                  details,
+                });
+              }
+            }
+          }
+        } else if (s.completed && s.weight && s.weight > 0 && s.reps && s.reps > 0) {
+          // Standalone set
+          const weight = s.weight;
+          const reps = s.reps;
+          const est1RM = calculate1RM(weight, reps);
+          const existingPR = prMap.get(ex.exerciseId);
 
-        const isNewPR =
-          !existingPR ||
-          weight > existingPR.weight ||
-          est1RM > existingPR.estimated1RM ||
-          (weight === existingPR.weight && reps > existingPR.reps);
+          const isNewPR =
+            !existingPR ||
+            weight > existingPR.weight ||
+            est1RM > existingPR.estimated1RM ||
+            (weight === existingPR.weight && reps > existingPR.reps);
 
-        if (isNewPR) {
-          const details = `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`;
-          prMap.set(ex.exerciseId, {
-            exerciseId: ex.exerciseId,
-            exerciseName: ex.exerciseName,
-            type: 'max_weight',
-            value: weight,
-            weight,
-            reps,
-            estimated1RM: est1RM,
-            date: session.date,
-            details,
-          });
+          if (isNewPR) {
+            const details = `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`;
+            prMap.set(ex.exerciseId, {
+              exerciseId: ex.exerciseId,
+              exerciseName: ex.exerciseName,
+              type: 'max_weight',
+              value: weight,
+              weight,
+              reps,
+              estimated1RM: est1RM,
+              date: session.date,
+              details,
+            });
+          }
         }
       }
     }
@@ -124,11 +153,14 @@ export const getPreviousPerformance = async (req: AuthenticatedRequest, res: Res
       return;
     }
 
-    // Find most recent completed workout session containing this exercise
+    // Find most recent completed workout session containing this exercise (standalone or in superset stage)
     const workout = await Workout.findOne({
       userId: req.user._id,
       status: 'completed',
-      'exercises.exerciseId': exerciseId,
+      $or: [
+        { 'exercises.exerciseId': exerciseId },
+        { 'exercises.sets.stages.exerciseId': exerciseId },
+      ],
     }).sort({ date: -1 });
 
     if (!workout) {
@@ -136,38 +168,49 @@ export const getPreviousPerformance = async (req: AuthenticatedRequest, res: Res
       return;
     }
 
-    const matchingEx = workout.exercises.find((e) => e.exerciseId === exerciseId);
-    if (!matchingEx) {
-      res.status(200).json({ previousPerformance: null });
-      return;
-    }
+    const completedSets: Array<{ setNumber: number; weight: number; reps: number }> = [];
+    let setNumberCounter = 1;
 
-    const completedSets = matchingEx.sets.filter(
-      (s) => s.completed && s.weight && s.weight > 0 && s.reps && s.reps > 0
-    );
+    for (const ex of workout.exercises) {
+      for (const s of ex.sets) {
+        if (Array.isArray(s.stages) && s.stages.length > 0) {
+          for (const st of s.stages) {
+            if (st.exerciseId === exerciseId && st.completed && st.weight && st.weight > 0 && st.reps && st.reps > 0) {
+              completedSets.push({
+                setNumber: setNumberCounter++,
+                weight: st.weight,
+                reps: st.reps,
+              });
+            }
+          }
+        } else if (ex.exerciseId === exerciseId && s.completed && s.weight && s.weight > 0 && s.reps && s.reps > 0) {
+          completedSets.push({
+            setNumber: setNumberCounter++,
+            weight: s.weight,
+            reps: s.reps,
+          });
+        }
+      }
+    }
 
     if (completedSets.length === 0) {
       res.status(200).json({ previousPerformance: null });
       return;
     }
 
-    const weights = completedSets.map((s) => s.weight!);
+    const weights = completedSets.map((s) => s.weight);
     const bestWeight = Math.max(...weights);
     const bestSet = completedSets.find((s) => s.weight === bestWeight) || completedSets[0];
-    const estimated1RM = calculate1RM(bestSet.weight!, bestSet.reps!);
+    const estimated1RM = calculate1RM(bestSet.weight, bestSet.reps);
 
     res.status(200).json({
       previousPerformance: {
         exerciseId,
         date: workout.date,
         workoutName: workout.workoutName,
-        sets: completedSets.map((s) => ({
-          setNumber: s.setNumber,
-          weight: s.weight!,
-          reps: s.reps!,
-        })),
+        sets: completedSets,
         bestWeight,
-        bestReps: bestSet.reps!,
+        bestReps: bestSet.reps,
         estimated1RM,
       },
     });
@@ -197,7 +240,10 @@ export const getExerciseProgress = async (req: AuthenticatedRequest, res: Respon
     const sessions = await Workout.find({
       userId: req.user._id,
       status: 'completed',
-      'exercises.exerciseId': exerciseId,
+      $or: [
+        { 'exercises.exerciseId': exerciseId },
+        { 'exercises.sets.stages.exerciseId': exerciseId },
+      ],
     }).sort({ date: 1 });
 
     const strengthTimeline: Array<{
@@ -209,26 +255,35 @@ export const getExerciseProgress = async (req: AuthenticatedRequest, res: Respon
     }> = [];
 
     sessions.forEach((session) => {
-      const matchingEx = session.exercises.find((e) => e.exerciseId === exerciseId);
-      if (matchingEx) {
-        const completedSets = matchingEx.sets.filter(
-          (s) => s.completed && s.weight && s.weight > 0 && s.reps && s.reps > 0
-        );
+      const workingSets: Array<{ weight: number; reps: number }> = [];
 
-        if (completedSets.length > 0) {
-          const weights = completedSets.map((s) => s.weight!);
-          const maxWeight = Math.max(...weights);
-          const bestSet = completedSets.find((s) => s.weight === maxWeight) || completedSets[0];
-          const estimated1RM = calculate1RM(bestSet.weight!, bestSet.reps!);
-
-          strengthTimeline.push({
-            date: session.date,
-            maxWeight,
-            bestReps: bestSet.reps!,
-            estimated1RM,
-            workoutName: session.workoutName,
-          });
+      for (const ex of session.exercises) {
+        for (const s of ex.sets) {
+          if (Array.isArray(s.stages) && s.stages.length > 0) {
+            for (const st of s.stages) {
+              if (st.exerciseId === exerciseId && st.completed && st.weight && st.weight > 0 && st.reps && st.reps > 0) {
+                workingSets.push({ weight: st.weight, reps: st.reps });
+              }
+            }
+          } else if (ex.exerciseId === exerciseId && s.completed && s.weight && s.weight > 0 && s.reps && s.reps > 0) {
+            workingSets.push({ weight: s.weight, reps: s.reps });
+          }
         }
+      }
+
+      if (workingSets.length > 0) {
+        const weights = workingSets.map((s) => s.weight);
+        const maxWeight = Math.max(...weights);
+        const bestSet = workingSets.find((s) => s.weight === maxWeight) || workingSets[0];
+        const estimated1RM = calculate1RM(bestSet.weight, bestSet.reps);
+
+        strengthTimeline.push({
+          date: session.date,
+          maxWeight,
+          bestReps: bestSet.reps,
+          estimated1RM,
+          workoutName: session.workoutName,
+        });
       }
     });
 

@@ -492,34 +492,63 @@ export const useWorkoutStore = create<WorkoutStore>()(
           .filter((h) => h.status === 'completed')
           .forEach((session) => {
             session.exercises.forEach((ex) => {
-              const completedSets = ex.sets.filter(
-                (s) => s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
-              );
-              completedSets.forEach((s) => {
-                const weight = s.weight!;
-                const reps = s.reps!;
-                const est1RM = calculate1RM(weight, reps);
-                const exId = ex.exerciseId || ex.id;
-                const existing = prMap.get(exId);
+              ex.sets.forEach((s) => {
+                if (Array.isArray(s.stages) && s.stages.length > 0) {
+                  s.stages.forEach((st) => {
+                    if (st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0) {
+                      const weight = st.weight;
+                      const reps = st.reps;
+                      const est1RM = calculate1RM(weight, reps);
+                      const exId = st.exerciseId;
+                      const existing = prMap.get(exId);
 
-                const isBetter =
-                  !existing ||
-                  weight > existing.weight ||
-                  est1RM > existing.estimated1RM ||
-                  (weight === existing.weight && reps > existing.reps);
+                      const isBetter =
+                        !existing ||
+                        weight > existing.weight ||
+                        est1RM > existing.estimated1RM ||
+                        (weight === existing.weight && reps > existing.reps);
 
-                if (isBetter) {
-                  prMap.set(exId, {
-                    id: existing ? existing.id : `pr_${exId}`,
-                    exerciseId: exId,
-                    exerciseName: ex.exercise.name,
-                    type: 'max_weight',
-                    value: weight,
-                    weight,
-                    reps,
-                    estimated1RM: est1RM,
-                    date: session.date,
+                      if (isBetter) {
+                        prMap.set(exId, {
+                          id: existing ? existing.id : `pr_${exId}`,
+                          exerciseId: exId,
+                          exerciseName: st.exerciseName || ex.exercise?.name || 'Exercise',
+                          type: 'max_weight',
+                          value: weight,
+                          weight,
+                          reps,
+                          estimated1RM: est1RM,
+                          date: session.date,
+                        });
+                      }
+                    }
                   });
+                } else if (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) {
+                  const weight = s.weight;
+                  const reps = s.reps;
+                  const est1RM = calculate1RM(weight, reps);
+                  const exId = ex.exerciseId || ex.id;
+                  const existing = prMap.get(exId);
+
+                  const isBetter =
+                    !existing ||
+                    weight > existing.weight ||
+                    est1RM > existing.estimated1RM ||
+                    (weight === existing.weight && reps > existing.reps);
+
+                  if (isBetter) {
+                    prMap.set(exId, {
+                      id: existing ? existing.id : `pr_${exId}`,
+                      exerciseId: exId,
+                      exerciseName: ex.exercise?.name || 'Exercise',
+                      type: 'max_weight',
+                      value: weight,
+                      weight,
+                      reps,
+                      estimated1RM: est1RM,
+                      date: session.date,
+                    });
+                  }
                 }
               });
             });
