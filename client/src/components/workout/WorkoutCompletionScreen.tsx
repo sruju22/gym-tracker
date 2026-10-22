@@ -159,10 +159,16 @@ export const WorkoutCompletionScreen: React.FC<WorkoutCompletionScreenProps> = (
         </div>
 
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-black uppercase tracking-wider text-emerald-400 mb-1">
-            <Check className="w-3 h-3 stroke-[3]" />
-            <span>Session Recorded & Saved</span>
-          </div>
+          {session.syncedToBackend === false ? (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-400 mb-1">
+              <span>Saved on device • Cloud sync will resume when connected</span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-black uppercase tracking-wider text-emerald-400 mb-1">
+              <Check className="w-3 h-3 stroke-[3]" />
+              <span>Session Recorded & Saved</span>
+            </div>
+          )}
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
             Workout Complete!
           </h1>

@@ -145,6 +145,7 @@ export interface WorkoutSession {
   totalVolume: number;
   totalSets: number;
   newPRs?: PersonalRecord[];
+  syncedToBackend?: boolean;
 }
 
 // ===== Schedule Types =====

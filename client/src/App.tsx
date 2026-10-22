@@ -56,6 +56,7 @@ export function App() {
   const fetchBackendPRs = useWorkoutStore((state) => state.fetchBackendPRs);
   const fetchProgressStats = useWorkoutStore((state) => state.fetchProgressStats);
   const fetchSavedCombinations = useWorkoutStore((state) => state.fetchSavedCombinations);
+  const syncPendingWorkouts = useWorkoutStore((state) => state.syncPendingWorkouts);
 
   useEffect(() => {
     prewarmBackend();
@@ -64,6 +65,17 @@ export function App() {
   useEffect(() => {
     restoreAuth();
   }, [restoreAuth]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      if (currentUser?.id) {
+        syncPendingWorkouts(currentUser.id);
+        fetchHistory(currentUser.id);
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [currentUser?.id, syncPendingWorkouts, fetchHistory]);
 
   useEffect(() => {
     if (currentUser?.id) {

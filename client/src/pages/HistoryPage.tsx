@@ -359,6 +359,14 @@ export const HistoryPage: React.FC = () => {
                 <span className="text-xs text-[var(--text-secondary)] font-medium capitalize">
                   {formatDayName(session.dayOfWeek)}
                 </span>
+                {session.syncedToBackend === false && (
+                  <>
+                    <span className="text-xs text-[var(--text-muted)]">•</span>
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
+                      On-device
+                    </span>
+                  </>
+                )}
               </div>
 
               <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight truncate mb-1">
@@ -437,6 +445,21 @@ export const HistoryPage: React.FC = () => {
           ).toUpperCase()}`}
         >
           <div className="space-y-3">
+            {selectedSession.syncedToBackend === false && (
+              <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-2.5 text-xs text-amber-400 font-semibold flex items-center justify-between">
+                <span>Stored locally on this device • Cloud sync pending</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    useWorkoutStore.getState().syncPendingWorkouts(userId);
+                  }}
+                  className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-[11px] font-bold text-amber-300 transition-colors cursor-pointer"
+                >
+                  Sync Now
+                </button>
+              </div>
+            )}
+
             {/* Session Quick Metrics */}
             <div className="grid grid-cols-3 gap-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-3 text-center">
               <div>

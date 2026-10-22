@@ -10,7 +10,8 @@
     "test:combinations": "npx --yes tsx src/utils/__tests__/testCombinationSupersets.ts",
     "test:analytics": "npx --yes tsx src/utils/__tests__/testTrainingAnalytics.ts",
     "test:reconciliation": "npx --yes tsx src/utils/__tests__/testSessionReconciliation.ts",
-    "test:all": "npm run test:recommendations && npm run test:combinations && npm run test:analytics && npm run test:reconciliation",
+    "test:offline": "npx --yes tsx src/utils/__tests__/testOfflineWorkoutPersistence.ts",
+    "test:all": "npm run test:recommendations && npm run test:combinations && npm run test:analytics && npm run test:reconciliation && npm run test:offline",
     "lint": "oxlint",
     "preview": "vite preview"
   },

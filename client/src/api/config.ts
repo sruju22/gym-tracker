@@ -7,10 +7,6 @@ function getBaseUrl(): string {
     if (!cleanUrl.endsWith('/api')) {
       cleanUrl += '/api';
     }
-    // Automatically route away from the degraded b68b backend to the healthy test backend
-    if (cleanUrl.includes('gym-tracker-b68b.onrender.com')) {
-      return 'https://gym-tracker-test.onrender.com/api';
-    }
     return cleanUrl;
   }
 
@@ -20,7 +16,7 @@ function getBaseUrl(): string {
     window.location.hostname &&
     window.location.hostname.includes('vercel.app')
   ) {
-    return 'https://gym-tracker-test.onrender.com/api';
+    return 'https://gym-tracker-backend.onrender.com/api';
   }
 
   // Local or LAN development fallback

@@ -156,7 +156,7 @@ GET /api/health
 Production backend:
 
 
-https://gym-tracker-test.onrender.com
+https://gym-tracker-backend.onrender.com
 
 
 ---
@@ -174,7 +174,7 @@ VITE_API_BASE_URL=http://localhost:5001/api
 For production, the frontend uses the deployed Render backend:
 
 
-VITE_API_BASE_URL=https://gym-tracker-test.onrender.com
+VITE_API_BASE_URL=https://gym-tracker-backend.onrender.com
 
 
 ### Backend
@@ -277,7 +277,7 @@ The Express.js backend is deployed using Render.
 
 Production API:
 
-**[https://gym-tracker-test.onrender.com](https://gym-tracker-test.onrender.com)**
+**[https://gym-tracker-backend.onrender.com](https://gym-tracker-backend.onrender.com)**
 
 ### Database — MongoDB Atlas
 

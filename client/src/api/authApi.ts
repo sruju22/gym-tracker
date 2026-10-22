@@ -61,29 +61,7 @@ async function handleResponse<T>(response: Response, defaultErrorMessage: string
 
 async function fetchWithDbFailover(path: string, init: RequestInit): Promise<Response> {
   const primaryUrl = `${API_BASE_URL}${path}`;
-  let response: Response;
-  try {
-    response = await fetch(primaryUrl, init);
-  } catch (err: any) {
-    if (!API_BASE_URL.includes('gym-tracker-test')) {
-      return await fetch(`https://gym-tracker-test.onrender.com/api${path}`, init);
-    }
-    throw err;
-  }
-
-  // If the server returns 503 (database disconnected), attempt failover to the healthy test backend
-  if (response.status === 503 && !API_BASE_URL.includes('gym-tracker-test')) {
-    try {
-      const fallback = await fetch(`https://gym-tracker-test.onrender.com/api${path}`, init);
-      if (fallback.ok || fallback.status !== 503) {
-        return fallback;
-      }
-    } catch {
-      // Fall through to original response
-    }
-  }
-
-  return response;
+  return await fetch(primaryUrl, init);
 }
 
 export async function registerUser(name: string, email: string, password: string): Promise<AuthResponse> {

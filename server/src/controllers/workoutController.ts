@@ -189,14 +189,24 @@ export const createWorkout = async (req: AuthenticatedRequest, res: Response): P
 
     const { totalVolume, totalSets } = calculateWorkoutTotals(exercises || []);
 
+    const safeWorkoutPlanId =
+      workoutPlanId && mongoose.Types.ObjectId.isValid(workoutPlanId)
+        ? new mongoose.Types.ObjectId(workoutPlanId)
+        : undefined;
+
+    const safeDayOfWeek =
+      dayOfWeek && typeof dayOfWeek === 'string'
+        ? dayOfWeek.toLowerCase().trim()
+        : 'monday';
+
     // SECURITY: Always assign userId from authenticated JWT payload (req.user._id)
     const newWorkout = await Workout.create({
       userId: req.user._id,
       clientSessionId: clientSessionId ? String(clientSessionId).trim() : undefined,
-      workoutPlanId: workoutPlanId || undefined,
+      workoutPlanId: safeWorkoutPlanId,
       workoutName: workoutName.trim(),
       date: date ? new Date(date) : new Date(),
-      dayOfWeek: dayOfWeek || 'monday',
+      dayOfWeek: safeDayOfWeek,
       muscleGroups: Array.isArray(muscleGroups) ? muscleGroups : [],
       status: status || 'completed',
       startedAt: startedAt ? new Date(startedAt) : undefined,
@@ -264,10 +274,15 @@ export const updateWorkout = async (req: AuthenticatedRequest, res: Response): P
       rating,
     } = req.body;
 
-    if (workoutPlanId !== undefined) workout.workoutPlanId = workoutPlanId;
+    if (workoutPlanId !== undefined) {
+      workout.workoutPlanId =
+        workoutPlanId && mongoose.Types.ObjectId.isValid(workoutPlanId)
+          ? new mongoose.Types.ObjectId(workoutPlanId)
+          : undefined;
+    }
     if (workoutName) workout.workoutName = workoutName.trim();
     if (date) workout.date = new Date(date);
-    if (dayOfWeek) workout.dayOfWeek = dayOfWeek;
+    if (dayOfWeek) workout.dayOfWeek = String(dayOfWeek).toLowerCase().trim();
     if (muscleGroups && Array.isArray(muscleGroups)) workout.muscleGroups = muscleGroups;
     if (status) workout.status = status;
     if (completedAt) workout.completedAt = new Date(completedAt);

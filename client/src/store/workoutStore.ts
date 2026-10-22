@@ -170,6 +170,7 @@ interface WorkoutStore {
 
   // Actions - Workout Session & Progress
   fetchHistory: (userId: string) => Promise<WorkoutSession[]>;
+  syncPendingWorkouts: (userId: string) => Promise<void>;
   fetchBackendPRs: (userId: string) => Promise<PersonalRecord[]>;
   fetchProgressStats: (userId: string) => Promise<void>;
   startTodayWorkout: (userId: string) => void;
@@ -781,6 +782,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           if (data && Array.isArray(data.workouts)) {
             const backendHistory: WorkoutSession[] = data.workouts.map((w: any) => ({
               id: w._id || w.id,
+              clientSessionId: w.clientSessionId,
               workoutName: w.workoutName,
               date: typeof w.date === 'string' ? w.date : new Date(w.date).toISOString(),
               dayOfWeek: w.dayOfWeek,
@@ -788,8 +790,12 @@ export const useWorkoutStore = create<WorkoutStore>()(
               status: w.status || 'completed',
               startedAt: w.startedAt ? new Date(w.startedAt).toISOString() : undefined,
               completedAt: w.completedAt ? new Date(w.completedAt).toISOString() : undefined,
+              duration: w.duration,
               totalVolume: w.totalVolume || 0,
               totalSets: w.totalSets || 0,
+              rating: w.rating,
+              notes: w.notes,
+              syncedToBackend: true,
               exercises: Array.isArray(w.exercises)
                 ? w.exercises.map((ex: any) => ({
                     id: ex.id || ex.exerciseId,
@@ -816,33 +822,135 @@ export const useWorkoutStore = create<WorkoutStore>()(
                           weight: s.weight,
                           reps: s.reps,
                           completed: s.completed,
+                          stages: s.stages,
                         }))
                       : [],
                     notes: ex.notes || '',
+                    combinationId: ex.combinationId,
+                    combinationName: ex.combinationName,
+                    combinationType: ex.combinationType,
+                    techniqueLabel: ex.techniqueLabel,
+                    stageDescription: ex.stageDescription,
+                    stageOrder: ex.stageOrder,
                   }))
                 : [],
             }));
 
+            // Preserve any local sessions that haven't been synced to backend yet
+            const currentLocalHistory = get().getUserData(userId).history || [];
+            const backendKnownIds = new Set(
+              backendHistory.flatMap((b) => [b.id, (b as any).clientSessionId].filter(Boolean))
+            );
+            const pendingSyncSessions = currentLocalHistory.filter(
+              (h) => !backendKnownIds.has(h.id) && (!h.clientSessionId || !backendKnownIds.has(h.clientSessionId)) && h.syncedToBackend === false
+            );
+
+            const mergedHistory = [...pendingSyncSessions, ...backendHistory].sort((a, b) => {
+              const dateA = new Date(a.completedAt || a.date || 0).getTime();
+              const dateB = new Date(b.completedAt || b.date || 0).getTime();
+              return dateB - dateA;
+            });
+
             const currentActive = get().getUserData(userId).activeSession;
-            const reconciledActive = reconcileActiveSession(currentActive, backendHistory);
+            const reconciledActive = reconcileActiveSession(currentActive, mergedHistory);
 
             set((state) => ({
               userDataMap: {
                 ...state.userDataMap,
                 [userId]: {
                   ...state.getUserData(userId),
-                  history: backendHistory,
+                  history: mergedHistory,
                   activeSession: reconciledActive,
                 },
               },
             }));
 
-            return backendHistory;
+            if (pendingSyncSessions.length > 0) {
+              get().syncPendingWorkouts(userId).catch(() => {});
+            }
+
+            return mergedHistory;
           }
         } catch (err) {
           console.warn('Failed to fetch backend workout history:', err);
         }
         return get().getHistory(userId);
+      },
+
+      syncPendingWorkouts: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) return;
+        const currentLocalHistory = get().getUserData(userId).history || [];
+        const unSyncedSessions = currentLocalHistory.filter((h) => h.syncedToBackend === false);
+        if (unSyncedSessions.length === 0) return;
+
+        for (const session of unSyncedSessions) {
+          try {
+            const apiExercises = (session.exercises || []).map((ex) => ({
+              exerciseId: ex.exerciseId || ex.exercise?.id || ex.id,
+              exerciseName: ex.exercise?.name || (ex as any).exerciseName || (ex as any).name || 'Exercise',
+              primaryMuscle: ex.exercise?.primaryMuscle || (ex as any).primaryMuscle || 'chest',
+              muscleAreaEmphasis: ex.exercise?.muscleAreaEmphasis || (ex as any).muscleAreaEmphasis || [],
+              equipment: ex.exercise?.equipment || (ex as any).equipment || 'other',
+              exerciseType: ex.exercise?.exerciseType || (ex as any).exerciseType || 'compound',
+              order: ex.order || 1,
+              sets: (ex.sets || []).map((s) => ({
+                setNumber: s.setNumber,
+                weight: s.weight,
+                reps: s.reps,
+                completed: s.completed,
+                stages: s.stages,
+              })),
+              notes: ex.notes || '',
+              combinationId: ex.combinationId || null,
+              combinationName: ex.combinationName || null,
+              combinationType: ex.combinationType || null,
+              techniqueLabel: ex.techniqueLabel || null,
+              stageDescription: ex.stageDescription || null,
+              stageOrder: ex.stageOrder || null,
+            }));
+
+            const apiPayload = {
+              clientSessionId: session.id,
+              workoutName: (session.workoutName || 'Workout Session').trim(),
+              date: session.date || new Date().toISOString(),
+              dayOfWeek: (session.dayOfWeek || 'monday').toLowerCase(),
+              muscleGroups: session.muscleGroups || [],
+              status: 'completed' as const,
+              startedAt: session.startedAt,
+              completedAt: session.completedAt || new Date().toISOString(),
+              duration: session.duration || 0,
+              exercises: apiExercises,
+              notes: session.notes || '',
+              rating: session.rating || null,
+              totalVolume: session.totalVolume,
+              totalSets: session.totalSets,
+            };
+
+            const res = await createWorkoutHistoryApi(apiPayload);
+            if (res && res.workout && res.workout._id) {
+              set((state) => {
+                const uData = state.getUserData(userId);
+                const updatedHistory = uData.history.map((h) =>
+                  h.id === session.id
+                    ? { ...h, id: res.workout._id, clientSessionId: session.id, syncedToBackend: true }
+                    : h
+                );
+                return {
+                  userDataMap: {
+                    ...state.userDataMap,
+                    [userId]: {
+                      ...uData,
+                      history: updatedHistory,
+                    },
+                  },
+                };
+              });
+            }
+          } catch (syncErr) {
+            console.warn(`Pending workout sync for session ${session.id} will retry later:`, syncErr);
+            break;
+          }
+        }
       },
 
       fetchBackendPRs: async (userId: string) => {
@@ -1221,7 +1329,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
           const token = getStoredToken();
           if (userId !== 'guest' && token) {
-            await updateWorkoutHistoryApi(editingSession.id, apiPayload);
+            try {
+              await updateWorkoutHistoryApi(editingSession.id, apiPayload);
+            } catch (apiErr) {
+              console.warn('Backend workout update failed (offline). Edits preserved locally:', apiErr);
+            }
           }
 
           const updatedSession: WorkoutSession = {
@@ -1285,7 +1397,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
         try {
           const token = getStoredToken();
           if (userId !== 'guest' && token) {
-            await deleteWorkoutHistoryApi(workoutId);
+            try {
+              await deleteWorkoutHistoryApi(workoutId);
+            } catch (apiErr) {
+              console.warn('Backend workout delete failed (offline). Deleted locally:', apiErr);
+            }
           }
 
           set((state) => {
@@ -2288,14 +2404,14 @@ export const useWorkoutStore = create<WorkoutStore>()(
           });
 
           const apiExercises = activeSession.exercises.map((ex) => ({
-            exerciseId: ex.exerciseId || ex.exercise.id,
-            exerciseName: ex.exercise.name,
-            primaryMuscle: ex.exercise.primaryMuscle,
-            muscleAreaEmphasis: ex.exercise.muscleAreaEmphasis,
-            equipment: ex.exercise.equipment,
-            exerciseType: ex.exercise.exerciseType,
-            order: ex.order,
-            sets: ex.sets.map((s) => ({
+            exerciseId: ex.exerciseId || ex.exercise?.id || ex.id,
+            exerciseName: ex.exercise?.name || (ex as any).exerciseName || (ex as any).name || 'Exercise',
+            primaryMuscle: ex.exercise?.primaryMuscle || (ex as any).primaryMuscle || 'chest',
+            muscleAreaEmphasis: ex.exercise?.muscleAreaEmphasis || (ex as any).muscleAreaEmphasis || [],
+            equipment: ex.exercise?.equipment || (ex as any).equipment || 'other',
+            exerciseType: ex.exercise?.exerciseType || (ex as any).exerciseType || 'compound',
+            order: ex.order || 1,
+            sets: (ex.sets || []).map((s) => ({
               setNumber: s.setNumber,
               weight: s.weight,
               reps: s.reps,
@@ -2328,15 +2444,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
           const apiPayload = {
             clientSessionId: activeSession.id,
-            workoutName: activeSession.workoutName || 'Workout Session',
+            workoutName: (activeSession.workoutName || 'Workout Session').trim(),
             date: activeSession.date || new Date().toISOString(),
-            dayOfWeek: activeSession.dayOfWeek || 'monday',
+            dayOfWeek: (activeSession.dayOfWeek || 'monday').toLowerCase(),
             muscleGroups: activeSession.muscleGroups || [],
             status: 'completed' as const,
             startedAt: activeSession.startedAt,
             completedAt: new Date().toISOString(),
             duration: activeSession.startedAt
-              ? Math.round((Date.now() - new Date(activeSession.startedAt).getTime()) / 1000)
+              ? Math.max(0, Math.round((Date.now() - new Date(activeSession.startedAt).getTime()) / 1000))
               : 0,
             exercises: apiExercises,
             notes: '',
@@ -2347,12 +2463,22 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
           let mongoId = activeSession.id;
           const token = getStoredToken();
+          let syncedToBackend = false;
 
-          // Await API persistence only if authenticated user
+          // Attempt API persistence if authenticated user and token exists
           if (userId !== 'guest' && token) {
-            const res = await createWorkoutHistoryApi(apiPayload);
-            if (res && res.workout && res.workout._id) {
-              mongoId = res.workout._id;
+            try {
+              const res = await createWorkoutHistoryApi(apiPayload);
+              if (res && res.workout && res.workout._id) {
+                mongoId = res.workout._id;
+                syncedToBackend = true;
+              }
+            } catch (apiErr: any) {
+              console.warn(
+                'Backend workout persistence failed (offline or remote server unreachable). Workout preserved safely in local storage:',
+                apiErr
+              );
+              syncedToBackend = false;
             }
           }
 
@@ -2366,6 +2492,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             totalVolume,
             totalSets: totalCompletedSets,
             newPRs: newPRsInSession,
+            syncedToBackend,
             exercises: activeSession.exercises.map((ex) => ({
               ...ex,
               sets: ex.sets.map((s) => ({
@@ -2392,7 +2519,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
               (!h.clientSessionId || h.clientSessionId !== activeSession.id)
           );
 
-          // ONLY update history and clear activeSession upon successful save
+          // Update store state with completed workout, PRs, goals, and clear active session
           set((state) => ({
             isFinishing: false,
             saveError: null,
@@ -2409,9 +2536,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
             },
           }));
 
-          if (userId !== 'guest' && token) {
-            get().fetchBackendPRs(userId);
-            get().fetchProgressStats(userId);
+          if (syncedToBackend && userId !== 'guest' && token) {
+            get().fetchBackendPRs(userId).catch(() => {});
+            get().fetchProgressStats(userId).catch(() => {});
           }
 
           return true;
