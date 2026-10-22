@@ -288,7 +288,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
 
       {/* 3. Strength Progression for Selected Exercise */}
       <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-[var(--primary)] shrink-0" />
             <h3 className="text-xs sm:text-sm font-bold text-[var(--text-main)] uppercase tracking-wide">
@@ -300,7 +300,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
           <select
             value={selectedExerciseId}
             onChange={(e) => setSelectedExerciseId(e.target.value)}
-            className="bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-2.5 py-1.5 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] max-w-[180px] sm:max-w-[260px] truncate cursor-pointer shrink-0"
+            className="w-full sm:w-auto bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-2.5 py-1.5 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] max-w-full sm:max-w-[260px] truncate cursor-pointer shrink-0"
           >
             {performedExerciseOptions.map((opt) => (
               <option key={opt.id} value={opt.id} className="bg-[var(--bg-surface)] text-[var(--text-main)]">
@@ -311,32 +311,35 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
         </div>
 
         {/* Metric Switcher */}
-        <div className="flex items-center gap-1.5 border-b border-[var(--border-subtle)] pb-3">
+        <div className="grid grid-cols-3 gap-1 bg-[var(--bg-input)] p-1 rounded-xl border border-[var(--border-subtle)]">
           <button
+            type="button"
             onClick={() => setProgressionMetric('1rm')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
+            className={`py-1.5 px-1 text-center text-[11px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer select-none truncate ${
               progressionMetric === '1rm'
-                ? 'bg-[var(--primary)] text-white'
+                ? 'bg-[var(--primary)] text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
             }`}
           >
-            Estimated 1RM
+            Est. 1RM
           </button>
           <button
+            type="button"
             onClick={() => setProgressionMetric('max_weight')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
+            className={`py-1.5 px-1 text-center text-[11px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer select-none truncate ${
               progressionMetric === 'max_weight'
-                ? 'bg-[var(--primary)] text-white'
+                ? 'bg-[var(--primary)] text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
             }`}
           >
-            Max Weight Lifted
+            Max Weight
           </button>
           <button
+            type="button"
             onClick={() => setProgressionMetric('volume')}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
+            className={`py-1.5 px-1 text-center text-[11px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer select-none truncate ${
               progressionMetric === 'volume'
-                ? 'bg-[var(--primary)] text-white'
+                ? 'bg-[var(--primary)] text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
             }`}
           >
@@ -709,7 +712,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
 
       {/* 5. Muscle-Group Coverage Breakdown */}
       <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-rose-400 shrink-0" />
             <h3 className="text-xs sm:text-sm font-bold text-[var(--text-main)] uppercase tracking-wide">
@@ -717,12 +720,12 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
             </h3>
           </div>
           <span className="text-[11px] font-semibold text-[var(--text-secondary)]">
-            Primary sets (1.0x) & Secondary (0.5x)
+            Primary sets (1.0x) · Secondary (0.5x)
           </span>
         </div>
 
-        {/* Muscle Progress Bars */}
-        <div className="space-y-3">
+        {/* Muscle Progress Cards */}
+        <div className="space-y-2.5">
           {analytics.muscleCoverage.map((mg) => {
             const maxSets = Math.max(
               ...analytics.muscleCoverage.map((m) => m.effectiveSets),
@@ -731,42 +734,56 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
             const ratio = Math.min(1, mg.effectiveSets / maxSets);
 
             return (
-              <div key={mg.muscleGroup} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-[var(--text-main)] capitalize">
+              <div
+                key={mg.muscleGroup}
+                className="bg-[var(--bg-surface)]/70 border border-[var(--border-subtle)] rounded-xl p-3 space-y-2 transition-colors hover:border-[var(--primary)]/30"
+              >
+                {/* Row 1: Muscle Name & In-Split Badge (Left) + Prominent Total Sets (Right) */}
+                <div className="flex items-start justify-between gap-2 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold text-[var(--text-main)] capitalize leading-snug">
                       {mg.displayName}
                     </span>
                     {mg.scheduledInSplit && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/20">
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded-md bg-indigo-500/15 text-indigo-400 font-bold border border-indigo-500/30 shrink-0">
                         In Split
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <span className="font-black text-[var(--text-main)]">
-                      {mg.effectiveSets} <span className="font-normal text-[var(--text-muted)]">sets</span>
+                  <div className="text-right shrink-0">
+                    <span className="text-sm sm:text-base font-black text-[var(--text-main)]">
+                      {mg.effectiveSets}
                     </span>
-                    <span className="text-[10px] text-[var(--text-muted)]">
-                      ({mg.directSets} direct{mg.secondarySets > 0 ? ` + ${mg.secondarySets} sec` : ''})
+                    <span className="text-xs font-semibold text-[var(--text-secondary)] ml-1">
+                      {mg.effectiveSets === 1 ? 'set' : 'sets'}
                     </span>
-                    {mg.daysSinceLastTrained !== null ? (
-                      <span className="text-[10px] text-[var(--text-secondary)] font-medium">
-                        {mg.daysSinceLastTrained === 0
-                          ? 'Trained today'
-                          : `${mg.daysSinceLastTrained}d ago`}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-[var(--text-muted)]">Not trained</span>
-                    )}
                   </div>
                 </div>
 
-                <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-full h-2 overflow-hidden">
+                {/* Row 2: Full-width Progress Bar */}
+                <div className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full h-2 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-[var(--primary)] transition-all duration-300"
                     style={{ width: `${Math.round(ratio * 100)}%` }}
                   />
+                </div>
+
+                {/* Row 3: Direct/Secondary Breakdown (Left) & Last-Trained (Right) */}
+                <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--text-secondary)] pt-0.5">
+                  <span className="font-medium truncate">
+                    {mg.directSets} direct{mg.secondarySets > 0 ? ` + ${mg.secondarySets} sec` : ''}
+                  </span>
+                  <span className="font-medium shrink-0 text-right">
+                    {mg.daysSinceLastTrained !== null ? (
+                      mg.daysSinceLastTrained === 0 ? (
+                        <span className="text-emerald-400 font-bold">Trained today</span>
+                      ) : (
+                        <span className="text-[var(--text-secondary)]">{mg.daysSinceLastTrained}d ago</span>
+                      )
+                    ) : (
+                      <span className="text-[var(--text-muted)]">Not trained</span>
+                    )}
+                  </span>
                 </div>
               </div>
             );

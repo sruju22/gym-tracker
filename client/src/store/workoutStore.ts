@@ -1006,7 +1006,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       startTodayWorkout: (userId: string) => {
         const active = get().getActiveSession(userId);
-        if (active) return;
+        if (active && active.exercises && active.exercises.length > 0) return;
         const userData = get().getUserData(userId);
 
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
@@ -1047,7 +1047,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       startScheduledWorkout: (userId: string, day: DayOfWeek) => {
         const active = get().getActiveSession(userId);
-        if (active) return;
+        if (active && active.exercises && active.exercises.length > 0) return;
         const userData = get().getUserData(userId);
 
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
@@ -1087,7 +1087,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       startCustomWorkout: (userId: string, muscleGroups: MuscleGroup[]) => {
         const active = get().getActiveSession(userId);
-        if (active) return;
+        if (active && active.exercises && active.exercises.length > 0) return;
 
         const today = getTodayDayOfWeek();
 

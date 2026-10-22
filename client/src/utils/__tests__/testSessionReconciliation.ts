@@ -520,7 +520,59 @@ async function runSessionReconciliationTests() {
     console.log('  All 10 test scenarios passed with 100% accuracy!');
   }
 
-  console.log('\n=== ALL 10 SESSION RECONCILIATION TESTS PASSED SUCCESSFULLY! ===');
+  // =========================================================================
+  // TEST 11: Starting next day's workout (e.g. 23rd) after today's (22nd) workout is completed
+  // (Prevents newly started empty workout from being erroneously cleared by reconciliation)
+  // =========================================================================
+  console.log('\nTest 11: Starting next day scheduled workout after today workout completed');
+  {
+    const todayCompletedPushB: WorkoutSession = {
+      id: 'session_pushb_oct22',
+      workoutName: 'Push B',
+      date: '2026-10-22T09:00:00.000Z',
+      completedAt: '2026-10-22T10:15:00.000Z',
+      dayOfWeek: 'thursday',
+      muscleGroups: ['chest', 'shoulders', 'triceps'],
+      status: 'completed',
+      totalVolume: 3200,
+      totalSets: 15,
+      exercises: [],
+    };
+
+    const history = [todayCompletedPushB];
+
+    // User deliberately starts tomorrow's workout (23rd, Friday Pull) at 11:00 AM (after Push B finished at 10:15 AM)
+    const newlyStartedTomorrowSession: WorkoutSession = {
+      id: 'session_pull_oct23',
+      workoutName: 'Pull',
+      date: '2026-10-22T11:00:00.000Z',
+      startedAt: '2026-10-22T11:00:00.000Z',
+      dayOfWeek: 'friday',
+      muscleGroups: ['back', 'biceps'],
+      status: 'in_progress',
+      totalVolume: 0,
+      totalSets: 0,
+      exercises: [], // Brand new session starts with 0 exercises
+    };
+
+    const isStale = isStaleOrAbandonedSession(
+      newlyStartedTomorrowSession,
+      history,
+      todayCompletedPushB,
+      new Date('2026-10-22T11:05:00.000Z')
+    );
+    assert(isStale === false, 'Newly started tomorrow workout is NOT marked stale even if it starts with 0 exercises');
+
+    const reconciled = reconcileActiveSession(
+      newlyStartedTomorrowSession,
+      history,
+      new Date('2026-10-22T11:05:00.000Z')
+    );
+    assert(reconciled !== null, 'Reconciliation preserves the newly started tomorrow workout');
+    assert(reconciled?.workoutName === 'Pull', 'Reconciled workout preserves tomorrow Pull name');
+  }
+
+  console.log('\n=== ALL 11 SESSION RECONCILIATION TESTS PASSED SUCCESSFULLY! ===');
 }
 
 runSessionReconciliationTests().catch((err) => {

@@ -72,11 +72,6 @@ export function isStaleOrAbandonedSession(
 
   // 3. Today's workout has already been completed:
   if (hasCompletedToday) {
-    // If the active session has 0 exercises, it is an empty draft that should not override completed workout
-    if (exerciseCount === 0 || !hasLoggedSets) {
-      return true;
-    }
-
     // Check completion timestamp of the latest completed workout today
     const latestCompleted = todayCompleted || completedTodaySessions[0];
     if (latestCompleted) {

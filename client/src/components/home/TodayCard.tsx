@@ -124,14 +124,14 @@ export const TodayCard: React.FC<TodayCardProps> = ({
   }, [targetConfig, allExercises]);
 
   const handleStartToday = () => {
-    if (!activeSession) {
+    if (!activeSession || !activeSession.exercises || activeSession.exercises.length === 0) {
       startTodayWorkout(userId);
     }
     navigate('/workout');
   };
 
   const handleStartScheduled = (day: DayOfWeek) => {
-    if (!activeSession) {
+    if (!activeSession || !activeSession.exercises || activeSession.exercises.length === 0 || !isGenuinelyActive) {
       if (day === today) {
         startTodayWorkout(userId);
       } else {

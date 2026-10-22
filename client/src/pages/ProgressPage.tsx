@@ -68,7 +68,7 @@ export const ProgressPage: React.FC = () => {
   }, [storedPRs, history, exercises]);
 
   return (
-    <div className="w-full max-w-full min-w-0 flex-1 flex flex-col space-y-4 sm:space-y-5 pb-16">
+    <div className="w-full max-w-full min-w-0 flex-1 flex flex-col space-y-4 sm:space-y-5 pb-28 sm:pb-32">
       <Header title="Progress & Stats" subtitle="Training Analytics, Records & Goals" />
 
       {/* Guest Mode Notice */}
@@ -98,78 +98,90 @@ export const ProgressPage: React.FC = () => {
       )}
 
       {/* Main Stats Summary Grid */}
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
-        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-2.5 sm:p-3.5 text-center">
-          <div className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-3 text-center rounded-2xl flex flex-col justify-center">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
             Workouts
           </div>
           <div className="text-xl sm:text-2xl font-black text-[var(--text-main)]">{totalWorkouts}</div>
-          <div className="text-[10px] sm:text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Completed</div>
+          <div className="text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Completed</div>
         </Card>
 
-        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-2.5 sm:p-3.5 text-center">
-          <div className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-3 text-center rounded-2xl flex flex-col justify-center">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
             Volume
           </div>
-          <div className="text-xl sm:text-2xl font-black text-[var(--primary)]">
-            {formatVolume(totalVolume)} <span className="text-[10px] font-normal text-[var(--text-secondary)]">kg</span>
+          <div className="text-xl sm:text-2xl font-black text-[var(--primary)] truncate">
+            {formatVolume(totalVolume)} <span className="text-xs font-normal text-[var(--text-secondary)]">kg</span>
           </div>
-          <div className="text-[10px] sm:text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Load lifted</div>
+          <div className="text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Load lifted</div>
         </Card>
 
-        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-2.5 sm:p-3.5 text-center">
-          <div className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-3 text-center rounded-2xl flex flex-col justify-center">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
             Sets
           </div>
           <div className="text-xl sm:text-2xl font-black text-emerald-400">{totalSets}</div>
-          <div className="text-[10px] sm:text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Working sets</div>
+          <div className="text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Working sets</div>
         </Card>
 
-        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-2.5 sm:p-3.5 text-center">
-          <div className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-3 text-center rounded-2xl flex flex-col justify-center">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
             PRs Hit
           </div>
           <div className="text-xl sm:text-2xl font-black text-amber-400">{effectivePRs.length}</div>
-          <div className="text-[10px] sm:text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Records</div>
+          <div className="text-[11px] text-[var(--text-secondary)] font-medium mt-0.5">Records</div>
         </Card>
       </div>
 
       {/* Segmented Tab Navigation */}
-      <div className="flex items-center bg-[var(--bg-input)] p-1 rounded-2xl border border-[var(--border-subtle)]">
+      <div className="grid grid-cols-3 gap-1 bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--border-subtle)]">
         <button
+          type="button"
           onClick={() => setActiveTab('analytics')}
-          className={`flex items-center justify-center gap-1.5 flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer select-none ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
             activeTab === 'analytics'
               ? 'bg-[var(--primary)] text-white shadow-sm'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
           }`}
         >
-          <TrendingUp className="w-3.5 h-3.5 shrink-0" />
-          <span>Analytics & Progress</span>
+          <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <div className="flex flex-col sm:flex-row items-center leading-tight">
+            <span className="text-[11px] sm:text-xs">Analytics</span>
+            <span className="text-[10px] sm:text-xs sm:ml-1 font-medium sm:font-bold opacity-90">& Progress</span>
+          </div>
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveTab('prs')}
-          className={`flex items-center justify-center gap-1.5 flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer select-none ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
             activeTab === 'prs'
               ? 'bg-[var(--primary)] text-white shadow-sm'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
           }`}
         >
-          <Award className="w-3.5 h-3.5 shrink-0" />
-          <span>Personal Records ({effectivePRs.length})</span>
+          <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <div className="flex flex-col sm:flex-row items-center leading-tight">
+            <span className="text-[11px] sm:text-xs">Records</span>
+            <span className="text-[10px] sm:text-xs sm:ml-1 text-amber-300 font-bold">({effectivePRs.length})</span>
+          </div>
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveTab('goals')}
-          className={`flex items-center justify-center gap-1.5 flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer select-none ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
             activeTab === 'goals'
               ? 'bg-[var(--primary)] text-white shadow-sm'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
           }`}
         >
-          <Target className="w-3.5 h-3.5 shrink-0" />
-          <span>Goals & Weight</span>
+          <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <div className="flex flex-col sm:flex-row items-center leading-tight">
+            <span className="text-[11px] sm:text-xs">Goals</span>
+            <span className="text-[10px] sm:text-xs sm:ml-1 font-medium sm:font-bold opacity-90">& Weight</span>
+          </div>
         </button>
       </div>
 
