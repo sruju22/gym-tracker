@@ -79,6 +79,15 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
       setSelectedSubArea('all');
       setSearch('');
       setActiveTab('recommended');
+      setShowCreateCustom(false);
+
+      if (targetMuscleGroup) {
+        setCustomMuscle(targetMuscleGroup);
+        const areas = MUSCLE_GROUPS[targetMuscleGroup]?.areas || [];
+        if (areas.length > 0) {
+          setCustomArea(areas[0].id);
+        }
+      }
     }
   }, [isOpen, targetMuscleGroup]);
 
@@ -155,7 +164,14 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
         return matchesSearch && matchesMuscle && matchesSubArea;
       })
       .sort((a, b) => {
-        if (!trimmedSearch) return 0;
+        if (!trimmedSearch) {
+          if (selectedMuscle !== 'all') {
+            const aIsPrimary = a.primaryMuscle === selectedMuscle ? 1 : 0;
+            const bIsPrimary = b.primaryMuscle === selectedMuscle ? 1 : 0;
+            if (bIsPrimary !== aIsPrimary) return bIsPrimary - aIsPrimary;
+          }
+          return a.name.localeCompare(b.name);
+        }
         return scoreExerciseSearch(b, trimmedSearch) - scoreExerciseSearch(a, trimmedSearch);
       });
   }, [exercises, trimmedSearch, targetLegKey, selectedMuscle, targetMuscleGroup, selectedSubArea]);
@@ -185,47 +201,79 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
   // Determine whether to show search results immediately
   const isSearching = trimmedSearch.length > 0;
+  const isContextual = Boolean(targetMuscleGroup);
+
+  const modalTitle = targetSectionName
+    ? `Add ${targetSectionName} Exercise`
+    : targetMuscleGroup
+    ? `Add ${MUSCLE_GROUPS[targetMuscleGroup]?.name || targetMuscleGroup} Exercise`
+    : 'Add Exercise';
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={targetSectionName ? `Add ${targetSectionName} Exercise` : 'Add Exercise'}
+      title={modalTitle}
     >
       {!showCreateCustom ? (
         <div className="space-y-3">
-          {/* Search bar */}
+          {/* 1. Search bar */}
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search exercises, muscles, equipment..."
+            placeholder={
+              isContextual && targetMuscleGroup
+                ? `Search ${MUSCLE_GROUPS[targetMuscleGroup]?.name || targetMuscleGroup} exercises...`
+                : 'Search exercises, muscles, equipment...'
+            }
           />
 
-          {/* Muscle filter horizontal scroll */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            <FilterChip
-              label="All Muscles"
-              active={selectedMuscle === 'all'}
-              onClick={() => {
-                setSelectedMuscle('all');
-                setSelectedSubArea('all');
-              }}
-            />
-            {Object.values(MUSCLE_GROUPS).map((mg) => (
+          {/* 2. Target-area filters (Contextual flow: scoped exclusively to target muscle group) */}
+          {isContextual && targetMuscleGroup && MUSCLE_GROUPS[targetMuscleGroup]?.areas && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               <FilterChip
-                key={mg.id}
-                label={mg.name}
-                active={selectedMuscle === mg.id}
+                label="All Target Areas"
+                active={selectedSubArea === 'all'}
+                onClick={() => setSelectedSubArea('all')}
+              />
+              {MUSCLE_GROUPS[targetMuscleGroup].areas.map((area) => (
+                <FilterChip
+                  key={area.id}
+                  label={area.name}
+                  active={selectedSubArea === area.id}
+                  onClick={() => setSelectedSubArea(area.id)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* General Muscle filter horizontal scroll (General unscoped browsing flow only) */}
+          {!isContextual && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <FilterChip
+                label="All Muscles"
+                active={selectedMuscle === 'all'}
                 onClick={() => {
-                  setSelectedMuscle(mg.id);
+                  setSelectedMuscle('all');
                   setSelectedSubArea('all');
                 }}
               />
-            ))}
-          </div>
+              {Object.values(MUSCLE_GROUPS).map((mg) => (
+                <FilterChip
+                  key={mg.id}
+                  label={mg.name}
+                  active={selectedMuscle === mg.id}
+                  onClick={() => {
+                    setSelectedMuscle(mg.id);
+                    setSelectedSubArea('all');
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
-          {/* Sub-area filter chips */}
-          {selectedMuscle !== 'all' && MUSCLE_GROUPS[selectedMuscle]?.areas && (
+          {/* Sub-area filter chips for General browsing flow when a specific muscle is picked */}
+          {!isContextual && selectedMuscle !== 'all' && MUSCLE_GROUPS[selectedMuscle]?.areas && (
             <div className="flex gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar border-t border-[var(--border-subtle)]">
               <FilterChip
                 label="All Target Areas"
@@ -276,6 +324,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
           {/* Action: Create Custom Exercise */}
           <button
+            type="button"
             onClick={() => setShowCreateCustom(true)}
             className="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] rounded-xl p-2.5 flex items-center justify-between text-left transition-colors cursor-pointer"
           >
@@ -285,14 +334,18 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
               </div>
               <div>
                 <div className="text-xs font-bold text-[var(--text-main)]">Create Custom Exercise</div>
-                <div className="text-[10px] text-[var(--text-secondary)]">Add to your personal library</div>
+                <div className="text-[10px] text-[var(--text-secondary)]">
+                  {isContextual && targetMuscleGroup
+                    ? `Add a custom ${MUSCLE_GROUPS[targetMuscleGroup]?.name || targetMuscleGroup} exercise`
+                    : 'Add to your personal library'}
+                </div>
               </div>
             </div>
           </button>
 
           {/* TAB CONTENT: RECOMMENDATIONS */}
           {!isSearching && activeTab === 'recommended' && (
-            <div className="space-y-2.5 max-h-[48vh] overflow-y-auto pr-1">
+            <div className="space-y-2.5 pb-2">
               {recommendations.length > 0 ? (
                 recommendations.map((rec, index) => {
                   const ex = rec.exercise;
@@ -411,7 +464,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
           {/* TAB CONTENT: ALL EXERCISES / SEARCH RESULTS */}
           {(isSearching || activeTab === 'all') && (
-            <div className="space-y-1.5 max-h-[48vh] overflow-y-auto pr-1">
+            <div className="space-y-1.5 pb-2">
               {filteredExercises.length > 0 ? (
                 filteredExercises.map((ex) => (
                   <div

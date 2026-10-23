@@ -17,11 +17,11 @@ import { getMuscleAreaName } from '../data/muscleGroups';
  * All weights are centralized, documented, and normalized to produce a 0 - 100 final score.
  */
 export const RECOMMENDATION_WEIGHTS = {
-  // Target Muscle & Sub-Area Alignment (Max 35 pts)
-  PRIMARY_MUSCLE_MATCH: 20,
+  // Target Muscle & Sub-Area Alignment (Max 40 pts)
+  PRIMARY_MUSCLE_MATCH: 25,
   UNCOVERED_SUB_AREA: 15,
   COVERED_SUB_AREA: 5,
-  SECONDARY_MUSCLE_MATCH: 8,
+  SECONDARY_MUSCLE_MATCH: 5,
 
   // Fitness Goal Alignment (Max 25 pts)
   GOAL_PRIMARY_MATCH: 20,
@@ -506,7 +506,8 @@ export function analyzePerformanceHistory(
  */
 export function applyDiversityReranking(
   scoredList: ScoredRecommendation[],
-  maxCount: number
+  maxCount: number,
+  targetMuscleGroup?: MuscleGroup
 ): ScoredRecommendation[] {
   if (scoredList.length <= 1) {
     return scoredList;
@@ -519,26 +520,56 @@ export function applyDiversityReranking(
   const first = remaining.shift()!;
   selected.push(first);
 
+  const isMultiPatternMuscle =
+    !targetMuscleGroup ||
+    targetMuscleGroup === 'chest' ||
+    targetMuscleGroup === 'back' ||
+    targetMuscleGroup === 'legs' ||
+    targetMuscleGroup === 'shoulders';
+
   while (selected.length < maxCount && remaining.length > 0) {
     const selectedPatterns = new Set(selected.map((s) => s.movementPattern));
     const selectedEquipments = new Set(selected.map((s) => s.exercise.equipment));
+    const selectedAreas = new Set(selected.flatMap((s) => s.exercise.muscleAreaEmphasis || []));
+
+    // Check if there are still primary candidates available in remaining pool
+    const hasRemainingPrimary = targetMuscleGroup
+      ? remaining.some((r) => r.exercise.primaryMuscle === targetMuscleGroup)
+      : false;
 
     let bestIdx = 0;
     let bestDiverseScore = -Infinity;
 
     for (let i = 0; i < remaining.length; i++) {
       const candidate = remaining[i];
+
+      // If primary candidates still exist, secondary candidates cannot displace them during diversity reranking
+      if (targetMuscleGroup && hasRemainingPrimary && candidate.exercise.primaryMuscle !== targetMuscleGroup) {
+        continue;
+      }
+
       let diverseScore = candidate.score;
 
-      const hasDuplicatePattern = selectedPatterns.has(candidate.movementPattern) && candidate.movementPattern !== 'other';
+      // Duplicate pattern penalty: only for multi-pattern muscle groups or general sessions
+      if (isMultiPatternMuscle) {
+        const hasDuplicatePattern = selectedPatterns.has(candidate.movementPattern) && candidate.movementPattern !== 'other';
+        if (hasDuplicatePattern) {
+          diverseScore -= RECOMMENDATION_WEIGHTS.DIVERSITY_DUPLICATE_PATTERN_PENALTY;
+        }
+      } else {
+        // For single-pattern groups (triceps, biceps, forearms, calves, core):
+        // Promote sub-area / head diversity
+        const coversNewArea = (candidate.exercise.muscleAreaEmphasis || []).some((a) => !selectedAreas.has(a));
+        if (coversNewArea) {
+          diverseScore += 6;
+        }
+      }
+
+      // Equipment diversity
       const hasDuplicateEquip =
         candidate.exercise.equipment &&
         candidate.exercise.equipment !== 'other' &&
         selectedEquipments.has(candidate.exercise.equipment);
-
-      if (hasDuplicatePattern) {
-        diverseScore -= RECOMMENDATION_WEIGHTS.DIVERSITY_DUPLICATE_PATTERN_PENALTY;
-      }
 
       if (hasDuplicateEquip) {
         diverseScore -= RECOMMENDATION_WEIGHTS.DIVERSITY_DUPLICATE_EQUIPMENT_PENALTY;
@@ -555,11 +586,11 @@ export function applyDiversityReranking(
       } else if (diverseScore === bestDiverseScore) {
         // Deterministic tie-breaking: baseline first, then alphabetical
         const candHasPerf = candidate.explanation.factors.hasPerformanceHistory ? 1 : 0;
-        const bestHasPerf = remaining[bestIdx].explanation.factors.hasPerformanceHistory ? 1 : 0;
+        const bestHasPerf = remaining[bestIdx]?.explanation.factors.hasPerformanceHistory ? 1 : 0;
         if (candHasPerf > bestHasPerf) {
           bestIdx = i;
         } else if (candHasPerf === bestHasPerf) {
-          if (candidate.exercise.name.localeCompare(remaining[bestIdx].exercise.name) < 0) {
+          if (candidate.exercise.name.localeCompare(remaining[bestIdx]?.exercise.name || '') < 0) {
             bestIdx = i;
           }
         }
@@ -737,7 +768,10 @@ export function getRecommendedExercises(
     let goalAlignmentText = 'General training suitability';
 
     if (goalType === 'hypertrophy') {
-      if (ex.exerciseType === 'compound' || ex.muscleAreaEmphasis.length > 0) {
+      if (!isPrimaryMatch) {
+        score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH;
+        goalAlignmentText = `Compound movement providing secondary ${effectiveMuscle} engagement`;
+      } else if (ex.exerciseType === 'compound' || ex.muscleAreaEmphasis.length > 0) {
         score += RECOMMENDATION_WEIGHTS.GOAL_PRIMARY_MATCH;
         badges.push('Hypertrophy Focus');
         goalAlignmentText = 'Hypertrophy-focused volume & localized tension';
@@ -745,7 +779,10 @@ export function getRecommendedExercises(
         score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH;
       }
     } else if (goalType === 'strength') {
-      if (ex.exerciseType === 'compound' && (ex.equipment === 'barbell' || ex.equipment === 'dumbbell')) {
+      if (!isPrimaryMatch) {
+        score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH;
+        goalAlignmentText = `Compound movement providing secondary ${effectiveMuscle} engagement`;
+      } else if (ex.exerciseType === 'compound' && (ex.equipment === 'barbell' || ex.equipment === 'dumbbell')) {
         score += RECOMMENDATION_WEIGHTS.GOAL_PRIMARY_MATCH;
         badges.push('Strength Compound');
         goalAlignmentText = 'Core compound movement for strength & power';
@@ -753,11 +790,25 @@ export function getRecommendedExercises(
         score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH + 5;
         badges.push('Compound Movement');
         goalAlignmentText = 'Multi-joint movement supporting power progression';
+      } else if (
+        effectiveMuscle === 'triceps' ||
+        effectiveMuscle === 'biceps' ||
+        effectiveMuscle === 'forearms' ||
+        effectiveMuscle === 'calves' ||
+        effectiveMuscle === 'core'
+      ) {
+        // Direct targeted loading for arm / isolation muscle groups
+        score += RECOMMENDATION_WEIGHTS.GOAL_PRIMARY_MATCH - 3;
+        badges.push('Strength Focus');
+        goalAlignmentText = 'Direct progressive overload for targeted strength';
       } else {
         score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH;
       }
     } else if (goalType === 'fat_loss') {
-      if (ex.exerciseType === 'compound' || ex.equipment === 'bodyweight' || ex.equipment === 'dumbbell') {
+      if (!isPrimaryMatch) {
+        score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH;
+        goalAlignmentText = `Compound movement providing secondary ${effectiveMuscle} engagement`;
+      } else if (ex.exerciseType === 'compound' || ex.equipment === 'bodyweight' || ex.equipment === 'dumbbell') {
         score += RECOMMENDATION_WEIGHTS.GOAL_PRIMARY_MATCH;
         badges.push('Conditioning Match');
         goalAlignmentText = 'High metabolic demand & caloric expenditure';
@@ -765,7 +816,10 @@ export function getRecommendedExercises(
         score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH;
       }
     } else if (goalType === 'longevity') {
-      if (ex.difficulty !== 'expert' && (ex.equipment === 'dumbbell' || ex.equipment === 'cable' || ex.equipment === 'bodyweight')) {
+      if (!isPrimaryMatch) {
+        score += RECOMMENDATION_WEIGHTS.GOAL_SECONDARY_MATCH;
+        goalAlignmentText = `Compound movement providing secondary ${effectiveMuscle} engagement`;
+      } else if (ex.difficulty !== 'expert' && (ex.equipment === 'dumbbell' || ex.equipment === 'cable' || ex.equipment === 'bodyweight')) {
         score += RECOMMENDATION_WEIGHTS.GOAL_PRIMARY_MATCH;
         badges.push('Joint-Friendly Mobility');
         goalAlignmentText = 'Functional movement supporting mobility and joint health';
@@ -906,6 +960,15 @@ export function getRecommendedExercises(
 
   // Sort initially by relevance score descending
   const sorted = scoredList.sort((a, b) => {
+    // When a specific target muscle group is selected, prioritize direct primary matches over secondary matches
+    if (targetMuscleGroup) {
+      const aIsPrimary = a.exercise.primaryMuscle === targetMuscleGroup ? 1 : 0;
+      const bIsPrimary = b.exercise.primaryMuscle === targetMuscleGroup ? 1 : 0;
+      if (aIsPrimary !== bIsPrimary) {
+        return bIsPrimary - aIsPrimary;
+      }
+    }
+
     if (b.score !== a.score) {
       return b.score - a.score;
     }
@@ -921,7 +984,7 @@ export function getRecommendedExercises(
   // STAGE D — DIVERSITY-AWARE RERANKING
   // ==========================================
   if (enableDiversityReranking) {
-    return applyDiversityReranking(sorted, maxRecommendations);
+    return applyDiversityReranking(sorted, maxRecommendations, targetMuscleGroup);
   }
 
   return sorted.slice(0, maxRecommendations);
