@@ -280,7 +280,14 @@ const workoutSchema = new Schema<IWorkoutDocument>(
 // Compound indexes for user workout queries
 workoutSchema.index({ userId: 1, date: -1 });
 workoutSchema.index({ userId: 1, status: 1, date: -1 });
-workoutSchema.index({ userId: 1, clientSessionId: 1 });
+workoutSchema.index(
+  { userId: 1, clientSessionId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { clientSessionId: { $type: 'string' } },
+    name: 'unique_userId_clientSessionId',
+  }
+);
 
 export const Workout: Model<IWorkoutDocument> =
   mongoose.models.Workout || mongoose.model<IWorkoutDocument>('Workout', workoutSchema);

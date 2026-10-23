@@ -74,12 +74,14 @@ export const HistoryPage: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const userId = currentUser?.id || 'guest';
-  const rawHistory = useWorkoutStore((state) => (currentUser?.id ? state.userDataMap[currentUser.id]?.history : undefined));
+  const rawHistory = useWorkoutStore((state) =>
+    currentUser?.id ? state.userDataMap[currentUser.id]?.history : state.userDataMap['guest']?.history
+  );
   const history = useMemo(() => {
     if (!rawHistory) return [];
-    return [...rawHistory].sort(
-      (a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime()
-    );
+    return rawHistory
+      .filter((s) => s.status === 'completed')
+      .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
   }, [rawHistory]);
 
   const handleSearchChange = (val: string) => {

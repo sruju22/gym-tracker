@@ -316,20 +316,15 @@ export function extractExerciseWorkingSets(
       // Superset / combination set with stages
       if (Array.isArray(set.stages) && set.stages.length > 0) {
         for (const stage of set.stages) {
-          if (
-            stage.exerciseId === targetExerciseId &&
-            stage.completed &&
-            stage.weight !== null &&
-            stage.weight > 0 &&
-            stage.reps !== null &&
-            stage.reps > 0
-          ) {
-            const w = stage.weight;
-            const r = stage.reps;
+          const isWeightValid = stage.weight === null || stage.weight >= 0;
+          const isRepsValid = stage.reps !== null && stage.reps > 0;
+          if (stage.exerciseId === targetExerciseId && stage.completed && isWeightValid && isRepsValid) {
+            const w = stage.weight ?? 0;
+            const r = stage.reps!;
             workingSets.push({
               weight: w,
               reps: r,
-              estimated1RM: calculateEstimated1RM(w, r),
+              estimated1RM: w > 0 ? calculateEstimated1RM(w, r) : 0,
               loadVolume: w * r,
               isSupersetStage: true,
               exerciseId: stage.exerciseId,
@@ -340,19 +335,15 @@ export function extractExerciseWorkingSets(
         }
       } else if (isDirectExerciseMatch) {
         // Standalone set
-        if (
-          set.completed &&
-          set.weight !== null &&
-          set.weight > 0 &&
-          set.reps !== null &&
-          set.reps > 0
-        ) {
-          const w = set.weight;
-          const r = set.reps;
+        const isWeightValid = set.weight === null || set.weight >= 0;
+        const isRepsValid = set.reps !== null && set.reps > 0;
+        if (set.completed && isWeightValid && isRepsValid) {
+          const w = set.weight ?? 0;
+          const r = set.reps!;
           workingSets.push({
             weight: w,
             reps: r,
-            estimated1RM: calculateEstimated1RM(w, r),
+            estimated1RM: w > 0 ? calculateEstimated1RM(w, r) : 0,
             loadVolume: w * r,
             isSupersetStage: false,
             exerciseId: targetExerciseId,

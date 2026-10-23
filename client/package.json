@@ -13,7 +13,8 @@
     "test:offline": "npx --yes tsx src/utils/__tests__/testOfflineWorkoutPersistence.ts",
     "test:responsive": "npx --yes tsx src/utils/__tests__/testMobileResponsiveProgress.ts",
     "test:picker": "npx --yes tsx src/utils/__tests__/testContextAwareExercisePicker.ts",
-    "test:all": "npm run test:recommendations && npm run test:combinations && npm run test:analytics && npm run test:reconciliation && npm run test:offline && npm run test:responsive && npm run test:picker",
+    "test:integrity": "npx --yes tsx src/utils/__tests__/testDataIntegrityAndReliability.ts",
+    "test:all": "npm run test:recommendations && npm run test:combinations && npm run test:analytics && npm run test:reconciliation && npm run test:offline && npm run test:responsive && npm run test:picker && npm run test:integrity",
     "lint": "oxlint",
     "preview": "vite preview"
   },

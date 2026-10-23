@@ -335,21 +335,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       handleUserLogout: () => {
-        set((state) => {
-          const updatedMap = { ...state.userDataMap };
-          if (updatedMap['guest']) {
-            updatedMap['guest'] = {
-              ...updatedMap['guest'],
-              activeSession: null,
-              editingSession: null,
-              editingOriginalSession: null,
-            };
-          }
-          return {
-            userDataMap: updatedMap,
-            isFinishing: false,
-            saveError: null,
-          };
+        set({
+          isFinishing: false,
+          saveError: null,
         });
       },
 
@@ -468,10 +456,12 @@ export const useWorkoutStore = create<WorkoutStore>()(
       getHistory: (userId: string) => {
         const userData = get().getUserData(userId);
         const history = userData.history || [];
-        const normalized = history.map((session) => ({
-          ...session,
-          exercises: normalizeCombinationExercises(session.exercises || []),
-        }));
+        const normalized = history
+          .filter((session) => session.status === 'completed')
+          .map((session) => ({
+            ...session,
+            exercises: normalizeCombinationExercises(session.exercises || []),
+          }));
         return [...normalized].sort(
           (a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime()
         );
@@ -910,7 +900,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             }));
 
             const apiPayload = {
-              clientSessionId: session.id,
+              clientSessionId: session.clientSessionId || session.id,
               workoutName: (session.workoutName || 'Workout Session').trim(),
               date: session.date || new Date().toISOString(),
               dayOfWeek: (session.dayOfWeek || 'monday').toLowerCase(),
@@ -1006,12 +996,18 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       startTodayWorkout: (userId: string) => {
         const active = get().getActiveSession(userId);
-        if (active && active.exercises && active.exercises.length > 0) return;
         const userData = get().getUserData(userId);
-
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
         const today = getTodayDayOfWeek();
         const dayConfig = plan[today];
+
+        if (
+          active &&
+          active.status === 'in_progress' &&
+          (active.workoutName === dayConfig.name || (active.exercises && active.exercises.length > 0))
+        ) {
+          return;
+        }
 
         if (dayConfig.isRest) {
           get().startCustomWorkout(userId, ['chest']);
@@ -1047,11 +1043,17 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       startScheduledWorkout: (userId: string, day: DayOfWeek) => {
         const active = get().getActiveSession(userId);
-        if (active && active.exercises && active.exercises.length > 0) return;
         const userData = get().getUserData(userId);
-
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
         const dayConfig = plan[day] || DEFAULT_WORKOUT_PLAN[day];
+
+        if (
+          active &&
+          active.status === 'in_progress' &&
+          (active.dayOfWeek === day || (active.exercises && active.exercises.length > 0))
+        ) {
+          return;
+        }
 
         if (dayConfig.isRest) {
           get().startCustomWorkout(userId, ['chest']);
@@ -1087,7 +1089,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       startCustomWorkout: (userId: string, muscleGroups: MuscleGroup[]) => {
         const active = get().getActiveSession(userId);
-        if (active && active.exercises && active.exercises.length > 0) return;
+        if (
+          active &&
+          active.status === 'in_progress' &&
+          (active.workoutName === 'Custom Workout' || (active.exercises && active.exercises.length > 0))
+        ) {
+          return;
+        }
 
         const today = getTodayDayOfWeek();
 
@@ -1194,83 +1202,85 @@ export const useWorkoutStore = create<WorkoutStore>()(
           editingSession.exercises.forEach((ex) => {
             ex.sets.forEach((s) => {
               if (Array.isArray(s.stages) && s.stages.length > 0) {
-                let setHasCompletedStage = false;
                 s.stages.forEach((st) => {
-                  if (st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0) {
-                    const weight = st.weight!;
-                    const reps = st.reps!;
-                    totalVolume += weight * reps;
-                    setHasCompletedStage = true;
+                  const isWeightValid = st.weight === null || st.weight >= 0;
+                  const isRepsValid = st.reps !== null && st.reps > 0;
+                  if (st.completed && isWeightValid && isRepsValid) {
+                    totalCompletedSets++;
+                    if (st.weight !== null && st.weight > 0) {
+                      const weight = st.weight;
+                      const reps = st.reps!;
+                      totalVolume += weight * reps;
 
-                    const est1RM = calculate1RM(weight, reps);
-                    const prIndex = updatedPRs.findIndex((p) => p.exerciseId === st.exerciseId);
-                    const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+                      const est1RM = calculate1RM(weight, reps);
+                      const prIndex = updatedPRs.findIndex((p) => p.exerciseId === st.exerciseId);
+                      const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-                    const isNewPR =
-                      !existingPR ||
-                      weight > existingPR.weight ||
-                      est1RM > existingPR.estimated1RM ||
-                      (weight === existingPR.weight && reps > existingPR.reps);
+                      const isNewPR =
+                        !existingPR ||
+                        weight > existingPR.weight ||
+                        est1RM > existingPR.estimated1RM ||
+                        (weight === existingPR.weight && reps > existingPR.reps);
 
-                    if (isNewPR) {
-                      const prRecord: PersonalRecord = {
-                        id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-                        exerciseId: st.exerciseId,
-                        exerciseName: st.exerciseName,
-                        type: 'max_weight',
-                        value: weight,
-                        weight,
-                        reps,
-                        estimated1RM: est1RM,
-                        date: editingSession.date || new Date().toISOString(),
-                        details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
-                      };
+                      if (isNewPR) {
+                        const prRecord: PersonalRecord = {
+                          id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                          exerciseId: st.exerciseId,
+                          exerciseName: st.exerciseName,
+                          type: 'max_weight',
+                          value: weight,
+                          weight,
+                          reps,
+                          estimated1RM: est1RM,
+                          date: editingSession.date || new Date().toISOString(),
+                          details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                        };
 
-                      if (prIndex >= 0) {
-                        updatedPRs[prIndex] = prRecord;
-                      } else {
-                        updatedPRs.push(prRecord);
+                        if (prIndex >= 0) {
+                          updatedPRs[prIndex] = prRecord;
+                        } else {
+                          updatedPRs.push(prRecord);
+                        }
                       }
                     }
                   }
                 });
-                if (s.completed || setHasCompletedStage) {
-                  totalCompletedSets++;
-                }
-              } else if (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) {
-                const weight = s.weight!;
-                const reps = s.reps!;
-                totalVolume += weight * reps;
+              } else if (s.completed && (s.weight === null || s.weight >= 0) && s.reps !== null && s.reps > 0) {
                 totalCompletedSets++;
+                if (s.weight !== null && s.weight > 0) {
+                  const weight = s.weight;
+                  const reps = s.reps!;
+                  totalVolume += weight * reps;
 
-                const est1RM = calculate1RM(weight, reps);
-                const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
-                const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+                  const est1RM = calculate1RM(weight, reps);
+                  const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
+                  const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-                const isNewPR =
-                  !existingPR ||
-                  weight > existingPR.weight ||
-                  est1RM > existingPR.estimated1RM ||
-                  (weight === existingPR.weight && reps > existingPR.reps);
+                  const isNewPR =
+                    !existingPR ||
+                    weight > existingPR.weight ||
+                    est1RM > existingPR.estimated1RM ||
+                    (weight === existingPR.weight && reps > existingPR.reps);
 
-                if (isNewPR) {
-                  const prRecord: PersonalRecord = {
-                    id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-                    exerciseId: ex.exerciseId,
-                    exerciseName: ex.exercise.name,
-                    type: 'max_weight',
-                    value: weight,
-                    weight,
-                    reps,
-                    estimated1RM: est1RM,
-                    date: editingSession.date || new Date().toISOString(),
-                    details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
-                  };
+                  if (isNewPR) {
+                    const prRecord: PersonalRecord = {
+                      id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                      exerciseId: ex.exerciseId,
+                      exerciseName: ex.exercise.name,
+                      type: 'max_weight',
+                      value: weight,
+                      weight,
+                      reps,
+                      estimated1RM: est1RM,
+                      date: editingSession.date || new Date().toISOString(),
+                      details: `${weight} kg × ${reps} reps (Est. 1RM ${est1RM} kg)`,
+                    };
 
-                  if (prIndex >= 0) {
-                    updatedPRs[prIndex] = prRecord;
-                  } else {
-                    updatedPRs.push(prRecord);
+                    if (prIndex >= 0) {
+                      updatedPRs[prIndex] = prRecord;
+                    } else {
+                      updatedPRs.push(prRecord);
+                    }
                   }
                 }
               }
@@ -1290,8 +1300,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
               weight: s.weight,
               reps: s.reps,
               completed: Boolean(
-                (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
-                (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+                (s.completed && (s.weight === null || s.weight >= 0) && s.reps !== null && s.reps > 0) ||
+                (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0))
               ),
               stages: Array.isArray(s.stages) && s.stages.length > 0
                 ? s.stages.map((st) => ({
@@ -1303,7 +1313,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
                     targetReps: st.targetReps ?? null,
                     weight: st.weight,
                     reps: st.reps,
-                    completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                    completed: Boolean(st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0),
                   }))
                 : undefined,
             })),
@@ -1346,13 +1356,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
               sets: ex.sets.map((s) => ({
                 ...s,
                 completed: Boolean(
-                  (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
-                  (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+                  (s.completed && (s.weight === null || s.weight >= 0) && s.reps !== null && s.reps > 0) ||
+                  (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0))
                 ),
                 stages: Array.isArray(s.stages) && s.stages.length > 0
                   ? s.stages.map((st) => ({
                       ...st,
-                      completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                      completed: Boolean(st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0),
                     }))
                   : undefined,
               })),
@@ -1511,7 +1521,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const updatedSets = [...ex.sets];
           const currentSet = updatedSets[setIndex];
           if (currentSet) {
-            const isValid = weight !== null && weight > 0 && reps !== null && reps > 0;
+            const isValid = (weight === null || weight >= 0) && reps !== null && reps > 0;
             updatedSets[setIndex] = {
               ...currentSet,
               weight,
@@ -1549,8 +1559,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const currentSet = updatedSets[setIndex];
           if (currentSet) {
             const isValid =
-              currentSet.weight !== null &&
-              currentSet.weight > 0 &&
+              (currentSet.weight === null || currentSet.weight >= 0) &&
               currentSet.reps !== null &&
               currentSet.reps > 0;
 
@@ -2234,170 +2243,172 @@ export const useWorkoutStore = create<WorkoutStore>()(
           activeSession.exercises.forEach((ex) => {
             ex.sets.forEach((s) => {
               if (Array.isArray(s.stages) && s.stages.length > 0) {
-                let setHasCompletedStage = false;
                 s.stages.forEach((st) => {
-                  if (st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0) {
-                    const weight = st.weight!;
-                    const reps = st.reps!;
-                    totalVolume += weight * reps;
-                    setHasCompletedStage = true;
+                  const isWeightValid = st.weight === null || st.weight >= 0;
+                  const isRepsValid = st.reps !== null && st.reps > 0;
+                  if (st.completed && isWeightValid && isRepsValid) {
+                    totalCompletedSets++;
+                    if (st.weight !== null && st.weight > 0) {
+                      const weight = st.weight;
+                      const reps = st.reps!;
+                      totalVolume += weight * reps;
 
-                    const est1RM = calculate1RM(weight, reps);
-                    const prIndex = updatedPRs.findIndex((p) => p.exerciseId === st.exerciseId);
-                    const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+                      const est1RM = calculate1RM(weight, reps);
+                      const prIndex = updatedPRs.findIndex((p) => p.exerciseId === st.exerciseId);
+                      const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-                    let isNewPR = false;
-                    let prCategory: 'max_weight' | 'max_reps' | 'max_1rm' | 'baseline' = 'max_weight';
-                    let prType: 'max_weight' | 'max_reps' | 'max_1rm' = 'max_weight';
-                    let details = '';
-                    let previousValue: number | undefined = undefined;
+                      let isNewPR = false;
+                      let prCategory: 'max_weight' | 'max_reps' | 'max_1rm' | 'baseline' = 'max_weight';
+                      let prType: 'max_weight' | 'max_reps' | 'max_1rm' = 'max_weight';
+                      let details = '';
+                      let previousValue: number | undefined = undefined;
 
-                    if (!existingPR) {
-                      isNewPR = true;
-                      prCategory = 'baseline';
-                      prType = 'max_weight';
-                      details = `${weight} kg × ${reps} reps (First Record)`;
-                    } else if (weight > existingPR.weight) {
-                      isNewPR = true;
-                      prCategory = 'max_weight';
-                      prType = 'max_weight';
-                      previousValue = existingPR.weight;
-                      const diff = (weight - existingPR.weight).toFixed(1).replace(/\.0$/, '');
-                      details = `${weight} kg × ${reps} reps (+${diff} kg Heaviest Weight)`;
-                    } else if (weight === existingPR.weight && reps > existingPR.reps) {
-                      isNewPR = true;
-                      prCategory = 'max_reps';
-                      prType = 'max_reps';
-                      previousValue = existingPR.reps;
-                      const diff = reps - existingPR.reps;
-                      details = `${weight} kg × ${reps} reps (+${diff} rep${diff > 1 ? 's' : ''} at ${weight} kg)`;
-                    } else if (est1RM > existingPR.estimated1RM) {
-                      isNewPR = true;
-                      prCategory = 'max_1rm';
-                      prType = 'max_1rm';
-                      previousValue = existingPR.estimated1RM;
-                      const diff = (est1RM - existingPR.estimated1RM).toFixed(1).replace(/\.0$/, '');
-                      details = `Est. 1RM ${est1RM} kg (+${diff} kg Strength Improvement)`;
-                    }
-
-                    if (isNewPR) {
-                      const prRecord: PersonalRecord = {
-                        id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-                        exerciseId: st.exerciseId,
-                        exerciseName: st.exerciseName,
-                        type: prType,
-                        prCategory,
-                        previousValue,
-                        value: weight,
-                        weight,
-                        reps,
-                        estimated1RM: est1RM,
-                        date: new Date().toISOString(),
-                        details,
-                      };
-
-                      if (prIndex >= 0) {
-                        updatedPRs[prIndex] = prRecord;
-                      } else {
-                        updatedPRs.push(prRecord);
+                      if (!existingPR) {
+                        isNewPR = true;
+                        prCategory = 'baseline';
+                        prType = 'max_weight';
+                        details = `${weight} kg × ${reps} reps (First Record)`;
+                      } else if (weight > existingPR.weight) {
+                        isNewPR = true;
+                        prCategory = 'max_weight';
+                        prType = 'max_weight';
+                        previousValue = existingPR.weight;
+                        const diff = (weight - existingPR.weight).toFixed(1).replace(/\.0$/, '');
+                        details = `${weight} kg × ${reps} reps (+${diff} kg Heaviest Weight)`;
+                      } else if (weight === existingPR.weight && reps > existingPR.reps) {
+                        isNewPR = true;
+                        prCategory = 'max_reps';
+                        prType = 'max_reps';
+                        previousValue = existingPR.reps;
+                        const diff = reps - existingPR.reps;
+                        details = `${weight} kg × ${reps} reps (+${diff} rep${diff > 1 ? 's' : ''} at ${weight} kg)`;
+                      } else if (est1RM > existingPR.estimated1RM) {
+                        isNewPR = true;
+                        prCategory = 'max_1rm';
+                        prType = 'max_1rm';
+                        previousValue = existingPR.estimated1RM;
+                        const diff = (est1RM - existingPR.estimated1RM).toFixed(1).replace(/\.0$/, '');
+                        details = `Est. 1RM ${est1RM} kg (+${diff} kg Strength Improvement)`;
                       }
 
-                      if (!newPRsInSession.some((p) => p.exerciseId === st.exerciseId)) {
-                        newPRsInSession.push(prRecord);
-                      }
+                      if (isNewPR) {
+                        const prRecord: PersonalRecord = {
+                          id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                          exerciseId: st.exerciseId,
+                          exerciseName: st.exerciseName,
+                          type: prType,
+                          prCategory,
+                          previousValue,
+                          value: weight,
+                          weight,
+                          reps,
+                          estimated1RM: est1RM,
+                          date: new Date().toISOString(),
+                          details,
+                        };
 
-                      // Update strength goal for this exercise if present
-                      updatedGoals.forEach((g) => {
-                        if ((g.type === 'exercise_strength' || g.type === 'strength') && g.exerciseId === st.exerciseId) {
-                          g.currentValue = Math.max(Number(g.currentValue) || 0, weight);
-                          g.updatedAt = new Date().toISOString();
+                        if (prIndex >= 0) {
+                          updatedPRs[prIndex] = prRecord;
+                        } else {
+                          updatedPRs.push(prRecord);
                         }
-                      });
+
+                        if (!newPRsInSession.some((p) => p.exerciseId === st.exerciseId)) {
+                          newPRsInSession.push(prRecord);
+                        }
+
+                        // Update strength goal for this exercise if present
+                        updatedGoals.forEach((g) => {
+                          if ((g.type === 'exercise_strength' || g.type === 'strength') && g.exerciseId === st.exerciseId) {
+                            g.currentValue = Math.max(Number(g.currentValue) || 0, weight);
+                            g.updatedAt = new Date().toISOString();
+                          }
+                        });
+                      }
                     }
                   }
                 });
-                if (s.completed || setHasCompletedStage) {
-                  totalCompletedSets++;
-                }
-              } else if (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) {
-                const weight = s.weight!;
-                const reps = s.reps!;
-                totalVolume += weight * reps;
+              } else if (s.completed && (s.weight === null || s.weight >= 0) && s.reps !== null && s.reps > 0) {
                 totalCompletedSets++;
+                if (s.weight !== null && s.weight > 0) {
+                  const weight = s.weight;
+                  const reps = s.reps!;
+                  totalVolume += weight * reps;
 
-                const est1RM = calculate1RM(weight, reps);
+                  const est1RM = calculate1RM(weight, reps);
 
-                // Check existing PR for this exercise
-                const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
-                const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
+                  // Check existing PR for this exercise
+                  const prIndex = updatedPRs.findIndex((p) => p.exerciseId === ex.exerciseId);
+                  const existingPR = prIndex >= 0 ? updatedPRs[prIndex] : null;
 
-                let isNewPR = false;
-                let prCategory: 'max_weight' | 'max_reps' | 'max_1rm' | 'baseline' = 'max_weight';
-                let prType: 'max_weight' | 'max_reps' | 'max_1rm' = 'max_weight';
-                let details = '';
-                let previousValue: number | undefined = undefined;
+                  let isNewPR = false;
+                  let prCategory: 'max_weight' | 'max_reps' | 'max_1rm' | 'baseline' = 'max_weight';
+                  let prType: 'max_weight' | 'max_reps' | 'max_1rm' = 'max_weight';
+                  let details = '';
+                  let previousValue: number | undefined = undefined;
 
-                if (!existingPR) {
-                  isNewPR = true;
-                  prCategory = 'baseline';
-                  prType = 'max_weight';
-                  details = `${weight} kg × ${reps} reps (First Record)`;
-                } else if (weight > existingPR.weight) {
-                  isNewPR = true;
-                  prCategory = 'max_weight';
-                  prType = 'max_weight';
-                  previousValue = existingPR.weight;
-                  const diff = (weight - existingPR.weight).toFixed(1).replace(/\.0$/, '');
-                  details = `${weight} kg × ${reps} reps (+${diff} kg Heaviest Weight)`;
-                } else if (weight === existingPR.weight && reps > existingPR.reps) {
-                  isNewPR = true;
-                  prCategory = 'max_reps';
-                  prType = 'max_reps';
-                  previousValue = existingPR.reps;
-                  const diff = reps - existingPR.reps;
-                  details = `${weight} kg × ${reps} reps (+${diff} rep${diff > 1 ? 's' : ''} at ${weight} kg)`;
-                } else if (est1RM > existingPR.estimated1RM) {
-                  isNewPR = true;
-                  prCategory = 'max_1rm';
-                  prType = 'max_1rm';
-                  previousValue = existingPR.estimated1RM;
-                  const diff = (est1RM - existingPR.estimated1RM).toFixed(1).replace(/\.0$/, '');
-                  details = `Est. 1RM ${est1RM} kg (+${diff} kg Strength Improvement)`;
-                }
-
-                if (isNewPR) {
-                  const prRecord: PersonalRecord = {
-                    id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-                    exerciseId: ex.exerciseId,
-                    exerciseName: ex.exercise.name,
-                    type: prType,
-                    prCategory,
-                    previousValue,
-                    value: weight,
-                    weight,
-                    reps,
-                    estimated1RM: est1RM,
-                    date: new Date().toISOString(),
-                    details,
-                  };
-
-                  if (prIndex >= 0) {
-                    updatedPRs[prIndex] = prRecord;
-                  } else {
-                    updatedPRs.push(prRecord);
+                  if (!existingPR) {
+                    isNewPR = true;
+                    prCategory = 'baseline';
+                    prType = 'max_weight';
+                    details = `${weight} kg × ${reps} reps (First Record)`;
+                  } else if (weight > existingPR.weight) {
+                    isNewPR = true;
+                    prCategory = 'max_weight';
+                    prType = 'max_weight';
+                    previousValue = existingPR.weight;
+                    const diff = (weight - existingPR.weight).toFixed(1).replace(/\.0$/, '');
+                    details = `${weight} kg × ${reps} reps (+${diff} kg Heaviest Weight)`;
+                  } else if (weight === existingPR.weight && reps > existingPR.reps) {
+                    isNewPR = true;
+                    prCategory = 'max_reps';
+                    prType = 'max_reps';
+                    previousValue = existingPR.reps;
+                    const diff = reps - existingPR.reps;
+                    details = `${weight} kg × ${reps} reps (+${diff} rep${diff > 1 ? 's' : ''} at ${weight} kg)`;
+                  } else if (est1RM > existingPR.estimated1RM) {
+                    isNewPR = true;
+                    prCategory = 'max_1rm';
+                    prType = 'max_1rm';
+                    previousValue = existingPR.estimated1RM;
+                    const diff = (est1RM - existingPR.estimated1RM).toFixed(1).replace(/\.0$/, '');
+                    details = `Est. 1RM ${est1RM} kg (+${diff} kg Strength Improvement)`;
                   }
 
-                  if (!newPRsInSession.some((p) => p.exerciseId === ex.exerciseId)) {
-                    newPRsInSession.push(prRecord);
-                  }
+                  if (isNewPR) {
+                    const prRecord: PersonalRecord = {
+                      id: existingPR ? existingPR.id : `pr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                      exerciseId: ex.exerciseId || ex.id,
+                      exerciseName: ex.exercise?.name || (ex as any).exerciseName || (ex as any).name || 'Exercise',
+                      type: prType,
+                      prCategory,
+                      previousValue,
+                      value: weight,
+                      weight,
+                      reps,
+                      estimated1RM: est1RM,
+                      date: new Date().toISOString(),
+                      details,
+                    };
 
-                  // Update strength goal for this exercise if present
-                  updatedGoals.forEach((g) => {
-                    if ((g.type === 'exercise_strength' || g.type === 'strength') && g.exerciseId === ex.exerciseId) {
-                      g.currentValue = Math.max(Number(g.currentValue) || 0, weight);
-                      g.updatedAt = new Date().toISOString();
+                    if (prIndex >= 0) {
+                      updatedPRs[prIndex] = prRecord;
+                    } else {
+                      updatedPRs.push(prRecord);
                     }
-                  });
+
+                    if (!newPRsInSession.some((p) => p.exerciseId === (ex.exerciseId || ex.id))) {
+                      newPRsInSession.push(prRecord);
+                    }
+
+                    // Update strength goal for this exercise if present
+                    updatedGoals.forEach((g) => {
+                      if ((g.type === 'exercise_strength' || g.type === 'strength') && g.exerciseId === (ex.exerciseId || ex.id)) {
+                        g.currentValue = Math.max(Number(g.currentValue) || 0, weight);
+                        g.updatedAt = new Date().toISOString();
+                      }
+                    });
+                  }
                 }
               }
             });
@@ -2416,8 +2427,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
               weight: s.weight,
               reps: s.reps,
               completed: Boolean(
-                (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
-                (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+                (s.completed && (s.weight === null || s.weight >= 0) && s.reps !== null && s.reps > 0) ||
+                (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0))
               ),
               stages: Array.isArray(s.stages) && s.stages.length > 0
                 ? s.stages.map((st) => ({
@@ -2429,7 +2440,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
                     targetReps: st.targetReps ?? null,
                     weight: st.weight,
                     reps: st.reps,
-                    completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                    completed: Boolean(st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0),
                   }))
                 : undefined,
             })),
@@ -2498,13 +2509,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
               sets: ex.sets.map((s) => ({
                 ...s,
                 completed: Boolean(
-                  (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) ||
-                  (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0))
+                  (s.completed && (s.weight === null || s.weight >= 0) && s.reps !== null && s.reps > 0) ||
+                  (Array.isArray(s.stages) && s.stages.length > 0 && s.stages.every((st) => st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0))
                 ),
                 stages: Array.isArray(s.stages) && s.stages.length > 0
                   ? s.stages.map((st) => ({
                       ...st,
-                      completed: Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0),
+                      completed: Boolean(st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0),
                     }))
                   : undefined,
               })),

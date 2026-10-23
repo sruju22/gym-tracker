@@ -15,19 +15,29 @@ const calculateWorkoutTotals = (exercises: any[]) => {
       if (Array.isArray(ex.sets)) {
         ex.sets.forEach((s: any) => {
           if (Array.isArray(s.stages) && s.stages.length > 0) {
-            let setHasCompletedStage = false;
             s.stages.forEach((st: any) => {
-              if (st.completed && st.weight && st.reps) {
-                totalVolume += Number(st.weight) * Number(st.reps);
-                setHasCompletedStage = true;
+              const weightNum = st.weight !== null && st.weight !== undefined ? Number(st.weight) : null;
+              const repsNum = st.reps !== null && st.reps !== undefined ? Number(st.reps) : null;
+              const isWeightValid = weightNum === null || weightNum >= 0;
+              const isRepsValid = repsNum !== null && repsNum > 0;
+              if (st.completed && isWeightValid && isRepsValid) {
+                totalSets++;
+                if (weightNum !== null && weightNum > 0) {
+                  totalVolume += weightNum * repsNum;
+                }
               }
             });
-            if (s.completed || setHasCompletedStage) {
+          } else if (s.completed) {
+            const weightNum = s.weight !== null && s.weight !== undefined ? Number(s.weight) : null;
+            const repsNum = s.reps !== null && s.reps !== undefined ? Number(s.reps) : null;
+            const isWeightValid = weightNum === null || weightNum >= 0;
+            const isRepsValid = repsNum !== null && repsNum > 0;
+            if (isWeightValid && isRepsValid) {
               totalSets++;
+              if (weightNum !== null && weightNum > 0) {
+                totalVolume += weightNum * repsNum;
+              }
             }
-          } else if (s.completed && s.weight && s.reps) {
-            totalVolume += Number(s.weight) * Number(s.reps);
-            totalSets++;
           }
         });
       }
@@ -224,6 +234,21 @@ export const createWorkout = async (req: AuthenticatedRequest, res: Response): P
       workout: newWorkout,
     });
   } catch (error: any) {
+    const rawClientSessionId = req.body?.clientSessionId;
+    if (error.code === 11000 && rawClientSessionId && req.user?._id) {
+      const existingWorkout = await Workout.findOne({
+        userId: req.user._id,
+        clientSessionId: String(rawClientSessionId).trim(),
+      });
+      if (existingWorkout) {
+        res.status(200).json({
+          message: 'Workout session already saved',
+          workout: existingWorkout,
+          deduplicated: true,
+        });
+        return;
+      }
+    }
     res.status(500).json({ error: 'Failed to create workout session', details: error.message });
   }
 };

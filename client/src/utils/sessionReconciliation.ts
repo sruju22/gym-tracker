@@ -55,7 +55,23 @@ export function isStaleOrAbandonedSession(
   const isStartedToday = isSameLocalDay(sessionDate, now);
   const exerciseCount = session.exercises ? session.exercises.length : 0;
   const hasLoggedSets = session.exercises
-    ? session.exercises.some((e) => e.sets && e.sets.some((s) => s.completed || (s.weight !== null && s.weight > 0) || (s.reps !== null && s.reps > 0)))
+    ? session.exercises.some(
+        (e) =>
+          e.sets &&
+          e.sets.some(
+            (s) =>
+              s.completed ||
+              (s.weight !== null && s.weight > 0) ||
+              (s.reps !== null && s.reps > 0) ||
+              (Array.isArray(s.stages) &&
+                s.stages.some(
+                  (st) =>
+                    st.completed ||
+                    (st.weight !== null && st.weight > 0) ||
+                    (st.reps !== null && st.reps > 0)
+                ))
+          )
+      )
     : false;
 
   // 2. Started on a previous calendar day:
