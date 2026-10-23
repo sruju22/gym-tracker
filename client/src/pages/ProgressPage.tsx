@@ -6,6 +6,8 @@ import {
   Award,
   Target,
   Info,
+  Dumbbell,
+  Flame,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -14,26 +16,34 @@ import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { formatVolume } from '../utils/formatters';
 import { GoalsList } from '../components/goals/GoalsList';
+import { CardioWeeklyGoalsCard } from '../components/goals/CardioWeeklyGoalsCard';
 import { BodyWeightCard } from '../components/weight/BodyWeightCard';
 import { PersonalRecordsWall } from '../components/progress/PersonalRecordsWall';
 import { TrainingAnalyticsView } from '../components/progress/TrainingAnalyticsView';
+import { CardioAnalyticsView } from '../components/progress/CardioAnalyticsView';
+import { LogCardioModal } from '../components/cardio/LogCardioModal';
 import { getVolumeAnalytics, derivePersonalRecords } from '../utils/analyticsEngine';
 import { PersonalRecord } from '../types';
 
 type ProgressTab = 'analytics' | 'prs' | 'goals';
+type AnalyticsCategory = 'strength' | 'cardio';
 
 export const ProgressPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<ProgressTab>('analytics');
+  const [analyticsCategory, setAnalyticsCategory] = useState<AnalyticsCategory>('strength');
+  const [prsCategory, setPrsCategory] = useState<'strength' | 'cardio'>('strength');
+  const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
 
-  const { getUserData, getHistory, getPersonalRecords, getExercises } = useWorkoutStore();
+  const { getUserData, getHistory, getPersonalRecords, getExercises, getCardioSessions } = useWorkoutStore();
 
   const userId = currentUser?.id || 'guest';
   const userData = getUserData(userId);
   const history = getHistory(userId);
   const storedPRs = getPersonalRecords(userId);
   const exercises = getExercises(userId);
+  const cardioSessions = getCardioSessions(userId);
 
   // Derive real client-side analytics directly from verified history
   const volumeAnalytics = useMemo(() => {
@@ -134,7 +144,7 @@ export const ProgressPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Segmented Tab Navigation */}
+      {/* Segmented Primary Tab Navigation */}
       <div className="grid grid-cols-3 gap-1 bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--border-subtle)]">
         <button
           type="button"
@@ -187,12 +197,55 @@ export const ProgressPage: React.FC = () => {
 
       {/* TAB 1: Analytics & Progression View */}
       {activeTab === 'analytics' && (
-        <TrainingAnalyticsView
-          history={history}
-          exercises={exercises}
-          weeklyPlan={userData.weeklyPlan}
-          targetDaysPerWeek={currentUser?.trainingDaysPerWeek || 4}
-        />
+        <div className="space-y-4">
+          {/* Secondary Strength / Cardio Segmented Selector */}
+          <div className="grid grid-cols-2 gap-1 bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--border-subtle)]">
+            <button
+              type="button"
+              onClick={() => setAnalyticsCategory('strength')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[42px] ${
+                analyticsCategory === 'strength'
+                  ? 'bg-[var(--primary)] text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+              }`}
+            >
+              <Dumbbell className="w-4 h-4 shrink-0" />
+              <span className="text-xs sm:text-sm">Strength</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAnalyticsCategory('cardio')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[42px] ${
+                analyticsCategory === 'cardio'
+                  ? 'bg-[var(--primary)] text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+              }`}
+            >
+              <Flame className="w-4 h-4 text-orange-400 shrink-0" />
+              <span className="text-xs sm:text-sm">Cardio</span>
+            </button>
+          </div>
+
+          {analyticsCategory === 'strength' ? (
+            <TrainingAnalyticsView
+              history={history}
+              exercises={exercises}
+              weeklyPlan={userData.weeklyPlan}
+              targetDaysPerWeek={currentUser?.trainingDaysPerWeek || 4}
+            />
+          ) : (
+            <CardioAnalyticsView
+              cardioSessions={cardioSessions}
+              onLogCardio={() => setIsLogCardioOpen(true)}
+              onNavigateToGoals={() => setActiveTab('goals')}
+              onNavigateToRecords={() => {
+                setPrsCategory('cardio');
+                setActiveTab('prs');
+              }}
+            />
+          )}
+        </div>
       )}
 
       {/* TAB 2: Personal Records Wall */}
@@ -201,6 +254,8 @@ export const ProgressPage: React.FC = () => {
           personalRecords={effectivePRs}
           exercises={exercises}
           history={history}
+          cardioSessions={cardioSessions}
+          initialCategory={prsCategory}
         />
       )}
 
@@ -208,9 +263,18 @@ export const ProgressPage: React.FC = () => {
       {activeTab === 'goals' && (
         <div className="space-y-4">
           <BodyWeightCard />
+          <CardioWeeklyGoalsCard />
           <GoalsList />
         </div>
       )}
+
+      {/* Log Cardio Modal Triggerable from Progress */}
+      <LogCardioModal
+        isOpen={isLogCardioOpen}
+        onClose={() => setIsLogCardioOpen(false)}
+      />
     </div>
   );
 };
+
+

@@ -157,10 +157,13 @@ export function generateWorkoutInsight(
     : 0;
   const completedExercises = Array.isArray(currentSession.exercises)
     ? currentSession.exercises.filter((ex) =>
+        Array.isArray(ex.sets) &&
         ex.sets.some(
           (s) =>
-            s.completed &&
-            ((s.weight !== null && s.weight > 0) || (s.reps !== null && s.reps > 0))
+            Boolean(s.completed) &&
+            ((s.weight !== null && s.weight !== undefined && s.weight >= 0) ||
+              (s.reps !== null && s.reps !== undefined && s.reps > 0) ||
+              (Array.isArray(s.stages) && s.stages.some((st) => st.completed)))
         )
       ).length
     : 0;

@@ -71,7 +71,7 @@ export const WorkoutCompletionScreen: React.FC<WorkoutCompletionScreenProps> = (
         ex.sets?.forEach((s) => {
           if (Array.isArray(s.stages) && s.stages.length > 0) {
             s.stages.forEach((st) => {
-              if (st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0) {
+              if (st.completed && (st.weight === null || st.weight >= 0) && st.reps !== null && st.reps > 0) {
                 repsCount += st.reps;
                 hasCompletedSetInExercise = true;
               }
@@ -79,7 +79,7 @@ export const WorkoutCompletionScreen: React.FC<WorkoutCompletionScreenProps> = (
             if (s.completed || s.stages.some((st) => st.completed)) {
               completedSetsCount++;
             }
-          } else if (s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0) {
+          } else if (s.completed && (s.weight === null || s.weight >= 0) && s.reps !== null && s.reps > 0) {
             repsCount += s.reps;
             completedSetsCount++;
             hasCompletedSetInExercise = true;
@@ -452,10 +452,10 @@ export const WorkoutCompletionScreen: React.FC<WorkoutCompletionScreenProps> = (
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-white truncate">
-                          {ex.exercise?.name || `Exercise ${exIdx + 1}`}
+                          {ex.exercise?.name || (ex as any).exerciseName || (ex as any).name || `Exercise ${exIdx + 1}`}
                         </span>
                         <span className="text-[9px] font-bold uppercase text-zinc-400 bg-zinc-800/60 px-1.5 py-0.5 rounded">
-                          {ex.exercise?.primaryMuscle || 'Exercise'}
+                          {ex.exercise?.primaryMuscle || (ex as any).primaryMuscle || 'Exercise'}
                         </span>
                       </div>
 

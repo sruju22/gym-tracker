@@ -57,6 +57,8 @@ export function App() {
   const fetchProgressStats = useWorkoutStore((state) => state.fetchProgressStats);
   const fetchSavedCombinations = useWorkoutStore((state) => state.fetchSavedCombinations);
   const syncPendingWorkouts = useWorkoutStore((state) => state.syncPendingWorkouts);
+  const fetchCardioSessions = useWorkoutStore((state) => state.fetchCardioSessions);
+  const syncPendingCardioSessions = useWorkoutStore((state) => state.syncPendingCardioSessions);
 
   useEffect(() => {
     prewarmBackend();
@@ -71,11 +73,13 @@ export function App() {
       if (currentUser?.id) {
         syncPendingWorkouts(currentUser.id);
         fetchHistory(currentUser.id);
+        syncPendingCardioSessions(currentUser.id);
+        fetchCardioSessions(currentUser.id);
       }
     };
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
-  }, [currentUser?.id, syncPendingWorkouts, fetchHistory]);
+  }, [currentUser?.id, syncPendingWorkouts, fetchHistory, syncPendingCardioSessions, fetchCardioSessions]);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -84,8 +88,17 @@ export function App() {
       fetchBackendPRs(currentUser.id);
       fetchProgressStats(currentUser.id);
       fetchSavedCombinations(currentUser.id);
+      fetchCardioSessions(currentUser.id);
     }
-  }, [currentUser?.id, fetchWeeklyPlan, fetchHistory, fetchBackendPRs, fetchProgressStats, fetchSavedCombinations]);
+  }, [
+    currentUser?.id,
+    fetchWeeklyPlan,
+    fetchHistory,
+    fetchBackendPRs,
+    fetchProgressStats,
+    fetchSavedCombinations,
+    fetchCardioSessions,
+  ]);
 
   // Show onboarding ONLY when an authenticated user has explicitly not completed onboarding
   const needsOnboarding = currentUser !== null && currentUser.onboardingCompleted === false;

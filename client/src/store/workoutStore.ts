@@ -15,7 +15,6 @@ import {
   ExerciseType,
   PreviousPerformance,
   Goal,
-  GoalType,
   GoalStatus,
   WeightLog,
   MuscleGroupConfig,
@@ -23,7 +22,10 @@ import {
   CombinationType,
   WorkoutSetStage,
   WorkoutTemplate,
+  CardioSession,
+  CardioWeeklyGoalSettings,
 } from '../types';
+import { DEFAULT_CARDIO_GOALS } from '../utils/cardioGoals';
 import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
@@ -67,6 +69,13 @@ import {
   updateSavedCombinationApi,
   deleteSavedCombinationApi,
 } from '../api/combinationApi';
+import {
+  fetchCardioSessionsApi,
+  createCardioSessionApi,
+  updateCardioSessionApi,
+  deleteCardioSessionApi,
+} from '../api/cardioApi';
+import { calculatePace, calculateSpeed } from '../utils/cardioMetrics';
 
 export interface UserWorkoutData {
   history: WorkoutSession[];
@@ -84,6 +93,9 @@ export interface UserWorkoutData {
   editingOriginalSession?: WorkoutSession | null;
   goals: Goal[];
   weightLogs: WeightLog[];
+  cardioSessions: CardioSession[];
+  pendingDeletedCardioIds?: string[];
+  cardioWeeklyGoals?: CardioWeeklyGoalSettings;
   currentWeight?: number;
   progressSummary?: ProgressSummaryResponse;
   volumeTrend?: VolumeTrendPoint[];
@@ -239,6 +251,29 @@ interface WorkoutStore {
   deleteWeightLog: (userId: string, logId: string) => Promise<void>;
   updateCurrentWeight: (userId: string, newWeight: number) => void;
 
+  // Actions - Cardio & Conditioning Tracking
+  getCardioSessions: (userId: string) => CardioSession[];
+  logCardioSession: (
+    userId: string,
+    session: (Omit<CardioSession, 'id' | 'date'> & { date?: string }) | CardioSession
+  ) => Promise<CardioSession>;
+  updateCardioSession: (
+    userId: string,
+    sessionId: string,
+    updates: Partial<CardioSession>
+  ) => Promise<boolean>;
+  deleteCardioSession: (
+    userId: string,
+    sessionId: string
+  ) => Promise<boolean>;
+  fetchCardioSessions: (userId: string) => Promise<CardioSession[]>;
+  syncPendingCardioSessions: (userId: string) => Promise<void>;
+  getCardioGoals: (userId: string) => CardioWeeklyGoalSettings;
+  updateCardioGoals: (
+    userId: string,
+    goals: Partial<CardioWeeklyGoalSettings>
+  ) => void;
+
   // Actions - Plan Settings & User Settings
   fetchWeeklyPlan: (userId: string) => Promise<WeeklySchedule>;
   updateWeeklyPlan: (userId: string, newPlan: WeeklySchedule) => Promise<void>;
@@ -268,6 +303,9 @@ const createDefaultUserData = (): UserWorkoutData => {
     currentWeight: 70,
     goals: [],
     weightLogs: [],
+    cardioSessions: [],
+    pendingDeletedCardioIds: [],
+    cardioWeeklyGoals: DEFAULT_CARDIO_GOALS,
   };
 };
 
@@ -365,6 +403,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }
         if (!data.savedCombinations) {
           data.savedCombinations = [];
+        }
+        if (!data.cardioSessions) {
+          data.cardioSessions = [];
+        }
+        if (!data.pendingDeletedCardioIds) {
+          data.pendingDeletedCardioIds = [];
+        }
+        if (!data.cardioWeeklyGoals) {
+          data.cardioWeeklyGoals = DEFAULT_CARDIO_GOALS;
         }
         return data;
       },
@@ -1340,7 +1387,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const token = getStoredToken();
           if (userId !== 'guest' && token) {
             try {
-              await updateWorkoutHistoryApi(editingSession.id, apiPayload);
+              const apiPromise = updateWorkoutHistoryApi(editingSession.id, apiPayload);
+              const timeoutPromise = new Promise<{ timeout: true }>((resolve) =>
+                setTimeout(() => resolve({ timeout: true }), 1200)
+              );
+              await Promise.race([apiPromise, timeoutPromise]);
             } catch (apiErr) {
               console.warn('Backend workout update failed (offline). Edits preserved locally:', apiErr);
             }
@@ -2476,17 +2527,23 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const token = getStoredToken();
           let syncedToBackend = false;
 
-          // Attempt API persistence if authenticated user and token exists
+          // Fast API persistence: race the network call against a 1.2s timeout
+          // If the backend takes longer or is offline, save locally immediately and sync in the background
+          let apiPromise: Promise<any> | null = null;
           if (userId !== 'guest' && token) {
             try {
-              const res = await createWorkoutHistoryApi(apiPayload);
-              if (res && res.workout && res.workout._id) {
-                mongoId = res.workout._id;
+              apiPromise = createWorkoutHistoryApi(apiPayload);
+              const timeoutPromise = new Promise<{ timeout: true }>((resolve) =>
+                setTimeout(() => resolve({ timeout: true }), 1200)
+              );
+              const raceResult = await Promise.race([apiPromise, timeoutPromise]);
+              if (raceResult && !('timeout' in raceResult) && raceResult.workout?._id) {
+                mongoId = raceResult.workout._id;
                 syncedToBackend = true;
               }
             } catch (apiErr: any) {
               console.warn(
-                'Backend workout persistence failed (offline or remote server unreachable). Workout preserved safely in local storage:',
+                'Backend workout persistence failed immediately (offline or remote server unreachable). Workout preserved safely in local storage:',
                 apiErr
               );
               syncedToBackend = false;
@@ -2546,6 +2603,50 @@ export const useWorkoutStore = create<WorkoutStore>()(
               },
             },
           }));
+
+          // If background API call is still pending, update local store with MongoDB ID once settled
+          if (apiPromise && !syncedToBackend) {
+            const clientSessionId = activeSession.id;
+            apiPromise
+              .then((res) => {
+                if (res && res.workout && res.workout._id) {
+                  const backendId = res.workout._id;
+                  set((state) => {
+                    const uData = state.getUserData(userId);
+                    const updatedHistory = (uData.history || []).map((h) =>
+                      h.id === clientSessionId || (h.clientSessionId && h.clientSessionId === clientSessionId)
+                        ? { ...h, id: backendId, clientSessionId, syncedToBackend: true }
+                        : h
+                    );
+                    const updatedLastCompleted =
+                      state.lastCompletedSession &&
+                      (state.lastCompletedSession.id === clientSessionId ||
+                        state.lastCompletedSession.clientSessionId === clientSessionId)
+                        ? { ...state.lastCompletedSession, id: backendId, syncedToBackend: true }
+                        : state.lastCompletedSession;
+
+                    return {
+                      lastCompletedSession: updatedLastCompleted,
+                      userDataMap: {
+                        ...state.userDataMap,
+                        [userId]: {
+                          ...uData,
+                          history: updatedHistory,
+                        },
+                      },
+                    };
+                  });
+                  get().fetchBackendPRs(userId).catch(() => {});
+                  get().fetchProgressStats(userId).catch(() => {});
+                }
+              })
+              .catch((err) => {
+                console.warn(
+                  'Background workout persistence did not complete immediately; preserved locally and will sync on next refresh/online event:',
+                  err
+                );
+              });
+          }
 
           if (syncedToBackend && userId !== 'guest' && token) {
             get().fetchBackendPRs(userId).catch(() => {});
@@ -3127,6 +3228,524 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }
 
         return true;
+      },
+
+      getCardioSessions: (userId: string) => {
+        const userData = get().getUserData(userId);
+        const sessions = userData.cardioSessions || [];
+        return [...sessions].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      },
+
+      logCardioSession: async (
+        userId: string,
+        sessionData: (Omit<CardioSession, 'id' | 'date'> & { date?: string }) | CardioSession
+      ) => {
+        const localId =
+          (sessionData as any).id ||
+          (sessionData as any)._id ||
+          (sessionData as any).clientSessionId ||
+          `cardio_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+        const clientSessionId = sessionData.clientSessionId || localId;
+        const duration = Number(sessionData.durationMinutes) || 0;
+        const distance =
+          sessionData.distance !== null && sessionData.distance !== undefined && sessionData.distance !== ('' as any)
+            ? Number(sessionData.distance)
+            : null;
+        const unit = sessionData.distanceUnit || 'km';
+
+        const paceMinutesPerUnit =
+          sessionData.paceMinutesPerUnit !== undefined && sessionData.paceMinutesPerUnit !== null
+            ? sessionData.paceMinutesPerUnit
+            : (distance !== null && distance > 0 && duration > 0
+                ? calculatePace(duration, distance, unit)
+                : null);
+
+        const speedPerHour =
+          sessionData.speedPerHour !== undefined && sessionData.speedPerHour !== null
+            ? sessionData.speedPerHour
+            : (distance !== null && distance > 0 && duration > 0
+                ? calculateSpeed(duration, distance, unit)
+                : null);
+
+        const newSession: CardioSession = {
+          ...sessionData,
+          id: localId,
+          clientSessionId,
+          date: sessionData.date || new Date().toISOString(),
+          durationMinutes: duration,
+          distance,
+          distanceUnit: unit,
+          paceMinutesPerUnit,
+          speedPerHour,
+          syncedToBackend: false,
+          createdAt: sessionData.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Optimistically save locally
+        set((state) => {
+          const uData = state.getUserData(userId);
+          const currentSessions = uData.cardioSessions || [];
+          const exists = currentSessions.some(
+            (s) => s.clientSessionId === clientSessionId || s.id === localId
+          );
+          if (exists) return state;
+
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...uData,
+                cardioSessions: [newSession, ...currentSessions],
+              },
+            },
+          };
+        });
+
+        const token = getStoredToken();
+        if (userId !== 'guest' && token) {
+          try {
+            const apiRes = await createCardioSessionApi(newSession);
+            if (apiRes && apiRes.session) {
+              const backendId = apiRes.session.id || (apiRes.session as any)._id || localId;
+              set((state) => {
+                const uData = state.getUserData(userId);
+                const updated = (uData.cardioSessions || []).map((s) => {
+                  if (s.id === localId || s.clientSessionId === clientSessionId) {
+                    return {
+                      ...s,
+                      id: backendId,
+                      _id: backendId,
+                      syncedToBackend: true,
+                    };
+                  }
+                  return s;
+                });
+                // Deduplicate by canonical ID and clientSessionId
+                const seenKeys = new Set<string>();
+                const deduplicated = updated.filter((s) => {
+                  const key = s.id || (s as any)._id || s.clientSessionId;
+                  if (!key) return true;
+                  if (seenKeys.has(key)) return false;
+                  seenKeys.add(key);
+                  return true;
+                });
+                return {
+                  userDataMap: {
+                    ...state.userDataMap,
+                    [userId]: {
+                      ...uData,
+                      cardioSessions: deduplicated,
+                    },
+                  },
+                };
+              });
+              return { ...newSession, id: backendId, _id: backendId, syncedToBackend: true };
+            }
+          } catch (err) {
+            console.warn('Backend save cardio session failed (will sync later offline):', err);
+          }
+        }
+
+        return newSession;
+      },
+
+      updateCardioSession: async (userId: string, sessionId: string, updates: Partial<CardioSession>) => {
+        let isLocalOnly = sessionId.startsWith('cardio_');
+
+        set((state) => {
+          const uData = state.getUserData(userId);
+          const updated = (uData.cardioSessions || []).map((s) => {
+            if (s.id === sessionId || (s as any)._id === sessionId || s.clientSessionId === sessionId) {
+              if (s.id.startsWith('cardio_')) {
+                isLocalOnly = true;
+              }
+              const merged = {
+                ...s,
+                ...updates,
+                syncedToBackend: false, // Mark uncommitted locally until API call confirms
+                updatedAt: new Date().toISOString(),
+              };
+              const duration = Number(merged.durationMinutes) || 0;
+              const distance =
+                merged.distance !== null && merged.distance !== undefined && merged.distance !== ('' as any)
+                  ? Number(merged.distance)
+                  : null;
+              const unit = merged.distanceUnit || 'km';
+
+              if (
+                updates.durationMinutes !== undefined ||
+                updates.distance !== undefined ||
+                updates.distanceUnit !== undefined
+              ) {
+                merged.paceMinutesPerUnit =
+                  distance !== null && distance > 0 && duration > 0
+                    ? calculatePace(duration, distance, unit)
+                    : null;
+                merged.speedPerHour =
+                  distance !== null && distance > 0 && duration > 0
+                    ? calculateSpeed(duration, distance, unit)
+                    : null;
+              }
+              return merged;
+            }
+            return s;
+          });
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...uData,
+                cardioSessions: updated,
+              },
+            },
+          };
+        });
+
+        const token = getStoredToken();
+        if (userId !== 'guest' && token && !isLocalOnly) {
+          try {
+            await updateCardioSessionApi(sessionId, updates);
+            // Succeeded on backend -> mark syncedToBackend: true
+            set((state) => {
+              const uData = state.getUserData(userId);
+              const updated = (uData.cardioSessions || []).map((s) => {
+                if (s.id === sessionId || (s as any)._id === sessionId || s.clientSessionId === sessionId) {
+                  return { ...s, syncedToBackend: true };
+                }
+                return s;
+              });
+              return {
+                userDataMap: {
+                  ...state.userDataMap,
+                  [userId]: { ...uData, cardioSessions: updated },
+                },
+              };
+            });
+            return true;
+          } catch (err) {
+            console.warn('Failed to update cardio session on backend (offline). Preserved locally:', err);
+            return false;
+          }
+        }
+        return true;
+      },
+
+      deleteCardioSession: async (userId: string, sessionId: string) => {
+        let isLocalOnly = sessionId.startsWith('cardio_');
+
+        set((state) => {
+          const uData = state.getUserData(userId);
+          const currentSessions = uData.cardioSessions || [];
+          const sessionToDelete = currentSessions.find(
+            (s) => s.id === sessionId || (s as any)._id === sessionId || s.clientSessionId === sessionId
+          );
+          if (sessionToDelete && sessionToDelete.id.startsWith('cardio_')) {
+            isLocalOnly = true;
+          }
+
+          const updated = currentSessions.filter(
+            (s) => s.id !== sessionId && (s as any)._id !== sessionId && s.clientSessionId !== sessionId
+          );
+
+          // If this was an existing backend session and user is authenticated, track for backend delete
+          const pendingDeleted = [...(uData.pendingDeletedCardioIds || [])];
+          if (!isLocalOnly && userId !== 'guest' && !pendingDeleted.includes(sessionId)) {
+            pendingDeleted.push(sessionId);
+          }
+
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...uData,
+                cardioSessions: updated,
+                pendingDeletedCardioIds: pendingDeleted,
+              },
+            },
+          };
+        });
+
+        const token = getStoredToken();
+        if (userId !== 'guest' && token && !isLocalOnly) {
+          try {
+            await deleteCardioSessionApi(sessionId);
+            set((state) => {
+              const uData = state.getUserData(userId);
+              const pendingDeleted = (uData.pendingDeletedCardioIds || []).filter((id) => id !== sessionId);
+              return {
+                userDataMap: {
+                  ...state.userDataMap,
+                  [userId]: { ...uData, pendingDeletedCardioIds: pendingDeleted },
+                },
+              };
+            });
+            return true;
+          } catch (err: any) {
+            console.warn('Backend delete cardio failed (offline). Queued for deletion:', err);
+            if (err.message && err.message.includes('not found')) {
+              set((state) => {
+                const uData = state.getUserData(userId);
+                const pendingDeleted = (uData.pendingDeletedCardioIds || []).filter((id) => id !== sessionId);
+                return {
+                  userDataMap: {
+                    ...state.userDataMap,
+                    [userId]: { ...uData, pendingDeletedCardioIds: pendingDeleted },
+                  },
+                };
+              });
+            }
+          }
+        }
+
+        return true;
+      },
+
+      fetchCardioSessions: async (userId: string) => {
+        if (!userId || userId === 'guest') {
+          return get().getCardioSessions(userId);
+        }
+
+        const token = getStoredToken();
+        if (!token) {
+          return get().getCardioSessions(userId);
+        }
+
+        try {
+          const res = await fetchCardioSessionsApi();
+          if (res && Array.isArray(res.sessions)) {
+            const backendSessions: CardioSession[] = res.sessions.map((s: any) => ({
+              id: s._id || s.id,
+              _id: s._id || s.id,
+              clientSessionId: s.clientSessionId,
+              userId: s.userId,
+              activityType: s.activityType,
+              customActivityName: s.customActivityName,
+              date: s.date ? new Date(s.date).toISOString() : new Date().toISOString(),
+              durationMinutes: Number(s.durationMinutes) || 0,
+              distance: s.distance !== null && s.distance !== undefined ? Number(s.distance) : null,
+              distanceUnit: s.distanceUnit || 'km',
+              paceMinutesPerUnit: s.paceMinutesPerUnit,
+              speedPerHour: s.speedPerHour,
+              averageHeartRate: s.averageHeartRate,
+              maxHeartRate: s.maxHeartRate,
+              caloriesBurned: s.caloriesBurned,
+              notes: s.notes || '',
+              syncedToBackend: true,
+              createdAt: s.createdAt,
+              updatedAt: s.updatedAt,
+            }));
+
+            const uData = get().getUserData(userId);
+            const currentLocal = uData.cardioSessions || [];
+            const pendingDeletedSet = new Set(uData.pendingDeletedCardioIds || []);
+
+            // 1. Local sessions with uncommitted changes (syncedToBackend === false)
+            const pendingSync = currentLocal.filter((c) => c.syncedToBackend === false);
+            const pendingKeys = new Set(
+              pendingSync.flatMap((b) => [b.id, b._id, b.clientSessionId].filter(Boolean))
+            );
+
+            // 2. Backend sessions that have not been modified locally or deleted offline
+            const nonConflictingBackend = backendSessions.filter((b) => {
+              const isPendingEdit =
+                (b.id && pendingKeys.has(b.id)) ||
+                (b._id && pendingKeys.has(b._id)) ||
+                (b.clientSessionId && pendingKeys.has(b.clientSessionId));
+              const isPendingDelete =
+                (b.id && pendingDeletedSet.has(b.id)) ||
+                (b._id && pendingDeletedSet.has(b._id));
+              return !isPendingEdit && !isPendingDelete;
+            });
+
+            // 3. Deduplicated merge: pending local edits take precedence
+            const mergedMap = new Map<string, CardioSession>();
+            pendingSync.forEach((s) => {
+              const key = s.id || (s as any)._id || s.clientSessionId;
+              if (key) mergedMap.set(key, s);
+            });
+            nonConflictingBackend.forEach((s) => {
+              const key = s.id || (s as any)._id || s.clientSessionId;
+              if (key && !mergedMap.has(key)) mergedMap.set(key, s);
+            });
+
+            const merged = Array.from(mergedMap.values()).sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+
+            set((state) => ({
+              userDataMap: {
+                ...state.userDataMap,
+                [userId]: {
+                  ...state.getUserData(userId),
+                  cardioSessions: merged,
+                },
+              },
+            }));
+
+            if (pendingSync.length > 0 || (uData.pendingDeletedCardioIds || []).length > 0) {
+              get().syncPendingCardioSessions(userId).catch(() => {});
+            }
+
+            return merged;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch backend cardio sessions:', err);
+        }
+        return get().getCardioSessions(userId);
+      },
+
+      syncPendingCardioSessions: async (userId: string) => {
+        if (!userId || userId === 'guest' || !getStoredToken()) return;
+        const uData = get().getUserData(userId);
+
+        // 1. Process pending offline deletions
+        const pendingDeletions = [...(uData.pendingDeletedCardioIds || [])];
+        for (const deleteId of pendingDeletions) {
+          try {
+            await deleteCardioSessionApi(deleteId);
+            set((state) => {
+              const currentData = state.getUserData(userId);
+              return {
+                userDataMap: {
+                  ...state.userDataMap,
+                  [userId]: {
+                    ...currentData,
+                    pendingDeletedCardioIds: (currentData.pendingDeletedCardioIds || []).filter(
+                      (id) => id !== deleteId
+                    ),
+                  },
+                },
+              };
+            });
+          } catch (err: any) {
+            if (err.message && err.message.includes('not found')) {
+              set((state) => {
+                const currentData = state.getUserData(userId);
+                return {
+                  userDataMap: {
+                    ...state.userDataMap,
+                    [userId]: {
+                      ...currentData,
+                      pendingDeletedCardioIds: (currentData.pendingDeletedCardioIds || []).filter(
+                        (id) => id !== deleteId
+                      ),
+                    },
+                  },
+                };
+              });
+            } else {
+              console.warn('Retrying delete cardio session failed:', deleteId, err);
+            }
+          }
+        }
+
+        // 2. Process pending offline creations & edits
+        const currentLocal = get().getUserData(userId).cardioSessions || [];
+        const unsynced = currentLocal.filter((c) => c.syncedToBackend === false);
+        if (unsynced.length === 0) return;
+
+        for (const session of unsynced) {
+          try {
+            const isLocalOnly = session.id.startsWith('cardio_');
+            if (isLocalOnly) {
+              const apiRes = await createCardioSessionApi(session);
+              if (apiRes && apiRes.session) {
+                const backendId = apiRes.session.id || (apiRes.session as any)._id;
+                set((state) => {
+                  const currentData = state.getUserData(userId);
+                  const updated = (currentData.cardioSessions || []).map((s) => {
+                    if (s.id === session.id || s.clientSessionId === session.clientSessionId) {
+                      return {
+                        ...s,
+                        id: backendId || s.id,
+                        _id: backendId || s._id,
+                        syncedToBackend: true,
+                      };
+                    }
+                    return s;
+                  });
+                  return {
+                    userDataMap: {
+                      ...state.userDataMap,
+                      [userId]: {
+                        ...currentData,
+                        cardioSessions: updated,
+                      },
+                    },
+                  };
+                });
+              }
+            } else {
+              // Existing backend session with offline edits
+              const apiRes = await updateCardioSessionApi(session.id, session);
+              if (apiRes && apiRes.session) {
+                set((state) => {
+                  const currentData = state.getUserData(userId);
+                  const updated = (currentData.cardioSessions || []).map((s) => {
+                    if (s.id === session.id) {
+                      return {
+                        ...s,
+                        syncedToBackend: true,
+                      };
+                    }
+                    return s;
+                  });
+                  return {
+                    userDataMap: {
+                      ...state.userDataMap,
+                      [userId]: {
+                        ...currentData,
+                        cardioSessions: updated,
+                      },
+                    },
+                  };
+                });
+              }
+            }
+          } catch (err) {
+            console.warn('Failed to sync pending cardio session:', session.id, err);
+          }
+        }
+      },
+
+      getCardioGoals: (userId: string) => {
+        const userData = get().getUserData(userId);
+        return userData.cardioWeeklyGoals || DEFAULT_CARDIO_GOALS;
+      },
+
+      updateCardioGoals: (userId: string, updates: Partial<CardioWeeklyGoalSettings>) => {
+        const targetId = userId || 'guest';
+        const currentData = get().getUserData(targetId);
+        const currentGoals = currentData.cardioWeeklyGoals || DEFAULT_CARDIO_GOALS;
+
+        const mergedGoals: CardioWeeklyGoalSettings = {
+          durationMinutes: {
+            ...currentGoals.durationMinutes,
+            ...(updates.durationMinutes || {}),
+          },
+          distance: {
+            ...currentGoals.distance,
+            ...(updates.distance || {}),
+          },
+          sessions: {
+            ...currentGoals.sessions,
+            ...(updates.sessions || {}),
+          },
+        };
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [targetId]: {
+              ...currentData,
+              cardioWeeklyGoals: mergedGoals,
+            },
+          },
+        }));
       },
 
       updateUserSettings: (newSettings) =>

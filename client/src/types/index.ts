@@ -290,4 +290,78 @@ export interface WorkoutTemplate {
   weeklySchedule: WeeklySchedule;
 }
 
+// ===== Cardio & Conditioning Types =====
+export type CardioActivityType =
+  | 'running'
+  | 'walking'
+  | 'cycling'
+  | 'treadmill'
+  | 'elliptical'
+  | 'rowing'
+  | 'stair_climber'
+  | 'other';
+
+export type DistanceUnit = 'km' | 'mi' | 'm';
+
+export interface CardioSession {
+  id: string;
+  _id?: string;
+  clientSessionId?: string;
+  userId?: string;
+  activityType: CardioActivityType;
+  customActivityName?: string;
+  date: string;
+  durationMinutes: number;
+  distance?: number | null;
+  distanceUnit?: DistanceUnit;
+  paceMinutesPerUnit?: number | null;
+  speedPerHour?: number | null;
+  averageHeartRate?: number | null;
+  maxHeartRate?: number | null;
+  caloriesBurned?: number | null;
+  notes?: string;
+  syncedToBackend?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ===== Cardio Goals & PR Types =====
+export interface CardioWeeklyGoalSettings {
+  durationMinutes: {
+    enabled: boolean;
+    target: number; // in minutes
+  };
+  distance: {
+    enabled: boolean;
+    target: number;
+    unit: DistanceUnit;
+  };
+  sessions: {
+    enabled: boolean;
+    target: number; // count of sessions
+  };
+}
+
+export type CardioRecordType =
+  | 'longest_duration'
+  | 'longest_distance'
+  | 'fastest_pace'
+  | 'highest_heart_rate';
+
+export interface CardioPersonalRecord {
+  id: string;
+  type: CardioRecordType;
+  title: string;
+  metricValue: string;
+  rawValue: number;
+  unit?: string;
+  activityType: CardioActivityType;
+  customActivityName?: string;
+  date: string;
+  details?: string;
+  sessionId: string;
+}
+
+
+
 

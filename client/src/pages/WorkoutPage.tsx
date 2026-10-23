@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
-import { Play, Plus, Check, AlertTriangle, Edit3, BookOpen, Eye, Coffee, Layers, Trophy } from 'lucide-react';
+import { Play, Plus, Check, AlertTriangle, Edit3, BookOpen, Coffee, Layers, Trophy, Flame } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { ExerciseCard } from '../components/workout/ExerciseCard';
@@ -10,6 +10,7 @@ import { CoverageIndicator } from '../components/workout/CoverageIndicator';
 import { AddExerciseSheet } from '../components/workout/AddExerciseSheet';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { WorkoutCompletionScreen } from '../components/workout/WorkoutCompletionScreen';
+import { LogCardioModal } from '../components/cardio/LogCardioModal';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
@@ -72,6 +73,7 @@ export const WorkoutPage: React.FC = () => {
   const [targetSectionForCombination, setTargetSectionForCombination] = useState<
     MuscleGroupConfig | undefined
   >(undefined);
+  const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
 
   // Track explicit expansion overrides per exercise
   // By default:
@@ -336,12 +338,20 @@ export const WorkoutPage: React.FC = () => {
             </div>
 
             {/* Clear Secondary Action: Start another workout session without overwriting */}
-            <div className="text-center pt-2.5 border-t border-[var(--border-subtle)]">
+            <div className="text-center pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-center gap-3">
               <button
                 onClick={() => startCustomWorkout(userId, ['chest'])}
                 className="text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors cursor-pointer"
               >
                 + Start another workout session today
+              </button>
+              <span className="text-[var(--text-muted)] text-[10px]">•</span>
+              <button
+                onClick={() => setIsLogCardioOpen(true)}
+                className="text-[11px] font-bold text-orange-400 hover:text-orange-300 transition-colors cursor-pointer inline-flex items-center gap-1"
+              >
+                <Flame className="w-3 h-3" />
+                <span>Log cardio session</span>
               </button>
             </div>
           </Card>
@@ -457,6 +467,31 @@ export const WorkoutPage: React.FC = () => {
               </div>
             </div>
           </Modal>
+
+          <LogCardioModal
+            isOpen={isLogCardioOpen}
+            onClose={() => setIsLogCardioOpen(false)}
+          />
+
+          {/* Post-Workout Completion Summary Modal */}
+          {showCompletionSummaryModal && todayCompleted && (
+            <Modal
+              isOpen={showCompletionSummaryModal}
+              onClose={() => setShowCompletionSummaryModal(false)}
+              maxWidth="max-w-xl"
+              title="Workout Complete"
+            >
+              <WorkoutCompletionScreen
+                session={todayCompleted}
+                isModal={true}
+                onDone={() => setShowCompletionSummaryModal(false)}
+                onViewHistory={() => {
+                  setShowCompletionSummaryModal(false);
+                  navigate('/history');
+                }}
+              />
+            </Modal>
+          )}
         </div>
       );
     }
@@ -489,15 +524,48 @@ export const WorkoutPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="text-center pt-3 border-t border-[var(--border-subtle)]">
+            <div className="text-center pt-3 border-t border-[var(--border-subtle)] flex items-center justify-center gap-3">
               <button
                 onClick={() => startCustomWorkout(userId, ['chest'])}
                 className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <span>+ Start an optional workout</span>
               </button>
+              <span className="text-[var(--text-muted)] text-xs">•</span>
+              <button
+                onClick={() => setIsLogCardioOpen(true)}
+                className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors cursor-pointer inline-flex items-center gap-1"
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span>Log cardio</span>
+              </button>
             </div>
           </Card>
+
+          <LogCardioModal
+            isOpen={isLogCardioOpen}
+            onClose={() => setIsLogCardioOpen(false)}
+          />
+
+          {/* Post-Workout Completion Summary Modal */}
+          {showCompletionSummaryModal && todayCompleted && (
+            <Modal
+              isOpen={showCompletionSummaryModal}
+              onClose={() => setShowCompletionSummaryModal(false)}
+              maxWidth="max-w-xl"
+              title="Workout Complete"
+            >
+              <WorkoutCompletionScreen
+                session={todayCompleted}
+                isModal={true}
+                onDone={() => setShowCompletionSummaryModal(false)}
+                onViewHistory={() => {
+                  setShowCompletionSummaryModal(false);
+                  navigate('/history');
+                }}
+              />
+            </Modal>
+          )}
         </div>
       );
     }
@@ -539,16 +607,29 @@ export const WorkoutPage: React.FC = () => {
               <span>START TODAY'S WORKOUT</span>
             </Button>
 
-            <div className="text-center pt-3 mt-3 border-t border-[var(--border-subtle)]">
+            <div className="text-center pt-3 mt-3 border-t border-[var(--border-subtle)] flex items-center justify-center gap-3">
               <button
                 onClick={() => startCustomWorkout(userId, ['chest'])}
                 className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <span>+ Start a custom workout</span>
               </button>
+              <span className="text-[var(--text-muted)] text-xs">•</span>
+              <button
+                onClick={() => setIsLogCardioOpen(true)}
+                className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors cursor-pointer inline-flex items-center gap-1"
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span>Log cardio</span>
+              </button>
             </div>
           </div>
         </Card>
+
+        <LogCardioModal
+          isOpen={isLogCardioOpen}
+          onClose={() => setIsLogCardioOpen(false)}
+        />
       </div>
     );
   }

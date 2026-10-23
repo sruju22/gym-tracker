@@ -1,6 +1,16 @@
 import { getStoredToken } from './authApi';
 import { API_BASE_URL } from './config';
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs: number = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface WorkoutHistoryResponse {
   count: number;
   workouts: any[];
@@ -39,7 +49,7 @@ export async function fetchWorkoutHistoryApi(params?: FetchWorkoutHistoryParams)
     if (qs) url += `?${qs}`;
   }
 
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -62,7 +72,7 @@ export async function createWorkoutHistoryApi(sessionData: Record<string, any>):
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/workouts/history`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/workouts/history`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -86,7 +96,7 @@ export async function updateWorkoutHistoryApi(id: string, sessionData: Record<st
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/workouts/history/${id}`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/workouts/history/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -110,7 +120,7 @@ export async function deleteWorkoutHistoryApi(id: string): Promise<{ message: st
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/workouts/history/${id}`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/workouts/history/${id}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
