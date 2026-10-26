@@ -15,6 +15,7 @@ import {
   Trash2,
   Calendar,
   CloudOff,
+  ChevronRight,
 } from 'lucide-react';
 import { CardioSession, CardioActivityType } from '../../types';
 import {
@@ -29,6 +30,7 @@ interface CardioSessionCardProps {
   session: CardioSession;
   onEdit: (session: CardioSession) => void;
   onDelete: (session: CardioSession) => void;
+  onViewDetails?: (session: CardioSession) => void;
 }
 
 const getActivityVisuals = (type: CardioActivityType) => {
@@ -81,6 +83,7 @@ export const CardioSessionCard: React.FC<CardioSessionCardProps> = ({
   session,
   onEdit,
   onDelete,
+  onViewDetails,
 }) => {
   const visuals = getActivityVisuals(session.activityType);
   const activityTitle = getActivityLabel(session.activityType, session.customActivityName);
@@ -89,12 +92,23 @@ export const CardioSessionCard: React.FC<CardioSessionCardProps> = ({
   const paceDisplay = formatPace(session.paceMinutesPerUnit, session.distanceUnit);
   const speedDisplay = formatSpeed(session.speedPerHour, session.distanceUnit);
 
+  const handleCardClick = () => {
+    if (onViewDetails) {
+      onViewDetails(session);
+    } else {
+      onEdit(session);
+    }
+  };
+
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--border-medium)] rounded-2xl p-4 transition-all shadow-sm">
+    <div
+      onClick={handleCardClick}
+      className="bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/50 rounded-2xl p-4 transition-all shadow-sm cursor-pointer"
+    >
       {/* Top Header Row */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <div className={`p-2 rounded-xl border flex items-center justify-center ${visuals.bg}`}>
+          <div className={`p-2 rounded-xl border flex items-center justify-center shrink-0 ${visuals.bg}`}>
             {visuals.icon}
           </div>
           <div className="min-w-0">
@@ -120,20 +134,29 @@ export const CardioSessionCard: React.FC<CardioSessionCardProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={() => onEdit(session)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(session);
+            }}
             aria-label="Edit cardio session"
-            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] rounded-lg transition-colors"
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] rounded-lg transition-colors cursor-pointer"
           >
             <Edit3 className="w-4 h-4" />
           </button>
           <button
             type="button"
-            onClick={() => onDelete(session)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(session);
+            }}
             aria-label="Delete cardio session"
-            className="p-1.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="p-1.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
           </button>
+          <div className="pl-1 text-[var(--text-muted)]">
+            <ChevronRight className="w-4 h-4" />
+          </div>
         </div>
       </div>
 

@@ -456,7 +456,7 @@ export function deriveCardioInsights(
 
   // Weekly Goal Alignment (if goals passed)
   if (weeklyGoals) {
-    const weeklyProgress = calculateCardioWeeklyProgress(currentSessions, weeklyGoals);
+    const weeklyProgress = calculateCardioWeeklyProgress(currentSessions, weeklyGoals, now);
     if (weeklyProgress.activeCount > 0) {
       if (weeklyProgress.allCompleted) {
         insights.push({

@@ -976,7 +976,7 @@ export function getTrainingConsistencyAnalytics(
 // MUSCLE-GROUP COVERAGE
 // ============================================================================
 
-const STANDARD_MUSCLE_GROUPS: Array<{ key: MuscleGroup; name: string }> = [
+export const STANDARD_MUSCLE_GROUPS: Array<{ key: MuscleGroup; name: string }> = [
   { key: 'chest', name: 'Chest' },
   { key: 'back', name: 'Back' },
   { key: 'shoulders', name: 'Shoulders' },

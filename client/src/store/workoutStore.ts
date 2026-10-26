@@ -3436,6 +3436,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       deleteCardioSession: async (userId: string, sessionId: string) => {
         let isLocalOnly = sessionId.startsWith('cardio_');
+        let effectiveBackendId: string | null = null;
 
         set((state) => {
           const uData = state.getUserData(userId);
@@ -3443,8 +3444,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const sessionToDelete = currentSessions.find(
             (s) => s.id === sessionId || (s as any)._id === sessionId || s.clientSessionId === sessionId
           );
-          if (sessionToDelete && sessionToDelete.id.startsWith('cardio_')) {
-            isLocalOnly = true;
+          if (sessionToDelete) {
+            effectiveBackendId =
+              (sessionToDelete as any)._id ||
+              (!sessionToDelete.id.startsWith('cardio_') ? sessionToDelete.id : null);
+            isLocalOnly = !effectiveBackendId;
           }
 
           const updated = currentSessions.filter(
@@ -3453,8 +3457,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
           // If this was an existing backend session and user is authenticated, track for backend delete
           const pendingDeleted = [...(uData.pendingDeletedCardioIds || [])];
-          if (!isLocalOnly && userId !== 'guest' && !pendingDeleted.includes(sessionId)) {
-            pendingDeleted.push(sessionId);
+          const idToQueue = effectiveBackendId || sessionId;
+          if (!isLocalOnly && userId !== 'guest' && idToQueue && !pendingDeleted.includes(idToQueue)) {
+            pendingDeleted.push(idToQueue);
           }
 
           return {
@@ -3470,12 +3475,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
         });
 
         const token = getStoredToken();
-        if (userId !== 'guest' && token && !isLocalOnly) {
+        const targetId = effectiveBackendId || sessionId;
+        if (userId !== 'guest' && token && !isLocalOnly && targetId) {
           try {
-            await deleteCardioSessionApi(sessionId);
+            await deleteCardioSessionApi(targetId);
             set((state) => {
               const uData = state.getUserData(userId);
-              const pendingDeleted = (uData.pendingDeletedCardioIds || []).filter((id) => id !== sessionId);
+              const pendingDeleted = (uData.pendingDeletedCardioIds || []).filter(
+                (id) => id !== targetId && id !== sessionId
+              );
               return {
                 userDataMap: {
                   ...state.userDataMap,
@@ -3489,7 +3497,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
             if (err.message && err.message.includes('not found')) {
               set((state) => {
                 const uData = state.getUserData(userId);
-                const pendingDeleted = (uData.pendingDeletedCardioIds || []).filter((id) => id !== sessionId);
+                const pendingDeleted = (uData.pendingDeletedCardioIds || []).filter(
+                  (id) => id !== targetId && id !== sessionId
+                );
                 return {
                   userDataMap: {
                     ...state.userDataMap,
@@ -3650,19 +3660,20 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
         for (const session of unsynced) {
           try {
-            const isLocalOnly = session.id.startsWith('cardio_');
+            const backendId = (session as any)._id || (!session.id.startsWith('cardio_') ? session.id : null);
+            const isLocalOnly = !backendId;
             if (isLocalOnly) {
               const apiRes = await createCardioSessionApi(session);
               if (apiRes && apiRes.session) {
-                const backendId = apiRes.session.id || (apiRes.session as any)._id;
+                const newBackendId = apiRes.session.id || (apiRes.session as any)._id;
                 set((state) => {
                   const currentData = state.getUserData(userId);
                   const updated = (currentData.cardioSessions || []).map((s) => {
                     if (s.id === session.id || s.clientSessionId === session.clientSessionId) {
                       return {
                         ...s,
-                        id: backendId || s.id,
-                        _id: backendId || s._id,
+                        id: newBackendId || s.id,
+                        _id: newBackendId || s._id,
                         syncedToBackend: true,
                       };
                     }
@@ -3681,12 +3692,12 @@ export const useWorkoutStore = create<WorkoutStore>()(
               }
             } else {
               // Existing backend session with offline edits
-              const apiRes = await updateCardioSessionApi(session.id, session);
+              const apiRes = await updateCardioSessionApi(backendId, session);
               if (apiRes && apiRes.session) {
                 set((state) => {
                   const currentData = state.getUserData(userId);
                   const updated = (currentData.cardioSessions || []).map((s) => {
-                    if (s.id === session.id) {
+                    if (s.id === session.id || (s as any)._id === backendId) {
                       return {
                         ...s,
                         syncedToBackend: true,

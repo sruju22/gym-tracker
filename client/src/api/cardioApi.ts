@@ -2,6 +2,16 @@ import { getStoredToken } from './authApi';
 import { API_BASE_URL } from './config';
 import { CardioSession } from '../types';
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs: number = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface CardioSessionsResponse {
   count: number;
   totalCount: number;
@@ -46,7 +56,7 @@ export async function fetchCardioSessionsApi(
     if (qs) url += `?${qs}`;
   }
 
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -70,7 +80,7 @@ export async function createCardioSessionApi(
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/cardio`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cardio`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -96,7 +106,7 @@ export async function updateCardioSessionApi(
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/cardio/${id}`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cardio/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -119,7 +129,7 @@ export async function deleteCardioSessionApi(id: string): Promise<{ message: str
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/cardio/${id}`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cardio/${id}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',

@@ -22,6 +22,12 @@ import {
   getExerciseStrengthProgression,
   ExerciseProgressionAnalytics,
 } from '../../utils/analyticsEngine';
+import {
+  analyzeExerciseProgression,
+  analyzeRoutineProgression,
+} from '../../utils/progressionEngine';
+import { ExerciseProgressionInsightCard } from './ExerciseProgressionInsightCard';
+import { RoutinePlateauSummaryCard } from './RoutinePlateauSummaryCard';
 
 interface TrainingAnalyticsViewProps {
   history: WorkoutSession[];
@@ -107,6 +113,23 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
     const exFallback = exercises.find((e) => e.id === selectedExerciseId);
     return getExerciseStrengthProgression(history, selectedExerciseId, exFallback?.name);
   }, [history, selectedExerciseId, exercises]);
+
+  // Routine-wide progression & plateau summary
+  const routineProgressionSummary = useMemo(() => {
+    return analyzeRoutineProgression(history, exercises);
+  }, [history, exercises]);
+
+  // Deep progression & plateau report for the currently selected exercise
+  const currentProgressionReport = useMemo(() => {
+    const exFallback = exercises.find((e) => e.id === selectedExerciseId);
+    return analyzeExerciseProgression(history, {
+      id: selectedExerciseId,
+      name: exFallback?.name || currentProgression.exerciseName,
+      equipment: exFallback?.equipment,
+      primaryMuscle: exFallback?.primaryMuscle,
+      isCustom: exFallback?.isCustom ?? selectedExerciseId.startsWith('custom_'),
+    });
+  }, [history, selectedExerciseId, exercises, currentProgression.exerciseName]);
 
   // Empty state if user has no completed sessions
   if (analytics.consistency.totalWorkouts === 0) {
@@ -286,13 +309,20 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
         )}
       </Card>
 
-      {/* 3. Strength Progression for Selected Exercise */}
+      {/* 3. Strength Progression & Plateau Detection */}
       <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        {/* Routine Plateau & Progression Health Summary */}
+        <RoutinePlateauSummaryCard
+          summary={routineProgressionSummary}
+          selectedExerciseId={selectedExerciseId}
+          onSelectExercise={(id) => setSelectedExerciseId(id)}
+        />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-[var(--primary)] shrink-0" />
             <h3 className="text-xs sm:text-sm font-bold text-[var(--text-main)] uppercase tracking-wide">
-              Strength Progression
+              Exercise Progression & Plateau Analysis
             </h3>
           </div>
 
@@ -578,6 +608,9 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Smart Progression & Plateau Insights Card */}
+            <ExerciseProgressionInsightCard report={currentProgressionReport} />
           </div>
         ) : (
           <div className="py-6 text-center text-xs text-[var(--text-secondary)]">

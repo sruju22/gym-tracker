@@ -15,6 +15,7 @@ import {
   Flame,
   Layers,
   Plus,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -28,7 +29,8 @@ import { useNavigate } from 'react-router-dom';
 import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 import { LogCardioModal } from '../components/cardio/LogCardioModal';
 import { CardioSessionCard } from '../components/cardio/CardioSessionCard';
-import { CARDIO_ACTIVITIES, formatDuration } from '../utils/cardioMetrics';
+import { CardioSessionDetailModal } from '../components/cardio/CardioSessionDetailModal';
+import { CARDIO_ACTIVITIES, formatDuration, getActivityLabel } from '../utils/cardioMetrics';
 
 type DateRangeFilter = 'all' | 'week' | 'month' | '3months';
 type HistoryTab = 'all' | 'strength' | 'cardio';
@@ -90,12 +92,14 @@ export const HistoryPage: React.FC = () => {
   const [cardioToDelete, setCardioToDelete] = useState<CardioSession | null>(null);
   const [isDeleteCardioConfirmOpen, setIsDeleteCardioConfirmOpen] = useState(false);
   const [isDeletingCardio, setIsDeletingCardio] = useState(false);
+  const [selectedCardioSession, setSelectedCardioSession] = useState<CardioSession | null>(null);
 
-  // Filters state
+  // Filters & sorting state
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState<DateRangeFilter>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedCardioActivity, setSelectedCardioActivity] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'duration' | 'metric'>('newest');
 
   // Pagination / Incremental loading
   const PAGE_SIZE = 10;
@@ -150,6 +154,7 @@ export const HistoryPage: React.FC = () => {
     setDateRange('all');
     setSelectedType('all');
     setSelectedCardioActivity('all');
+    setSortOrder('newest');
     setVisibleCount(PAGE_SIZE);
   };
 
@@ -177,7 +182,7 @@ export const HistoryPage: React.FC = () => {
 
   // Filtered Strength History
   const filteredHistory = useMemo(() => {
-    return history.filter((session) => {
+    const list = history.filter((session) => {
       if (!isDateInRange(session.completedAt || session.date, dateRange)) {
         return false;
       }
@@ -201,11 +206,24 @@ export const HistoryPage: React.FC = () => {
       }
       return true;
     });
-  }, [history, dateRange, selectedType, searchQuery]);
+
+    return list.sort((a, b) => {
+      if (sortOrder === 'oldest') {
+        return new Date(a.completedAt || a.date).getTime() - new Date(b.completedAt || b.date).getTime();
+      }
+      if (sortOrder === 'duration') {
+        return (b.duration || 0) - (a.duration || 0);
+      }
+      if (sortOrder === 'metric') {
+        return (b.totalVolume || 0) - (a.totalVolume || 0);
+      }
+      return new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime();
+    });
+  }, [history, dateRange, selectedType, searchQuery, sortOrder]);
 
   // Filtered Cardio Sessions
   const filteredCardio = useMemo(() => {
-    return cardioSessions.filter((session) => {
+    const list = cardioSessions.filter((session) => {
       if (!isDateInRange(session.date, dateRange)) {
         return false;
       }
@@ -217,15 +235,38 @@ export const HistoryPage: React.FC = () => {
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
         const typeMatch = session.activityType.toLowerCase().includes(q);
+        const labelMatch = getActivityLabel(session.activityType, session.customActivityName)
+          .toLowerCase()
+          .includes(q);
         const customMatch = (session.customActivityName || '').toLowerCase().includes(q);
         const notesMatch = (session.notes || '').toLowerCase().includes(q);
-        if (!typeMatch && !customMatch && !notesMatch) {
+        const distMatch =
+          session.distance !== null && session.distance !== undefined
+            ? `${session.distance}`.includes(q) ||
+              `${session.distance} ${session.distanceUnit || 'km'}`.toLowerCase().includes(q)
+            : false;
+        const durMatch =
+          `${session.durationMinutes}m`.includes(q) || `${session.durationMinutes} min`.includes(q);
+        if (!typeMatch && !labelMatch && !customMatch && !notesMatch && !distMatch && !durMatch) {
           return false;
         }
       }
       return true;
     });
-  }, [cardioSessions, dateRange, selectedCardioActivity, searchQuery]);
+
+    return list.sort((a, b) => {
+      if (sortOrder === 'oldest') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+      if (sortOrder === 'duration') {
+        return (b.durationMinutes || 0) - (a.durationMinutes || 0);
+      }
+      if (sortOrder === 'metric') {
+        return (b.distance || 0) - (a.distance || 0);
+      }
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, [cardioSessions, dateRange, selectedCardioActivity, searchQuery, sortOrder]);
 
   // Unified Chronological Feed (When activeTab === 'all')
   const unifiedFeed = useMemo<FeedItem[]>(() => {
@@ -249,14 +290,29 @@ export const HistoryPage: React.FC = () => {
       });
     });
 
-    return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [filteredHistory, filteredCardio]);
+    return items.sort((a, b) => {
+      if (sortOrder === 'oldest') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+      if (sortOrder === 'duration') {
+        const durA =
+          a.cardioSession?.durationMinutes ||
+          (a.strengthSession?.duration ? Math.round(a.strengthSession.duration / 60) : 0);
+        const durB =
+          b.cardioSession?.durationMinutes ||
+          (b.strengthSession?.duration ? Math.round(b.strengthSession.duration / 60) : 0);
+        return durB - durA;
+      }
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, [filteredHistory, filteredCardio, sortOrder]);
 
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
     dateRange !== 'all' ||
     selectedType !== 'all' ||
-    selectedCardioActivity !== 'all';
+    selectedCardioActivity !== 'all' ||
+    sortOrder !== 'newest';
 
   // Strength Summary statistics
   const totalVolume = useMemo(() => {
@@ -302,6 +358,9 @@ export const HistoryPage: React.FC = () => {
     if (!cardioToDelete) return;
     setIsDeletingCardio(true);
     await deleteCardioSession(userId, cardioToDelete.id);
+    if (selectedCardioSession?.id === cardioToDelete.id) {
+      setSelectedCardioSession(null);
+    }
     setIsDeletingCardio(false);
     setIsDeleteCardioConfirmOpen(false);
     setCardioToDelete(null);
@@ -645,6 +704,42 @@ export const HistoryPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Sort Controls */}
+        <div className="pt-2 border-t border-[var(--border-subtle)]/70 flex flex-wrap items-center justify-between gap-1.5 text-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1">
+            <ArrowUpDown className="w-3 h-3 text-[var(--primary)]" />
+            Sort By
+          </span>
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'newest', label: 'Newest' },
+              { id: 'oldest', label: 'Oldest' },
+              { id: 'duration', label: 'Duration' },
+              ...(activeTab === 'cardio'
+                ? [{ id: 'metric', label: 'Distance' }]
+                : activeTab === 'strength'
+                ? [{ id: 'metric', label: 'Volume' }]
+                : []),
+            ].map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => {
+                  setSortOrder(s.id as any);
+                  setVisibleCount(PAGE_SIZE);
+                }}
+                className={`py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  sortOrder === s.id
+                    ? 'bg-[var(--primary)] text-white shadow-xs'
+                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Filter Results Status */}
@@ -674,6 +769,7 @@ export const HistoryPage: React.FC = () => {
             <CardioSessionCard
               key={session.id}
               session={session}
+              onViewDetails={(s) => setSelectedCardioSession(s)}
               onEdit={(s) => {
                 setCardioToEdit(s);
                 setIsLogCardioOpen(true);
@@ -811,6 +907,7 @@ export const HistoryPage: React.FC = () => {
                 <CardioSessionCard
                   key={item.id}
                   session={item.cardioSession}
+                  onViewDetails={(s) => setSelectedCardioSession(s)}
                   onEdit={(s) => {
                     setCardioToEdit(s);
                     setIsLogCardioOpen(true);
@@ -1137,6 +1234,33 @@ export const HistoryPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Cardio Session Detail Modal */}
+      {selectedCardioSession && (
+        <CardioSessionDetailModal
+          session={selectedCardioSession}
+          isOpen={Boolean(selectedCardioSession)}
+          onClose={() => setSelectedCardioSession(null)}
+          onEdit={(s) => {
+            setSelectedCardioSession(null);
+            setCardioToEdit(s);
+            setIsLogCardioOpen(true);
+          }}
+          onDelete={(s) => {
+            setSelectedCardioSession(null);
+            setCardioToDelete(s);
+            setIsDeleteCardioConfirmOpen(true);
+          }}
+          onSyncNow={async (s) => {
+            await useWorkoutStore.getState().syncPendingCardioSessions(userId);
+            const updated = useWorkoutStore.getState().getUserData(userId).cardioSessions || [];
+            const found = updated.find(
+              (c) => c.id === s.id || (c as any)._id === s.id || c.clientSessionId === s.clientSessionId
+            );
+            if (found) setSelectedCardioSession(found);
+          }}
+        />
+      )}
     </div>
   );
 };
