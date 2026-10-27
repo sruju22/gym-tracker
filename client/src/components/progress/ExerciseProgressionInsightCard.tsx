@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
@@ -8,14 +8,10 @@ import {
   HelpCircle,
   ArrowRight,
   Sparkles,
-  Layers,
-  Dumbbell,
-  CheckCircle2,
+  Info,
 } from 'lucide-react';
 import { ExerciseProgressionReport } from '../../utils/progressionEngine';
-import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { formatVolume } from '../../utils/formatters';
 
 interface ExerciseProgressionInsightCardProps {
   report: ExerciseProgressionReport;
@@ -27,7 +23,8 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
   onNavigateToWorkout,
 }) => {
   const navigate = useNavigate();
-  const { status, plateauSeverity, recommendation, evidence, metricDeltas, latestExposure, baselineExposure } = report;
+  const [show1RMExplainer, setShow1RMExplainer] = useState(false);
+  const { status, recommendation, evidence, metricDeltas, latestExposure } = report;
 
   const handleActionClick = () => {
     if (onNavigateToWorkout) {
@@ -52,10 +49,7 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
         return {
           icon: <AlertTriangle className="w-4 h-4 text-amber-400" />,
           badgeVariant: 'warning' as const,
-          badgeText:
-            plateauSeverity === 'confirmed'
-              ? `⚠️ Confirmed Plateau (${report.stallDurationSessions} sessions)`
-              : `⚠️ Potential Plateau (Watch)`,
+          badgeText: `⚠️ Progress May Have Slowed (${report.stallDurationSessions} workouts)`,
           borderClass: 'border-amber-500/35',
           bgClass: 'bg-amber-500/10',
         };
@@ -63,7 +57,7 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
         return {
           icon: <RotateCw className="w-4 h-4 text-orange-400" />,
           badgeVariant: 'warning' as const,
-          badgeText: '↓ Load Adjusted',
+          badgeText: '↓ Lighter Workout',
           borderClass: 'border-orange-500/30',
           bgClass: 'bg-orange-500/5',
         };
@@ -71,7 +65,7 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
         return {
           icon: <Clock className="w-4 h-4 text-neutral-400" />,
           badgeVariant: 'secondary' as const,
-          badgeText: 'Out of Rotation',
+          badgeText: 'Not Trained Recently',
           borderClass: 'border-[var(--border-subtle)]',
           bgClass: 'bg-[var(--bg-surface)]',
         };
@@ -80,7 +74,7 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
         return {
           icon: <HelpCircle className="w-4 h-4 text-sky-400" />,
           badgeVariant: 'info' as const,
-          badgeText: `${report.totalExposures}/3 Sessions Logged`,
+          badgeText: `${report.totalExposures}/3 Workouts Logged`,
           borderClass: 'border-[var(--border-subtle)]',
           bgClass: 'bg-[var(--bg-surface)]',
         };
@@ -99,7 +93,7 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
           </div>
           <div className="min-w-0">
             <h4 className="text-xs sm:text-sm font-black text-[var(--text-main)] truncate">
-              Smart Progression & Plateau Status
+              Exercise Progress & Strength Tracking
             </h4>
             <div className="text-[10px] text-[var(--text-muted)] font-medium">
               {report.isBodyweight ? 'Bodyweight repetition-based tracking' : `Loaded exercise (${report.equipment})`}
@@ -114,53 +108,85 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
 
       {/* 2. Top-Line Metrics Grid (3 Boxes) */}
       {latestExposure && (
-        <div className="grid grid-cols-3 gap-2">
-          {/* Box A: Latest Top Working Set */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 sm:p-2.5 text-center flex flex-col justify-between">
-            <div className="text-[9px] uppercase font-bold text-[var(--text-muted)]">Top Set</div>
-            <div className="text-xs sm:text-sm font-black text-[var(--text-main)] my-0.5 truncate">
-              {latestExposure.topSet.weight > 0 ? `${latestExposure.topSet.weight} kg × ` : ''}
-              {latestExposure.topSet.reps} reps
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            {/* Box A: Latest Top Working Set */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 sm:p-2.5 text-center flex flex-col justify-between">
+              <div className="text-[9px] uppercase font-bold text-[var(--text-muted)]">Top Set</div>
+              <div className="text-xs sm:text-sm font-black text-[var(--text-main)] my-0.5 truncate">
+                {latestExposure.topSet.weight > 0 ? `${latestExposure.topSet.weight} kg × ` : ''}
+                {latestExposure.topSet.reps} reps
+              </div>
+              <div className="text-[9px] text-[var(--text-secondary)] font-medium">
+                {latestExposure.completedSetsCount} sets total
+              </div>
             </div>
-            <div className="text-[9px] text-[var(--text-secondary)] font-medium">
-              {latestExposure.completedSetsCount} sets total
+
+            {/* Box B: Estimated Max Strength Indicator */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 sm:p-2.5 text-center flex flex-col justify-between relative group">
+              <div className="flex items-center justify-center gap-1 text-[9px] uppercase font-bold text-[var(--text-muted)]">
+                <span>{report.isBodyweight ? 'Best Reps' : 'Est. Max Strength'}</span>
+                {!report.isBodyweight && (
+                  <button
+                    type="button"
+                    onClick={() => setShow1RMExplainer(!show1RMExplainer)}
+                    className="text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors focus:outline-none cursor-pointer"
+                    title="This is an estimate of the maximum weight you could lift for one rep, calculated from your recorded sets. It isn't a tested maximum."
+                    aria-label="Explain Estimated Max Strength"
+                  >
+                    <Info className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <div className="text-xs sm:text-sm font-black text-[var(--text-main)] my-0.5 truncate">
+                {report.isBodyweight ? `${latestExposure.topSet.reps} reps` : `${latestExposure.topSet.estimated1RM} kg`}
+              </div>
+              <div className="text-[9px] font-semibold truncate">
+                {metricDeltas.estimated1RMDeltaPercent !== null ? (
+                  <span className={metricDeltas.estimated1RMDeltaPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                    {metricDeltas.estimated1RMDeltaPercent >= 0 ? '+' : ''}
+                    {metricDeltas.estimated1RMDeltaPercent}% baseline
+                  </span>
+                ) : (
+                  <span className="text-[var(--text-muted)]">First workout</span>
+                )}
+              </div>
+            </div>
+
+            {/* Box C: Workouts Logged */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 sm:p-2.5 text-center flex flex-col justify-between">
+              <div className="text-[9px] uppercase font-bold text-[var(--text-muted)]">Workouts Logged</div>
+              <div className="text-xs sm:text-sm font-black text-[var(--text-main)] my-0.5">
+                {report.totalExposures} <span className="text-[10px] text-[var(--text-secondary)] font-normal">workout{report.totalExposures === 1 ? '' : 's'}</span>
+              </div>
+              <div className="text-[9px] text-[var(--text-secondary)] font-medium">
+                {report.daysSinceLastPerformed !== null
+                  ? report.daysSinceLastPerformed === 0
+                    ? 'Trained today'
+                    : `${report.daysSinceLastPerformed}d ago`
+                  : '—'}
+              </div>
             </div>
           </div>
 
-          {/* Box B: Estimated 1RM / Strength Indicator */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 sm:p-2.5 text-center flex flex-col justify-between">
-            <div className="text-[9px] uppercase font-bold text-[var(--text-muted)]">
-              {report.isBodyweight ? 'Best Reps' : 'Est. 1RM'}
+          {/* Explanatory note for Estimated Max Strength (toggled by user or shown on click) */}
+          {show1RMExplainer && (
+            <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--primary)]/30 text-[11px] text-[var(--text-secondary)] leading-relaxed flex items-start gap-2 animate-fadeIn">
+              <Info className="w-3.5 h-3.5 text-[var(--primary)] shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span className="font-bold text-[var(--text-main)]">Estimated Max Strength: </span>
+                This is an estimate of the maximum weight you could lift for one rep, calculated from your recorded sets. It isn't a tested maximum.
+              </div>
+              <button
+                type="button"
+                onClick={() => setShow1RMExplainer(false)}
+                className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] px-1 cursor-pointer"
+                aria-label="Dismiss note"
+              >
+                ×
+              </button>
             </div>
-            <div className="text-xs sm:text-sm font-black text-[var(--text-main)] my-0.5 truncate">
-              {report.isBodyweight ? `${latestExposure.topSet.reps} reps` : `${latestExposure.topSet.estimated1RM} kg`}
-            </div>
-            <div className="text-[9px] font-semibold truncate">
-              {metricDeltas.estimated1RMDeltaPercent !== null ? (
-                <span className={metricDeltas.estimated1RMDeltaPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                  {metricDeltas.estimated1RMDeltaPercent >= 0 ? '+' : ''}
-                  {metricDeltas.estimated1RMDeltaPercent}% baseline
-                </span>
-              ) : (
-                <span className="text-[var(--text-muted)]">Initial exposure</span>
-              )}
-            </div>
-          </div>
-
-          {/* Box C: Exposure Frequency & History */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 sm:p-2.5 text-center flex flex-col justify-between">
-            <div className="text-[9px] uppercase font-bold text-[var(--text-muted)]">Exposures</div>
-            <div className="text-xs sm:text-sm font-black text-[var(--text-main)] my-0.5">
-              {report.totalExposures} <span className="text-[10px] text-[var(--text-secondary)] font-normal">session{report.totalExposures === 1 ? '' : 's'}</span>
-            </div>
-            <div className="text-[9px] text-[var(--text-secondary)] font-medium">
-              {report.daysSinceLastPerformed !== null
-                ? report.daysSinceLastPerformed === 0
-                  ? 'Trained today'
-                  : `${report.daysSinceLastPerformed}d ago`
-                : '—'}
-            </div>
-          </div>
+          )}
         </div>
       )}
 

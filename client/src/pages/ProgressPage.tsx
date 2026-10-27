@@ -73,7 +73,7 @@ export const ProgressPage: React.FC = () => {
       reps: d.maxWeight.reps,
       estimated1RM: d.max1RM.estimated1RM,
       date: d.maxWeight.date,
-      details: `${d.maxWeight.value} kg × ${d.maxWeight.reps} reps (Est. 1RM ${d.max1RM.estimated1RM} kg)`,
+      details: `${d.maxWeight.value} kg × ${d.maxWeight.reps} reps (Est. Max Strength: ${d.max1RM.estimated1RM} kg)`,
     }));
   }, [storedPRs, history, exercises]);
 

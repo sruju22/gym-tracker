@@ -436,7 +436,7 @@ export const PersonalRecordsWall: React.FC<PersonalRecordsWallProps> = ({
                             <div className="text-[11px] text-amber-400 font-semibold truncate">
                               {pr.weight} kg × {pr.reps} reps{' '}
                               <span className="text-[var(--text-secondary)] font-normal">
-                                (Est. 1RM {pr.estimated1RM} kg)
+                                (Est. Max Strength: {pr.estimated1RM} kg)
                               </span>
                             </div>
                           </div>

@@ -121,8 +121,48 @@ async function runTests() {
 
     const singleReport = analyzeExerciseProgression(singleSessionHistory, benchPressExercise, { referenceDate: refDate });
     assertEqual(singleReport.status, 'insufficient_data', 'Single session returns insufficient_data');
+    assertEqual(singleReport.statusLabel, 'Keep Logging Workouts', 'Single session has friendly status label');
     assertEqual(singleReport.totalExposures, 1, 'Total exposures is 1');
     assertEqual(singleReport.plateauSeverity, 'none', 'Single session is never a plateau');
+    assertEqual(
+      singleReport.recommendation.actionText,
+      'Log 2 more workouts with this exercise so we can track your progress more reliably.',
+      'Dynamic calculation for 2 more workouts needed'
+    );
+
+    // C: 2 sessions (1 more needed)
+    const twoSessionsHistory: WorkoutSession[] = [
+      ...singleSessionHistory,
+      {
+        id: 's_2',
+        date: '2026-10-20T10:00:00Z',
+        completedAt: '2026-10-20T11:00:00Z',
+        dayOfWeek: 'tuesday',
+        status: 'completed',
+        workoutName: 'Upper Hypertrophy',
+        muscleGroups: ['chest'],
+        totalVolume: 1275,
+        totalSets: 3,
+        exercises: [
+          {
+            id: 'we_2',
+            exerciseId: 'ex_bench_press',
+            exercise: benchPressExercise,
+            order: 0,
+            notes: '',
+            sets: [{ id: 'set_3', setNumber: 1, weight: 85, reps: 5, completed: true }],
+          },
+        ],
+      },
+    ];
+    const twoReport = analyzeExerciseProgression(twoSessionsHistory, benchPressExercise, { referenceDate: refDate });
+    assertEqual(twoReport.status, 'progressing', 'Weight increased on 2nd session is progressing');
+    assertEqual(twoReport.statusLabel, 'Making Progress', '2-session progress has friendly Making Progress label');
+    assertEqual(
+      twoReport.recommendation.actionText,
+      'Log one more workout with this exercise so we can track your progress more reliably.',
+      'Dynamic calculation for 1 more workout needed'
+    );
   }
 
   // ==========================================
@@ -195,6 +235,7 @@ async function runTests() {
 
     const report = analyzeExerciseProgression(progressingHistory, benchPressExercise, { referenceDate: refDate });
     assertEqual(report.status, 'progressing', 'Linear load increase classified as progressing');
+    assertEqual(report.statusLabel, 'Making Progress', 'Friendly status label for progressing');
     assertEqual(report.plateauSeverity, 'none', 'Plateau severity is none');
     assertEqual(report.totalExposures, 3, 'Total exposures is 3');
     assertEqual(report.metricDeltas.weightDeltaKg, 5, 'Weight delta is +5 kg');
@@ -347,6 +388,11 @@ async function runTests() {
 
     const report3 = analyzeExerciseProgression(plateauHistory3, benchPressExercise, { referenceDate: refDate });
     assertEqual(report3.status, 'potential_plateau', 'Stalled across 3 exposures is potential_plateau');
+    assertEqual(report3.statusLabel, 'Progress May Have Slowed', 'Friendly status label: Progress May Have Slowed');
+    assert(
+      report3.evidence.headline.includes('Progress may have slowed'),
+      'Evidence headline uses friendly progress may have slowed language'
+    );
     assertEqual(report3.stallDurationSessions, 3, 'Stall duration is 3 sessions');
     assertEqual(report3.plateauSeverity, 'watch', '3 sessions stall is severity: watch');
     assert(report3.recommendation.type === 'plateau_microload', 'Recommends micro-loading for stalled compound');

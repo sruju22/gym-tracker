@@ -63,7 +63,7 @@ function runResponsiveAudit() {
     // 4. Metric Switcher (3 columns in a grid)
     const metricBtnWidth = (availableWidth - 8) / 3;
     console.log(`  Metric Switcher buttons: ${metricBtnWidth.toFixed(1)}px each`);
-    console.log(`  ✅ Metric Switcher: 3 equal segmented buttons cleanly fit 'Est. 1RM', 'Max Weight', 'Set Volume'`);
+    console.log(`  ✅ Metric Switcher: 3 equal segmented buttons cleanly fit 'Est. Max Strength', 'Max Weight', 'Total Weight Lifted'`);
 
     console.log(`  ✅ Safe Bottom Padding: pb-28 / pb-32 cleanly accounts for ~64px bottom nav + 34px iOS home bar\n`);
   }

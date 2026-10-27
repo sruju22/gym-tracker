@@ -2,15 +2,10 @@ import React from 'react';
 import {
   TrendingUp,
   AlertTriangle,
-  RotateCw,
-  Layers,
   ChevronRight,
   Sparkles,
-  Dumbbell,
 } from 'lucide-react';
-import { RoutineProgressionSummary, ExerciseProgressionReport } from '../../utils/progressionEngine';
-import { Card } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { RoutineProgressionSummary } from '../../utils/progressionEngine';
 
 interface RoutinePlateauSummaryCardProps {
   summary: RoutineProgressionSummary;
@@ -23,7 +18,7 @@ export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps>
   selectedExerciseId,
   onSelectExercise,
 }) => {
-  const { progressingCount, plateauCount, fluctuatingCount, plateauedExercises, topProgressingExercises } =
+  const { progressingCount, plateauCount, plateauedExercises, topProgressingExercises } =
     summary;
 
   if (summary.totalAnalyzedExercises === 0) {
@@ -40,10 +35,10 @@ export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps>
           </div>
           <div>
             <h4 className="text-xs sm:text-sm font-black text-[var(--text-main)] uppercase tracking-wider">
-              Routine Progression Health
+              Your Exercise Progress
             </h4>
             <div className="text-[10px] text-[var(--text-muted)] font-medium">
-              Plateau detection across {summary.totalAnalyzedExercises} active exercises
+              Progress tracking across {summary.totalAnalyzedExercises} active exercises
             </div>
           </div>
         </div>
@@ -52,13 +47,13 @@ export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps>
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
-            <span>{progressingCount} Progressing</span>
+            <span>{progressingCount} Making Progress</span>
           </span>
 
           {plateauCount > 0 ? (
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
-              <span>{plateauCount} Plateau Watch</span>
+              <span>{plateauCount} Check In</span>
             </span>
           ) : (
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400">
@@ -68,12 +63,12 @@ export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps>
         </div>
       </div>
 
-      {/* 2. Plateau Alerts (If any exercises are stalled) */}
+      {/* 2. Plateau Alerts (If any exercises have slowed progress) */}
       {plateauCount > 0 && (
         <div className="space-y-2 pt-1 border-t border-[var(--border-subtle)]/60">
           <div className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Exercises Requiring Attention ({plateauCount})</span>
+            <span>Exercises Where Progress May Have Slowed ({plateauCount})</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -97,7 +92,7 @@ export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps>
                       {rep.exerciseName}
                     </div>
                     <div className="text-[10px] text-[var(--text-secondary)] mt-0.5">
-                      Stalled {rep.stallDurationSessions} sessions at {topW > 0 ? `${topW} kg × ` : ''}{topR} reps
+                      Same weight & reps across {rep.stallDurationSessions} workouts ({topW > 0 ? `${topW} kg × ` : ''}{topR} reps)
                     </div>
                   </div>
 
@@ -120,7 +115,7 @@ export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps>
         <div className="pt-1 border-t border-[var(--border-subtle)]/60">
           <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-1.5">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Active Progressive Overload Momentum</span>
+            <span>Exercises You're Improving In</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {topProgressingExercises.slice(0, 4).map((rep) => (

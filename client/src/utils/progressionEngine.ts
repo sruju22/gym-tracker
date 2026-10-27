@@ -302,7 +302,7 @@ export function analyzeExerciseProgression(
       totalExposures: 0,
       recentExposuresCount: 0,
       status: 'insufficient_data',
-      statusLabel: 'Insufficient Data',
+      statusLabel: 'Keep Logging Workouts',
       plateauSeverity: 'none',
       stallDurationSessions: 0,
       lastPerformedDate: null,
@@ -319,15 +319,17 @@ export function analyzeExerciseProgression(
       },
       evidence: {
         headline: 'No completed sets recorded for this exercise',
-        details: ['Complete and log at least 3 workouts containing this exercise to enable progression and plateau tracking.'],
+        details: [
+          'Log 3 workouts with this exercise so we can track your progress more reliably.',
+        ],
         isRecencyGuarded: false,
         hasSufficientData: false,
       },
       recommendation: {
         type: 'maintain_baseline',
-        title: 'Establish Starting Baseline',
-        actionText: 'Perform initial sets to record baseline load and repetitions',
-        rationale: 'Logging your first exposure will establish a benchmark for progressive overload tracking.',
+        title: 'Keep Logging Workouts',
+        actionText: 'Log one more workout with this exercise so we can track your progress more reliably.',
+        rationale: 'Logging your first workout will establish a starting benchmark for tracking your strength progress.',
       },
       exposures: [],
     };
@@ -382,7 +384,7 @@ export function analyzeExerciseProgression(
       totalExposures,
       recentExposuresCount: 0,
       status: 'dormant',
-      statusLabel: 'Out of Active Rotation',
+      statusLabel: 'Not Trained Recently',
       plateauSeverity: 'none',
       stallDurationSessions: 0,
       lastPerformedDate: latest.date,
@@ -398,20 +400,20 @@ export function analyzeExerciseProgression(
         volumeDeltaPercent,
       },
       evidence: {
-        headline: `Last performed ${daysSinceLast} days ago (${formatDateShort(latest.date)})`,
+        headline: `Last trained ${daysSinceLast} days ago (${formatDateShort(latest.date)})`,
         details: [
-          'Exercise has not been trained in recent weeks. A plateau requires ongoing, repeated training exposure to classify.',
-          `Peak historical load was ${best.topSet.weight} kg × ${best.topSet.reps} reps.`,
+          'This exercise has not been trained in recent weeks. Tracking progress reliably requires regular workouts.',
+          `Best previous workout was ${best.topSet.weight > 0 ? `${best.topSet.weight} kg × ` : ''}${best.topSet.reps} reps.`,
         ],
         isRecencyGuarded: true,
         hasSufficientData: totalExposures >= minExposures,
       },
       recommendation: {
         type: 'maintain_baseline',
-        title: 'Re-enter Exercise Gradually',
-        actionText: 'Resume training with a conservative re-acclimation load',
+        title: 'Ease Back In Gradually',
+        actionText: 'Start with a lighter, comfortable weight to warm back up',
         rationale:
-          'Because this exercise has been out of rotation for over 8 weeks, restart with a comfortable working load before pushing progressive overload.',
+          'Because this exercise has been out of rotation for several weeks, restart with a comfortable working weight before trying to add more load.',
       },
       exposures,
     };
@@ -426,7 +428,10 @@ export function analyzeExerciseProgression(
         (latest.topSet.weight === baseline.topSet.weight && latest.topSet.reps > baseline.topSet.reps));
 
     const status: ProgressionStatus = progressTwoSessions ? 'progressing' : 'insufficient_data';
-    const statusLabel = progressTwoSessions ? 'Early Progression' : 'Insufficient History';
+    const statusLabel = progressTwoSessions ? 'Making Progress' : 'Keep Logging Workouts';
+
+    const needed = Math.max(1, minExposures - totalExposures);
+    const neededText = needed === 1 ? 'one more workout' : `${needed} more workouts`;
 
     return {
       exerciseId,
@@ -455,20 +460,20 @@ export function analyzeExerciseProgression(
       },
       evidence: {
         headline: isSingleSession
-          ? `Baseline established: ${latest.topSet.weight} kg × ${latest.topSet.reps} reps`
-          : `2 sessions logged: ${baseline.topSet.weight} kg × ${baseline.topSet.reps} reps → ${latest.topSet.weight} kg × ${latest.topSet.reps} reps`,
+          ? `First workout logged: ${latest.topSet.weight > 0 ? `${latest.topSet.weight} kg × ` : ''}${latest.topSet.reps} reps`
+          : `2 workouts logged: ${baseline.topSet.weight > 0 ? `${baseline.topSet.weight} kg × ` : ''}${baseline.topSet.reps} reps → ${latest.topSet.weight > 0 ? `${latest.topSet.weight} kg × ` : ''}${latest.topSet.reps} reps`,
         details: [
-          `Logged ${totalExposures} of the required ${minExposures} sessions for plateau detection.`,
-          'Continue following your prescribed workout plan to establish reliable trend patterns.',
+          `Logged ${totalExposures} of ${minExposures} workouts needed for reliable progress tracking.`,
+          `Log ${neededText} with this exercise so we can track your progress more reliably.`,
         ],
         isRecencyGuarded: false,
         hasSufficientData: false,
       },
       recommendation: {
         type: 'maintain_baseline',
-        title: 'Build Consistent Baseline',
-        actionText: `Complete ${minExposures - totalExposures} more session(s) to unlock plateau analysis`,
-        rationale: 'Reliable progression and plateau detection requires at least 3 comparable training exposures.',
+        title: 'Keep Logging Workouts',
+        actionText: `Log ${neededText} with this exercise so we can track your progress more reliably.`,
+        rationale: `We need at least ${minExposures} workouts with this exercise to spot trends and check whether your strength is increasing.`,
       },
       exposures,
     };
@@ -485,7 +490,7 @@ export function analyzeExerciseProgression(
   const exp3 = recentWindow[n - 1]; // latest
 
   let status: ProgressionStatus = 'fluctuating';
-  let statusLabel = 'Fluctuating Performance';
+  let statusLabel = 'Normal Variation';
   let plateauSeverity: PlateauSeverity = 'none';
   let stallDurationSessions = 0;
   const evidenceDetails: string[] = [];
@@ -511,26 +516,26 @@ export function analyzeExerciseProgression(
 
     if (isWeightUp || isRepsUpAtSameWeight || is1RMUp) {
       status = 'progressing';
-      statusLabel = 'Progressing';
+      statusLabel = 'Making Progress';
       plateauSeverity = 'none';
       stallDurationSessions = 0;
 
       if (isRepsUpAtSameWeight) {
         evidenceDetails.push(
-          `Double progression active: Load held at ${w3} kg while repetitions advanced from ${r1} → ${r3} reps.`
+          `Double progression: Kept weight at ${w3} kg while repetitions increased from ${r1} → ${r3} reps. Your muscles are adapting and getting stronger!`
         );
       } else if (isWeightUp) {
         evidenceDetails.push(
-          `Working load progressed from ${w1} kg (${r1} reps) to ${w3} kg (${r3} reps).`
+          `Working weight increased from ${w1} kg (${r1} reps) to ${w3} kg (${r3} reps). Great progress!`
         );
       } else {
         const pct = Math.round(((e3 - e1) / e1) * 100);
         evidenceDetails.push(
-          `Estimated 1RM improved by +${pct}% across recent sessions (${e1} kg → ${e3} kg).`
+          `Estimated max strength improved by +${pct}% across recent workouts (${e1} kg → ${e3} kg).`
         );
       }
     } else {
-      // Check Case B: Potential Plateau
+      // Check Case B: Potential Plateau (Progress may have slowed)
       // Weight stagnant (difference <= 0.5 kg or 0%) AND reps stagnant/flat (r3 <= r1 and r2 <= r1)
       const isWeightStagnant = Math.abs(w3 - w1) <= 0.5 && Math.abs(w2 - w1) <= 0.5;
       const isRepsStagnantOrDown = r3 <= r1 && r2 <= r1;
@@ -538,7 +543,7 @@ export function analyzeExerciseProgression(
 
       if (isWeightStagnant && isRepsStagnantOrDown && is1RMStagnant) {
         status = 'potential_plateau';
-        statusLabel = 'Potential Plateau';
+        statusLabel = 'Progress May Have Slowed';
         stallDurationSessions = 3;
 
         // Check if 4th session was also stagnant
@@ -551,26 +556,26 @@ export function analyzeExerciseProgression(
 
         plateauSeverity = stallDurationSessions >= 4 ? 'confirmed' : 'watch';
         evidenceDetails.push(
-          `Performance stalled at ${w3} kg × ${r3} reps across ${stallDurationSessions} consecutive sessions (${formatDateShort(exp1.date)}, ${formatDateShort(exp2.date)}, ${formatDateShort(exp3.date)}).`
+          `Progress may have slowed at ${w3} kg × ${r3} reps across ${stallDurationSessions} consecutive workouts (${formatDateShort(exp1.date)}, ${formatDateShort(exp2.date)}, ${formatDateShort(exp3.date)}).`
         );
         evidenceDetails.push(
-          `No increase in working load or repetitions achieved across ${stallDurationSessions} exposures.`
+          `Weight and reps have stayed steady across ${stallDurationSessions} workouts. It's completely normal for progress to slow down as you get stronger.`
         );
       } else if (w3 < w1 && (e1 > 0 && (e1 - e3) / e1 >= 0.06)) {
         // Drop of > 6% in estimated 1RM
         status = 'deload_or_regressing';
-        statusLabel = 'Working Load Adjusted';
+        statusLabel = 'Lighter Workout Recorded';
         plateauSeverity = 'none';
         evidenceDetails.push(
-          `Working weight decreased from ${w1} kg to ${w3} kg across recent exposures. Normal training variations occur during fatigue or deload phases.`
+          `Working weight was lighter (${w1} kg down to ${w3} kg). Lighter workouts are normal during recovery or deload periods and help keep you injury-free.`
         );
       } else {
         // Normal minor fluctuations
         status = 'fluctuating';
-        statusLabel = 'Fluctuating';
+        statusLabel = 'Normal Variation';
         plateauSeverity = 'none';
         evidenceDetails.push(
-          `Recent sessions show normal repetition and load variance (${w1} kg × ${r1} reps → ${w2} kg × ${r2} reps → ${w3} kg × ${r3} reps).`
+          `Recent workouts show normal day-to-day variations (${w1} kg × ${r1} reps → ${w2} kg × ${r2} reps → ${w3} kg × ${r3} reps). Daily energy, sleep, and recovery naturally cause minor changes.`
         );
       }
     }
@@ -582,25 +587,28 @@ export function analyzeExerciseProgression(
 
     if (r3 > r1 && r3 >= r2) {
       status = 'progressing';
-      statusLabel = 'Progressing (Bodyweight)';
+      statusLabel = 'Making Progress';
       plateauSeverity = 'none';
       evidenceDetails.push(
-        `Bodyweight repetition volume advanced from ${r1} reps to ${r3} reps across recent sessions.`
+        `Bodyweight repetitions improved from ${r1} reps to ${r3} reps across recent workouts. Great work!`
       );
     } else if (r3 === r1 && r2 === r1) {
       status = 'potential_plateau';
-      statusLabel = 'Potential Plateau';
+      statusLabel = 'Progress May Have Slowed';
       stallDurationSessions = 3;
       plateauSeverity = 'watch';
       evidenceDetails.push(
-        `Bodyweight repetitions have stalled at ${r3} reps across 3 consecutive sessions without volume progression.`
+        `Bodyweight repetitions have stayed steady at ${r3} reps across 3 workouts in a row.`
+      );
+      evidenceDetails.push(
+        `Progress naturally slows over time. Adding a set or slowing down each rep can help spark new progress.`
       );
     } else {
       status = 'fluctuating';
-      statusLabel = 'Fluctuating';
+      statusLabel = 'Normal Variation';
       plateauSeverity = 'none';
       evidenceDetails.push(
-        `Repetition counts are fluctuating within normal variance (${r1} → ${r2} → ${r3} reps).`
+        `Repetition counts are fluctuating within normal daily variance (${r1} → ${r2} → ${r3} reps).`
       );
     }
   }
@@ -613,73 +621,73 @@ export function analyzeExerciseProgression(
       const bumpKg = equipment === 'dumbbell' ? 2.0 : 2.5;
       recommendation = {
         type: 'double_progression_increase',
-        title: 'Ready for Load Progression',
-        actionText: `Consider increasing load by +${bumpKg} kg next session`,
+        title: 'Ready to Increase Weight',
+        actionText: `Try adding +${bumpKg} kg next workout`,
         suggestedLoadChangeKg: bumpKg,
-        rationale: `You consistently completed ${latest.topSet.reps} reps at ${latest.topSet.weight} kg. Under double-progression principles, you have earned a small load increase.`,
+        rationale: `You consistently completed ${latest.topSet.reps} reps at ${latest.topSet.weight} kg. You've earned a small weight increase!`,
       };
     } else {
       recommendation = {
         type: 'continue_load',
-        title: 'Continue Current Progression',
-        actionText: 'Maintain current working weight and aim for +1 rep next session',
+        title: 'Keep Up the Great Work',
+        actionText: 'Stick with this weight and aim for 1 more rep next workout',
         rationale:
-          'Your strength trajectory is advancing. Focus on clean repetition execution and progressive overload momentum.',
+          'Your strength is moving in the right direction. Focus on clean, controlled reps and let progress build naturally.',
       };
     }
   } else if (status === 'potential_plateau') {
     if (isBodyweight) {
       recommendation = {
         type: 'plateau_volume_adjust',
-        title: 'Add Rest-Pause or Variation',
-        actionText: 'Incorporate 1 additional set or an assisted/eccentric variation',
-        rationale: `Repetitions have plateaued at ${latest.topSet.reps} reps. Adding an additional set or adjusting tempo will provide a fresh stimulus.`,
+        title: 'Add an Extra Set or Change the Pace',
+        actionText: 'Try 1 additional set or slow down your descent (negative reps)',
+        rationale: `Reps have stayed steady at ${latest.topSet.reps} reps. Adding an extra set or slowing down each rep increases the challenge without needing extra equipment.`,
       };
     } else if (latest.topSet.reps <= 5) {
       // Low-rep compound plateau: Micro-loading or rep range shift
       recommendation = {
         type: 'plateau_microload',
-        title: 'Apply Micro-Loading or Shift Rep Range',
-        actionText: 'Use fractional plates (+1.0 kg to +1.25 kg) or shift to 6–8 reps for 2 weeks',
+        title: 'Try a Small Weight Increase or More Reps',
+        actionText: 'Use smaller plates (+1.0 to 1.25 kg) or aim for 6–8 reps for 2 weeks',
         suggestedLoadChangeKg: 1.25,
-        rationale: `Performance has stalled at ${latest.topSet.weight} kg × ${latest.topSet.reps} reps across ${stallDurationSessions} sessions. Micro-loading or shifting rep schemes breaks adaptation stalls effectively.`,
+        rationale: `Progress may have slowed at ${latest.topSet.weight} kg × ${latest.topSet.reps} reps across ${stallDurationSessions} workouts. Micro-loading with smaller weight jumps or temporarily shifting rep targets is an effective way to keep moving forward.`,
       };
     } else {
       // Moderate-rep plateau: Double progression consolidation or movement variation
       recommendation = {
         type: 'plateau_rep_range_rotation',
-        title: 'Rotate Stimulus or Exercise Angle',
-        actionText: 'Consider a complementary movement variation or consolidating set volume',
-        rationale: `Performance has plateaued at ${latest.topSet.weight} kg over ${stallDurationSessions} sessions. Introducing an exercise variation stimulates different motor units without altering your split.`,
+        title: 'Try a Slight Variation or Slower Tempo',
+        actionText: 'Try a complementary movement variation or focus on controlled reps',
+        rationale: `Weight and reps have stayed steady at ${latest.topSet.weight} kg over ${stallDurationSessions} workouts. A slight change in angle, grip, or repetition tempo stimulates muscles in a fresh way.`,
       };
     }
   } else if (status === 'deload_or_regressing') {
     recommendation = {
       type: 'maintain_baseline',
-      title: 'Consolidate Working Sets',
-      actionText: 'Keep working load steady until performance stabilizes',
+      title: 'Listen to Your Body & Recover',
+      actionText: 'Keep weights comfortable until you feel fully recovered',
       rationale:
-        'Temporary reductions in working weight are normal following intense training blocks or schedule changes. Re-consolidate form before pushing heavier loads.',
+        'Taking lighter workouts when fatigued or following an intense training block helps your body recover and prevents injury.',
     };
   } else {
     // Fluctuating
     recommendation = {
       type: 'maintain_baseline',
-      title: 'Consolidate Form & Consistency',
-      actionText: `Consolidate ${latest.topSet.weight} kg for steady repetitions`,
+      title: 'Focus on Consistency & Clean Form',
+      actionText: `Keep working with ${latest.topSet.weight} kg and aim for steady reps`,
       rationale:
-        'Performance is fluctuating within normal limits. Focus on technical consistency at your current working load.',
+        'Small fluctuations from workout to workout are completely normal. Focus on smooth, controlled reps and stay consistent.',
     };
   }
 
   const headline =
     status === 'progressing'
-      ? `Progressing: ${latest.topSet.weight} kg × ${latest.topSet.reps} reps (Est. 1RM ${latest.topSet.estimated1RM} kg)`
+      ? `Making progress: ${latest.topSet.weight > 0 ? `${latest.topSet.weight} kg × ` : ''}${latest.topSet.reps} reps (Estimated Max Strength: ${latest.topSet.estimated1RM} kg)`
       : status === 'potential_plateau'
-      ? `Potential Plateau: Stalled at ${latest.topSet.weight} kg × ${latest.topSet.reps} reps across ${stallDurationSessions} sessions`
+      ? `Progress may have slowed: Stalled at ${latest.topSet.weight > 0 ? `${latest.topSet.weight} kg × ` : ''}${latest.topSet.reps} reps across ${stallDurationSessions} workouts`
       : status === 'fluctuating'
-      ? `Fluctuating: ${latest.topSet.weight} kg × ${latest.topSet.reps} reps`
-      : `Working load adjusted: ${latest.topSet.weight} kg`;
+      ? `Normal variation: ${latest.topSet.weight > 0 ? `${latest.topSet.weight} kg × ` : ''}${latest.topSet.reps} reps`
+      : `Lighter workout recorded: ${latest.topSet.weight} kg`;
 
   return {
     exerciseId,

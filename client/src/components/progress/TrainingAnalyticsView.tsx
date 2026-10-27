@@ -309,7 +309,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
         )}
       </Card>
 
-      {/* 3. Strength Progression & Plateau Detection */}
+      {/* 3. Exercise Progress & Strength */}
       <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
         {/* Routine Plateau & Progression Health Summary */}
         <RoutinePlateauSummaryCard
@@ -322,7 +322,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-[var(--primary)] shrink-0" />
             <h3 className="text-xs sm:text-sm font-bold text-[var(--text-main)] uppercase tracking-wide">
-              Exercise Progression & Plateau Analysis
+              Exercise Progress & Strength
             </h3>
           </div>
 
@@ -351,7 +351,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
             }`}
           >
-            Est. 1RM
+            Est. Max Strength
           </button>
           <button
             type="button"
@@ -373,7 +373,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
             }`}
           >
-            Set Volume
+            Total Weight Lifted
           </button>
         </div>
 
@@ -395,10 +395,10 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
                   </span>
                   <span className="text-xs text-[var(--text-secondary)] font-medium">
                     {progressionMetric === '1rm'
-                      ? 'Current Est. 1RM'
+                      ? 'Estimated Max Strength'
                       : progressionMetric === 'max_weight'
-                      ? 'Heaviest Weight'
-                      : 'Latest Volume'}
+                      ? 'Heaviest Weight Lifted'
+                      : 'Total Weight Lifted Across Sets'}
                   </span>
                 </div>
               </div>
@@ -417,7 +417,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
                 )}
                 {currentProgression.trend === 'declining' && (
                   <Badge variant="warning" size="sm" className="font-bold text-amber-400 border-amber-400/20">
-                    ↓ Working Load Adjusted
+                    ↓ Lighter Workout
                   </Badge>
                 )}
                 {currentProgression.trend === 'unknown' && (
@@ -552,9 +552,13 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
               <span>{currentProgression.trendReason}</span>
             </div>
 
-            {/* Transparent formula & interpretation note */}
-            <div className="text-[10px] text-[var(--text-muted)] italic px-1">
-              Estimated 1RM is calculated using the documented Brzycki (≤12 reps) and Epley (&gt;12 reps) formulas from verified working sets.
+            {/* Plain-language explanation for Estimated Max Strength */}
+            <div className="flex items-start gap-2 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)] leading-relaxed">
+              <Info className="w-3.5 h-3.5 text-[var(--primary)] shrink-0 mt-0.5" />
+              <p>
+                <span className="font-semibold text-[var(--text-main)]">Estimated Max Strength:</span>{' '}
+                This is an estimate of the maximum weight you could lift for one rep, calculated from your recorded sets. It isn't a tested maximum.
+              </p>
             </div>
 
             {/* Toggle Past Session History Drawer */}
@@ -575,9 +579,9 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
                         <th className="p-2.5">Date</th>
                         <th className="p-2.5">Workout</th>
                         <th className="p-2.5">Top Set</th>
-                        <th className="p-2.5">Est. 1RM</th>
+                        <th className="p-2.5">Est. Max Strength</th>
                         <th className="p-2.5">Sets</th>
-                        <th className="p-2.5">Volume</th>
+                        <th className="p-2.5">Total Lifted</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-subtle)] text-[var(--text-main)]">
