@@ -128,11 +128,11 @@ assert(legacyPreserved.isCustomized === true, 'Legacy custom target safely flagg
 console.log('--- Test 5: Goal-Aware Priority Ranking in Weekly Coaching ---');
 
 const baseSchedule: WeeklySchedule = {
-  monday: { name: 'Leg Day', isRest: false, muscleGroups: [{ name: 'legs' as any }] },
+  monday: { name: 'Leg Day', isRest: false, muscleGroups: [{ name: 'legs', displayName: 'Legs' }] as any },
   tuesday: { name: 'Rest & Recovery', isRest: true, muscleGroups: [] },
-  wednesday: { name: 'Push Strength', isRest: false, muscleGroups: [{ name: 'chest' as any }] },
+  wednesday: { name: 'Push Strength', isRest: false, muscleGroups: [{ name: 'chest', displayName: 'Chest' }] as any },
   thursday: { name: 'Rest', isRest: true, muscleGroups: [] },
-  friday: { name: 'Pull Strength', isRest: false, muscleGroups: [{ name: 'back' as any }] },
+  friday: { name: 'Pull Strength', isRest: false, muscleGroups: [{ name: 'back', displayName: 'Back' }] as any },
   saturday: { name: 'Rest', isRest: true, muscleGroups: [] },
   sunday: { name: 'Rest', isRest: true, muscleGroups: [] },
 };
@@ -180,21 +180,24 @@ console.log('--- Test 6: Recovery-Aware Cardio Scheduling & Leg Day Safeguards -
 // User completed heavy legs on Monday (diff = 1 day ago on Tuesday)
 const completedLegSession: WorkoutSession = {
   id: 'sess_leg_mon',
-  name: 'Heavy Leg Day',
+  workoutName: 'Heavy Leg Day',
   date: '2026-10-26T10:00:00.000Z',
   completedAt: '2026-10-26T11:00:00.000Z',
+  dayOfWeek: 'monday',
   status: 'completed',
   totalVolume: 5000,
   totalSets: 15,
-  totalReps: 120,
-  durationMinutes: 60,
+  duration: 60,
   muscleGroups: ['legs'],
   exercises: [
     {
+      id: 'we_1',
       exerciseId: 'squat',
       exercise: { id: 'squat', name: 'Barbell Squat', primaryMuscle: 'legs' as any } as any,
-      sets: [{ setNumber: 1, weight: 100, reps: 5, completed: true }],
-    },
+      order: 1,
+      notes: '',
+      sets: [{ id: 's1', setNumber: 1, weight: 100, reps: 5, completed: true }],
+    } as any,
   ],
 };
 
@@ -214,13 +217,13 @@ const recoveryCoaching = deriveWeeklyCoaching({
 const legAlert = recoveryCoaching.recoveryAlerts.find((a) => a.type === 'active_recovery');
 assert(Boolean(legAlert), 'Lower-body recovery alert emitted following demanding leg session');
 assert(
-  legAlert?.message.includes('low-impact') || legAlert?.message.includes('walking'),
+  Boolean(legAlert?.message.includes('low-impact') || legAlert?.message.includes('walking')),
   'Alert advises low-impact cardio to facilitate recovery'
 );
 
 const recoveryCardioStep = recoveryCoaching.actionableSteps.find((s) => s.category === 'cardio_goal');
 assert(
-  recoveryCardioStep?.rationale.includes('low-impact') || recoveryCardioStep?.rationale.includes('recovering'),
+  Boolean(recoveryCardioStep?.rationale.includes('low-impact') || recoveryCardioStep?.rationale.includes('recovering')),
   'Cardio action step advises low-impact walking/spin rather than high-impact eccentric running'
 );
 
