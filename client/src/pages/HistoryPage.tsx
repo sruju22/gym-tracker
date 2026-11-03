@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ChevronRight,
   Edit3,
@@ -25,7 +25,7 @@ import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { formatDateShort, formatDayName } from '../utils/formatters';
 import { WorkoutSession, CardioSession } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 import { LogCardioModal } from '../components/cardio/LogCardioModal';
 import { CardioSessionCard } from '../components/cardio/CardioSessionCard';
@@ -74,6 +74,17 @@ const isDateInRange = (dateStr: string, range: DateRangeFilter): boolean => {
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (
+      location.search.includes('action=log_cardio') ||
+      location.search.includes('logCardio=true') ||
+      (location.state as any)?.openLogCardio
+    ) {
+      setIsLogCardioOpen(true);
+    }
+  }, [location.search, location.state]);
   const { currentUser } = useAuthStore();
 
   const { startEditingWorkout, deleteWorkout, deleteCardioSession } = useWorkoutStore();

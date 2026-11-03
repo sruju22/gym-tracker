@@ -200,6 +200,8 @@ interface WorkoutStore {
   addExerciseToWorkout: (userId: string, exercise: Exercise) => void;
   removeExerciseFromWorkout: (userId: string, exerciseId: string) => void;
   toggleExerciseCompleted: (userId: string, exerciseId: string) => void;
+  setExerciseCollapsed: (userId: string, exerciseId: string, isCollapsed: boolean) => void;
+  toggleExerciseExpanded: (userId: string, exerciseId: string) => void;
   updateExerciseNotes: (userId: string, exerciseId: string, notes: string) => void;
   finishWorkout: (userId: string) => Promise<boolean>;
   cancelWorkout: (userId: string) => void;
@@ -1725,6 +1727,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
           exercise,
           order: targetSession.exercises.length + 1,
           notes: '',
+          completed: false,
+          isCollapsed: false,
           sets: Array.from({ length: 3 }, (_, i) => ({
             id: `set_${Date.now()}_${i + 1}`,
             setNumber: i + 1,
@@ -2224,7 +2228,67 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 })
               : ex.sets;
 
-            return { ...ex, completed: nextCompleted, sets: updatedSets };
+            return {
+              ...ex,
+              completed: nextCompleted,
+              isCollapsed: nextCompleted ? true : false,
+              sets: updatedSets,
+            };
+          }
+          return ex;
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+              },
+            },
+          },
+        }));
+      },
+
+      setExerciseCollapsed: (userId, exerciseId, isCollapsed) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.exerciseId === exerciseId || ex.id === exerciseId) {
+            return { ...ex, isCollapsed };
+          }
+          return ex;
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+              },
+            },
+          },
+        }));
+      },
+
+      toggleExerciseExpanded: (userId, exerciseId) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.exerciseId === exerciseId || ex.id === exerciseId) {
+            const currentlyCollapsed = ex.isCollapsed !== undefined ? ex.isCollapsed : Boolean(ex.completed);
+            return { ...ex, isCollapsed: !currentlyCollapsed };
           }
           return ex;
         });

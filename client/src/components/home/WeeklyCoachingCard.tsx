@@ -22,14 +22,17 @@ import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { deriveWeeklyCoaching, ActionableCoachingStep } from '../../utils/weeklyCoaching';
 import { formatVolume } from '../../utils/formatters';
+import { LogCardioModal } from '../cardio/LogCardioModal';
 
 interface WeeklyCoachingCardProps {
   onOpenEditPlan?: () => void;
+  onOpenLogCardio?: () => void;
   className?: string;
 }
 
 export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
   onOpenEditPlan,
+  onOpenLogCardio,
   className = '',
 }) => {
   const navigate = useNavigate();
@@ -45,6 +48,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
   } = useWorkoutStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
 
   const history = getHistory(userId);
   const weeklyPlan = getWeeklyPlan(userId);
@@ -84,6 +88,14 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
   const handleActionClick = (step: ActionableCoachingStep) => {
     if (step.actionType === 'view_plan' && onOpenEditPlan) {
       onOpenEditPlan();
+      return;
+    }
+    if (step.actionType === 'log_cardio') {
+      if (onOpenLogCardio) {
+        onOpenLogCardio();
+      } else {
+        setIsLogCardioOpen(true);
+      }
       return;
     }
     if (step.actionRoute) {
@@ -317,6 +329,12 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
           )}
         </div>
       )}
+
+      {/* Direct Cardio Logging Modal */}
+      <LogCardioModal
+        isOpen={isLogCardioOpen}
+        onClose={() => setIsLogCardioOpen(false)}
+      />
     </Card>
   );
 };

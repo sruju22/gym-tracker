@@ -330,11 +330,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           onClick={(e) => {
             e.stopPropagation();
             if (!isDoneEnabled) return;
-            if (!completed) {
-              toggleExerciseCompleted(userId, workoutExercise.id);
-            }
             if (onDone) {
               onDone();
+            } else if (!completed) {
+              toggleExerciseCompleted(userId, workoutExercise.id);
             }
           }}
           className={`font-black px-4 min-h-[38px] transition-all ${

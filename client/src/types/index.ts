@@ -83,6 +83,7 @@ export interface WorkoutExercise {
   notes: string;
   previousPerformance?: PreviousPerformance;
   completed?: boolean;
+  isCollapsed?: boolean;
   combinationId?: string;
   combinationName?: string;
   combinationType?: CombinationType;

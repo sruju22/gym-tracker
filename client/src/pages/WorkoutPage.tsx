@@ -39,6 +39,8 @@ export const WorkoutPage: React.FC = () => {
     addExerciseToWorkout,
     addMuscleSectionToWorkout,
     toggleExerciseCompleted,
+    setExerciseCollapsed,
+    toggleExerciseExpanded,
     cancelWorkout,
     cancelEditingWorkout,
     saveWorkoutEdits,
@@ -75,26 +77,18 @@ export const WorkoutPage: React.FC = () => {
   >(undefined);
   const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
 
-  // Track explicit expansion overrides per exercise
-  // By default:
-  // - uncompleted exercises (and newly added exercises) are automatically EXPANDED
-  // - completed exercises default to collapsed into their compact summary row
-  // User can click any card header to expand or collapse it
-  const [expandedOverrides, setExpandedOverrides] = useState<Record<string, boolean>>({});
-
+  // Track per-exercise expansion / collapse state:
+  // - If explicitly collapsed or expanded in active session state, respect workEx.isCollapsed
+  // - Otherwise, completed exercises default to collapsed and uncompleted default to expanded
   const isExerciseExpanded = (workEx: WorkoutExercise) => {
-    if (expandedOverrides[workEx.id] !== undefined) {
-      return expandedOverrides[workEx.id];
+    if (workEx.isCollapsed !== undefined) {
+      return !workEx.isCollapsed;
     }
     return !workEx.completed;
   };
 
-  const handleToggleExpand = (id: string, workEx: WorkoutExercise) => {
-    const currentlyExpanded = isExerciseExpanded(workEx);
-    setExpandedOverrides((prev) => ({
-      ...prev,
-      [id]: !currentlyExpanded,
-    }));
+  const handleToggleExpand = (id: string, _workEx: WorkoutExercise) => {
+    toggleExerciseExpanded(userId, id);
   };
 
   // Track meaningful unsaved changes
@@ -122,17 +116,19 @@ export const WorkoutPage: React.FC = () => {
     return false;
   }, [isEditing, editingSession, activeSession, userId]);
 
-  // Intercept in-app navigation when unsaved changes exist
+  const MAIN_APP_ROUTES = ['/', '/workout', '/exercises', '/history', '/progress', '/settings'];
+
+  // Intercept in-app navigation when unsaved changes exist (e.g. leaving the app or discarding edits)
   const blocker = useBlocker(
     useCallback(
       ({ currentLocation, nextLocation }: any) => {
         if (!hasUnsavedChanges) return false;
         if (currentLocation.pathname === nextLocation.pathname) return false;
-        // Mid-workout exercise library access is supported without losing progress
-        if (nextLocation.pathname === '/exercises') return false;
+        // Allow seamless bottom-tab and main app navigation during an active in-progress workout session
+        if (!isEditing && MAIN_APP_ROUTES.includes(nextLocation.pathname)) return false;
         return true;
       },
-      [hasUnsavedChanges]
+      [hasUnsavedChanges, isEditing]
     )
   );
 
@@ -211,10 +207,6 @@ export const WorkoutPage: React.FC = () => {
 
   const handleExerciseDone = (currentExId: string) => {
     toggleExerciseCompleted(userId, currentExId);
-    setExpandedOverrides((prev) => ({
-      ...prev,
-      [currentExId]: false,
-    }));
   };
 
   const formatCompletionTime = (isoString?: string) => {
@@ -819,6 +811,8 @@ export const WorkoutPage: React.FC = () => {
                     <CombinationCard
                       key={workEx.combinationId || workEx.id}
                       workoutExercise={workEx}
+                      isExpanded={isExerciseExpanded(workEx)}
+                      onToggleExpand={() => handleToggleExpand(workEx.id, workEx)}
                     />
                   );
                 }
