@@ -24,8 +24,14 @@ import {
   WorkoutTemplate,
   CardioSession,
   CardioWeeklyGoalSettings,
+  UserCardioPreferences,
 } from '../types';
-import { DEFAULT_CARDIO_GOALS } from '../utils/cardioGoals';
+import {
+  DEFAULT_CARDIO_GOALS,
+  DEFAULT_CARDIO_PREFERENCES,
+  resolveCardioWeeklyGoals,
+  getRecommendedCardioGoals,
+} from '../utils/cardioGoals';
 import { normalizeCombinationExercises } from '../utils/combinationNormalizer';
 import { INITIAL_EXERCISES } from '../data/exercises';
 import { DEFAULT_WORKOUT_PLAN } from '../data/workoutPlan';
@@ -96,6 +102,7 @@ export interface UserWorkoutData {
   cardioSessions: CardioSession[];
   pendingDeletedCardioIds?: string[];
   cardioWeeklyGoals?: CardioWeeklyGoalSettings;
+  cardioPreferences?: UserCardioPreferences;
   currentWeight?: number;
   progressSummary?: ProgressSummaryResponse;
   volumeTrend?: VolumeTrendPoint[];
@@ -275,6 +282,11 @@ interface WorkoutStore {
     userId: string,
     goals: Partial<CardioWeeklyGoalSettings>
   ) => void;
+  getCardioPreferences: (userId: string) => UserCardioPreferences;
+  updateCardioPreferences: (
+    userId: string,
+    prefs: Partial<UserCardioPreferences>
+  ) => void;
 
   // Actions - Plan Settings & User Settings
   fetchWeeklyPlan: (userId: string) => Promise<WeeklySchedule>;
@@ -307,6 +319,7 @@ const createDefaultUserData = (): UserWorkoutData => {
     weightLogs: [],
     cardioSessions: [],
     pendingDeletedCardioIds: [],
+    cardioPreferences: DEFAULT_CARDIO_PREFERENCES,
     cardioWeeklyGoals: DEFAULT_CARDIO_GOALS,
   };
 };
@@ -412,8 +425,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
         if (!data.pendingDeletedCardioIds) {
           data.pendingDeletedCardioIds = [];
         }
+        if (!data.cardioPreferences) {
+          data.cardioPreferences = DEFAULT_CARDIO_PREFERENCES;
+        }
         if (!data.cardioWeeklyGoals) {
-          data.cardioWeeklyGoals = DEFAULT_CARDIO_GOALS;
+          data.cardioWeeklyGoals = resolveCardioWeeklyGoals(
+            undefined,
+            data.fitnessGoal,
+            data.cardioPreferences
+          );
         }
         return data;
       },
@@ -3810,6 +3830,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...currentGoals.sessions,
             ...(updates.sessions || {}),
           },
+          isCustomized: updates.isCustomized !== undefined ? updates.isCustomized : true,
         };
 
         set((state) => ({
@@ -3818,6 +3839,32 @@ export const useWorkoutStore = create<WorkoutStore>()(
             [targetId]: {
               ...currentData,
               cardioWeeklyGoals: mergedGoals,
+            },
+          },
+        }));
+      },
+
+      getCardioPreferences: (userId: string) => {
+        const userData = get().getUserData(userId);
+        return userData.cardioPreferences || DEFAULT_CARDIO_PREFERENCES;
+      },
+
+      updateCardioPreferences: (userId: string, prefs: Partial<UserCardioPreferences>) => {
+        const targetId = userId || 'guest';
+        const currentData = get().getUserData(targetId);
+        const existing = currentData.cardioPreferences || DEFAULT_CARDIO_PREFERENCES;
+        const updated: UserCardioPreferences = {
+          ...existing,
+          ...prefs,
+          preferredActivities: prefs.preferredActivities || existing.preferredActivities,
+        };
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [targetId]: {
+              ...currentData,
+              cardioPreferences: updated,
             },
           },
         }));

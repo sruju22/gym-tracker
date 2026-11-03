@@ -45,6 +45,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
     getCardioSessions,
     getPersonalRecords,
     getUserData,
+    getCardioPreferences,
   } = useWorkoutStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -56,6 +57,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
   const personalRecords = getPersonalRecords(userId);
   const userData = getUserData(userId);
   const cardioGoals = userData.cardioWeeklyGoals;
+  const cardioPreferences = userData.cardioPreferences || getCardioPreferences(userId);
 
   const coaching = useMemo(() => {
     return deriveWeeklyCoaching({
@@ -64,6 +66,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
       cardioSessions,
       weeklyPlan,
       cardioGoals,
+      cardioPreferences,
       fitnessGoal: currentUser?.fitnessGoal,
       experienceLevel: currentUser?.experienceLevel,
       equipmentPreference: currentUser?.equipmentPreference,
@@ -76,6 +79,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
     cardioSessions,
     weeklyPlan,
     cardioGoals,
+    cardioPreferences,
     currentUser?.fitnessGoal,
     currentUser?.experienceLevel,
     currentUser?.equipmentPreference,
@@ -104,6 +108,10 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
   };
 
   const coverageGaps = muscleCoverage.filter((m) => m.status === 'needs_attention');
+  const isFatLoss =
+    (currentUser?.fitnessGoal || '').toLowerCase().includes('fat') ||
+    (currentUser?.fitnessGoal || '').toLowerCase().includes('loss') ||
+    (currentUser?.fitnessGoal || '').toLowerCase().includes('conditioning');
 
   return (
     <Card
@@ -198,7 +206,13 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
         </div>
 
         {/* Box C: Cardio Conditioning */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2.5 text-center flex flex-col justify-between">
+        <div
+          className={`border rounded-xl p-2.5 text-center flex flex-col justify-between ${
+            isFatLoss
+              ? 'bg-orange-500/5 border-orange-500/35 shadow-xs'
+              : 'bg-[var(--bg-card)] border-[var(--border-subtle)]'
+          }`}
+        >
           <div className="text-[9px] uppercase font-bold text-[var(--text-muted)] flex items-center justify-center gap-1">
             <Flame className="w-3 h-3 text-orange-400" />
             Cardio

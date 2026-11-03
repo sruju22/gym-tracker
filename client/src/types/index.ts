@@ -260,6 +260,7 @@ export interface User {
   experienceLevel?: string;
   trainingDaysPerWeek?: number;
   equipmentPreference?: string;
+  cardioPreferences?: UserCardioPreferences;
   selectedTemplateId?: string;
   heightCm?: number | null;
   currentWeight?: number | null;
@@ -302,6 +303,15 @@ export type CardioActivityType =
   | 'stair_climber'
   | 'other';
 
+export type CardioIntensity = 'low' | 'moderate' | 'high';
+
+export interface UserCardioPreferences {
+  preferredActivities: CardioActivityType[];
+  preferredDurationMinutes: number; // e.g. 20, 30, 45, 60
+  availableDaysPerWeek: number; // e.g. 2, 3, 4, 5
+  preferredIntensity?: CardioIntensity;
+}
+
 export type DistanceUnit = 'km' | 'mi' | 'm';
 
 export interface CardioSession {
@@ -341,6 +351,7 @@ export interface CardioWeeklyGoalSettings {
     enabled: boolean;
     target: number; // count of sessions
   };
+  isCustomized?: boolean; // When true, user manual edits are preserved against goal changes
 }
 
 export type CardioRecordType =

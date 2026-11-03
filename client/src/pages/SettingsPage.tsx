@@ -12,8 +12,15 @@ import {
   Edit2,
   Sparkles,
   Sliders,
-  Dumbbell,
   Zap,
+  Footprints,
+  Bike,
+  Flame,
+  Timer,
+  Activity,
+  Heart,
+  Clock,
+  Award,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -25,7 +32,15 @@ import { useThemeStore, ThemeMode } from '../store/themeStore';
 import { useWorkoutStore } from '../store/workoutStore';
 import { WorkoutTemplatesModal } from '../components/plan/WorkoutTemplatesModal';
 import { getRecommendedTemplate } from '../data/workoutTemplates';
-import { WorkoutTemplate } from '../types';
+import {
+  WorkoutTemplate,
+  CardioActivityType,
+  CardioIntensity,
+  UserCardioPreferences,
+} from '../types';
+import {
+  getRecommendedCardioGoals,
+} from '../utils/cardioGoals';
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +55,9 @@ export const SettingsPage: React.FC = () => {
     getActiveTemplate,
     getUserData,
     applyWorkoutTemplate,
+    updateCardioGoals,
+    updateCardioPreferences,
+    getCardioPreferences,
   } = useWorkoutStore();
 
   const userId = currentUser?.id || 'guest';
@@ -125,6 +143,19 @@ export const SettingsPage: React.FC = () => {
 
       setSaveSuccess(true);
 
+      // If goal changed, update cardio goals unless user has customized them
+      if (goalChanged) {
+        const currentGoals = userData.cardioWeeklyGoals;
+        if (!currentGoals?.isCustomized) {
+          const recCardio = getRecommendedCardioGoals(
+            goalInput,
+            userData.cardioPreferences,
+            currentUser?.experienceLevel
+          );
+          updateCardioGoals(userId, recCardio);
+        }
+      }
+
       // If goal or frequency changed, prompt user with the new recommended split
       if (goalChanged || daysChanged) {
         const newRec = getRecommendedTemplate(goalInput, Number(daysInput));
@@ -144,6 +175,72 @@ export const SettingsPage: React.FC = () => {
       setProfileError(err?.message || 'Failed to update profile');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const userCardioPrefs = userData.cardioPreferences || getCardioPreferences(userId);
+
+  const handleToggleCardioActivity = (act: CardioActivityType) => {
+    const current = userCardioPrefs.preferredActivities || ['walking'];
+    let updated: CardioActivityType[];
+    if (current.includes(act)) {
+      if (current.length <= 1) return;
+      updated = current.filter((x) => x !== act);
+    } else {
+      updated = [...current, act];
+    }
+    const newPrefs: UserCardioPreferences = {
+      ...userCardioPrefs,
+      preferredActivities: updated,
+    };
+    updateCardioPreferences(userId, newPrefs);
+    if (currentUser) {
+      updateProfile({ cardioPreferences: newPrefs }).catch(() => {});
+    }
+    if (!userData.cardioWeeklyGoals?.isCustomized) {
+      const rec = getRecommendedCardioGoals(currentUser?.fitnessGoal, newPrefs, currentUser?.experienceLevel);
+      updateCardioGoals(userId, rec);
+    }
+  };
+
+  const handleUpdateCardioDuration = (dur: number) => {
+    const newPrefs: UserCardioPreferences = {
+      ...userCardioPrefs,
+      preferredDurationMinutes: dur,
+    };
+    updateCardioPreferences(userId, newPrefs);
+    if (currentUser) {
+      updateProfile({ cardioPreferences: newPrefs }).catch(() => {});
+    }
+    if (!userData.cardioWeeklyGoals?.isCustomized) {
+      const rec = getRecommendedCardioGoals(currentUser?.fitnessGoal, newPrefs, currentUser?.experienceLevel);
+      updateCardioGoals(userId, rec);
+    }
+  };
+
+  const handleUpdateCardioDays = (days: number) => {
+    const newPrefs: UserCardioPreferences = {
+      ...userCardioPrefs,
+      availableDaysPerWeek: days,
+    };
+    updateCardioPreferences(userId, newPrefs);
+    if (currentUser) {
+      updateProfile({ cardioPreferences: newPrefs }).catch(() => {});
+    }
+    if (!userData.cardioWeeklyGoals?.isCustomized) {
+      const rec = getRecommendedCardioGoals(currentUser?.fitnessGoal, newPrefs, currentUser?.experienceLevel);
+      updateCardioGoals(userId, rec);
+    }
+  };
+
+  const handleUpdateCardioIntensity = (intensity: CardioIntensity) => {
+    const newPrefs: UserCardioPreferences = {
+      ...userCardioPrefs,
+      preferredIntensity: intensity,
+    };
+    updateCardioPreferences(userId, newPrefs);
+    if (currentUser) {
+      updateProfile({ cardioPreferences: newPrefs }).catch(() => {});
     }
   };
 
@@ -415,6 +512,189 @@ export const SettingsPage: React.FC = () => {
                 LBS
               </button>
             </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 3.5 Cardio & Conditioning Preferences */}
+      <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5">
+            <Flame className="w-3.5 h-3.5 text-orange-400" />
+            <span>CARDIO & CONDITIONING</span>
+          </div>
+          <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
+            Cardio Preferences & Goal Targets
+          </h3>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+            Configure preferred activities, session length, and frequency to tailor weekly coaching.
+          </p>
+        </div>
+
+        <div className="space-y-4 pt-1">
+          {/* Preferred Activities Multi-Select */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider block">
+              Preferred Activities
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'walking', label: 'Walking', icon: Footprints },
+                { id: 'running', label: 'Running', icon: Flame },
+                { id: 'cycling', label: 'Cycling', icon: Bike },
+                { id: 'treadmill', label: 'Treadmill', icon: Timer },
+                { id: 'elliptical', label: 'Elliptical', icon: Activity },
+                { id: 'rowing', label: 'Rowing', icon: Zap },
+                { id: 'stair_climber', label: 'Stair Climber', icon: Award },
+                { id: 'other', label: 'Other', icon: Heart },
+              ].map((act) => {
+                const isSelected = (userCardioPrefs.preferredActivities || []).includes(
+                  act.id as CardioActivityType
+                );
+                const Icon = act.icon;
+                return (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() => handleToggleCardioActivity(act.id as CardioActivityType)}
+                    className={`p-3 rounded-xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer select-none ${
+                      isSelected
+                        ? 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--text-main)] shadow-xs'
+                        : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Icon
+                        className={`w-4 h-4 shrink-0 ${
+                          isSelected ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'
+                        }`}
+                      />
+                      <span className="text-xs font-bold truncate">{act.label}</span>
+                    </div>
+                    {isSelected && (
+                      <Check className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Days Per Week & Duration */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Days Per Week */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[var(--text-main)]">Cardio Days Per Week</span>
+                <span className="text-xs font-black text-[var(--primary)]">
+                  {userCardioPrefs.availableDaysPerWeek || 3} Days
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                {[1, 2, 3, 4, 5].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => handleUpdateCardioDays(d)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      (userCardioPrefs.availableDaysPerWeek || 3) === d
+                        ? 'bg-[var(--primary)] text-white shadow-xs'
+                        : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Session Duration */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[var(--text-main)]">Target Session Duration</span>
+                <span className="text-xs font-black text-[var(--primary)]">
+                  {userCardioPrefs.preferredDurationMinutes || 30} Mins
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                {[20, 30, 45, 60].map((dur) => (
+                  <button
+                    key={dur}
+                    type="button"
+                    onClick={() => handleUpdateCardioDuration(dur)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      (userCardioPrefs.preferredDurationMinutes || 30) === dur
+                        ? 'bg-[var(--primary)] text-white shadow-xs'
+                        : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
+                    }`}
+                  >
+                    {dur}m
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Preferred Intensity */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2">
+            <span className="text-xs font-bold text-[var(--text-main)] block">Conditioning Intensity</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { id: 'low', label: 'Low', desc: 'Zone 1–2 (Conversational recovery)' },
+                { id: 'moderate', label: 'Moderate', desc: 'Zone 2–3 (Steady aerobic endurance)' },
+                { id: 'high', label: 'High', desc: 'Zone 4+ (Intervals & Sprints)' },
+              ].map((inte) => (
+                <button
+                  key={inte.id}
+                  type="button"
+                  onClick={() => handleUpdateCardioIntensity(inte.id as CardioIntensity)}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    (userCardioPrefs.preferredIntensity || 'moderate') === inte.id
+                      ? 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--text-main)] shadow-xs'
+                      : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
+                  }`}
+                >
+                  <div className="text-xs font-black">{inte.label}</div>
+                  <div className="text-[10px] text-[var(--text-secondary)] mt-0.5 leading-tight">
+                    {inte.desc}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active Weekly Target Summary */}
+          <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-[var(--text-main)]">
+                    Weekly Cardio Target
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                    {userData.cardioWeeklyGoals?.isCustomized
+                      ? 'Custom Target'
+                      : 'Goal-Recommended'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                  {userData.cardioWeeklyGoals?.durationMinutes?.target || 150} mins &middot;{' '}
+                  {userData.cardioWeeklyGoals?.sessions?.target || 3} sessions / week
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/progress')}
+              className="text-xs font-bold gap-1 self-start sm:self-auto cursor-pointer"
+            >
+              <span>View in Progress</span>
+            </Button>
           </div>
         </div>
       </Card>

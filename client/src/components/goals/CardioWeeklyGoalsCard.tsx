@@ -16,7 +16,7 @@ import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
-import { calculateCardioWeeklyProgress } from '../../utils/cardioGoals';
+import { calculateCardioWeeklyProgress, getRecommendedCardioGoals } from '../../utils/cardioGoals';
 import { CardioWeeklyGoalSettings, DistanceUnit } from '../../types';
 
 interface CardioWeeklyGoalsCardProps {
@@ -27,10 +27,11 @@ export const CardioWeeklyGoalsCard: React.FC<CardioWeeklyGoalsCardProps> = () =>
   const { currentUser } = useAuthStore();
   const userId = currentUser?.id || 'guest';
 
-  const { getCardioSessions, getCardioGoals, updateCardioGoals } = useWorkoutStore();
+  const { getCardioSessions, getCardioGoals, updateCardioGoals, getUserData } = useWorkoutStore();
 
   const sessions = getCardioSessions(userId);
   const settings = getCardioGoals(userId);
+  const userData = getUserData(userId);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
 
@@ -84,10 +85,26 @@ export const CardioWeeklyGoalsCard: React.FC<CardioWeeklyGoalsCardProps> = () =>
         enabled: sessionsEnabled,
         target: parsedSess,
       },
+      isCustomized: true,
     };
 
     updateCardioGoals(userId, updated);
     setIsEditOpen(false);
+  };
+
+  const handleResetToRecommended = () => {
+    const recommended = getRecommendedCardioGoals(
+      currentUser?.fitnessGoal,
+      userData.cardioPreferences,
+      currentUser?.experienceLevel
+    );
+    setDurationEnabled(recommended.durationMinutes.enabled);
+    setDurationTarget(recommended.durationMinutes.target.toString());
+    setDistanceEnabled(recommended.distance.enabled);
+    setDistanceTarget(recommended.distance.target.toString());
+    setDistanceUnit(recommended.distance.unit || 'km');
+    setSessionsEnabled(recommended.sessions.enabled);
+    setSessionsTarget(recommended.sessions.target.toString());
   };
 
   const getIconForType = (type: string) => {
@@ -116,6 +133,9 @@ export const CardioWeeklyGoalsCard: React.FC<CardioWeeklyGoalsCardProps> = () =>
                 <h3 className="text-xs sm:text-sm font-bold text-[var(--text-main)] uppercase tracking-wide">
                   Weekly Cardio Goals
                 </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                  {settings.isCustomized ? 'Custom Targets' : 'Goal Targets'}
+                </span>
                 {activeCount > 0 && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                     {completedCount} of {activeCount} met
@@ -362,18 +382,29 @@ export const CardioWeeklyGoalsCard: React.FC<CardioWeeklyGoalsCardProps> = () =>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)]">
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               size="sm"
-              onClick={() => setIsEditOpen(false)}
+              onClick={handleResetToRecommended}
+              className="text-[11px] font-bold"
             >
-              Cancel
+              Reset to Recommended
             </Button>
-            <Button type="submit" variant="primary" size="sm" className="font-bold">
-              Save Targets
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm" className="font-bold">
+                Save Targets
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>

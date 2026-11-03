@@ -265,6 +265,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
       experienceLevel,
       trainingDaysPerWeek,
       equipmentPreference,
+      cardioPreferences,
       heightCm,
       currentWeight,
       weightUnit,
@@ -280,6 +281,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     if (experienceLevel !== undefined) updateFields.experienceLevel = experienceLevel;
     if (trainingDaysPerWeek !== undefined) updateFields.trainingDaysPerWeek = Number(trainingDaysPerWeek);
     if (equipmentPreference !== undefined) updateFields.equipmentPreference = equipmentPreference;
+    if (cardioPreferences !== undefined) updateFields.cardioPreferences = cardioPreferences;
     if (heightCm !== undefined) updateFields.heightCm = heightCm ? Number(heightCm) : null;
     if (currentWeight !== undefined) {
       if (currentWeight === null || currentWeight === '' || Number(currentWeight) === 0) {

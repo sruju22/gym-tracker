@@ -1,6 +1,18 @@
-import { CardioSession, CardioWeeklyGoalSettings, DistanceUnit } from '../types';
+import {
+  CardioSession,
+  CardioWeeklyGoalSettings,
+  DistanceUnit,
+  UserCardioPreferences,
+} from '../types';
 import { getMondayOfWeek, getSundayOfWeek } from './analyticsEngine';
 import { formatDuration } from './cardioMetrics';
+
+export const DEFAULT_CARDIO_PREFERENCES: UserCardioPreferences = {
+  preferredActivities: ['walking', 'running', 'cycling'],
+  preferredDurationMinutes: 30,
+  availableDaysPerWeek: 3,
+  preferredIntensity: 'moderate',
+};
 
 export const DEFAULT_CARDIO_GOALS: CardioWeeklyGoalSettings = {
   durationMinutes: {
@@ -16,7 +28,142 @@ export const DEFAULT_CARDIO_GOALS: CardioWeeklyGoalSettings = {
     enabled: true,
     target: 3,
   },
+  isCustomized: false,
 };
+
+export type CanonicalFitnessGoal = 'fat_loss' | 'hypertrophy' | 'strength' | 'longevity';
+
+/**
+ * Normalizes user-entered or template fitness goal into a canonical goal type.
+ */
+export function normalizeFitnessGoal(rawGoal?: string): CanonicalFitnessGoal {
+  const g = (rawGoal || '').toLowerCase();
+  if (g.includes('fat') || g.includes('loss') || g.includes('conditioning')) return 'fat_loss';
+  if (g.includes('strength') || g.includes('power')) return 'strength';
+  if (
+    g.includes('longevity') ||
+    g.includes('general') ||
+    g.includes('fitness') ||
+    g.includes('health') ||
+    g.includes('joint')
+  ) {
+    return 'longevity';
+  }
+  return 'hypertrophy';
+}
+
+/**
+ * Generates goal-aware recommended weekly cardio targets based on fitness goal,
+ * user preferences, and baseline health guidelines (minimum 150 mins for health).
+ */
+export function getRecommendedCardioGoals(
+  fitnessGoal?: string,
+  preferences?: UserCardioPreferences,
+  experienceLevel?: string
+): CardioWeeklyGoalSettings {
+  const goal = normalizeFitnessGoal(fitnessGoal);
+  const preferredDays = preferences?.availableDaysPerWeek;
+  const preferredDur = preferences?.preferredDurationMinutes;
+
+  let baseDuration: number;
+  let baseSessions: number;
+
+  switch (goal) {
+    case 'fat_loss':
+      baseDuration = 180; // 180 mins/week for fat loss & conditioning
+      baseSessions = 4; // 3-4 sessions
+      break;
+    case 'hypertrophy':
+      baseDuration = 150; // 150 mins general health, supportive
+      baseSessions = 3;
+      break;
+    case 'strength':
+      baseDuration = 150; // 150 mins general health, conditioning focus
+      baseSessions = 3;
+      break;
+    case 'longevity':
+    default:
+      baseDuration = 150; // 150 mins balanced health
+      baseSessions = 3;
+      break;
+  }
+
+  // Adjust sessions based on user's available cardio days
+  let targetSessions = baseSessions;
+  if (Number.isFinite(preferredDays) && (preferredDays as number) > 0) {
+    if (goal === 'fat_loss') {
+      targetSessions = Math.min(Math.max(preferredDays as number, 3), 5);
+    } else if (goal === 'longevity') {
+      targetSessions = Math.min(Math.max(preferredDays as number, 3), 5);
+    } else {
+      // hypertrophy / strength: 2-3 sessions
+      targetSessions = Math.min(Math.max(preferredDays as number, 2), 4);
+    }
+  }
+
+  // Adjust duration based on preferred session duration and days, with general health floor (>= 150m)
+  let targetDuration = baseDuration;
+  if (
+    Number.isFinite(preferredDur) &&
+    (preferredDur as number) > 0 &&
+    Number.isFinite(preferredDays) &&
+    (preferredDays as number) > 0
+  ) {
+    const computedDuration = (preferredDur as number) * (preferredDays as number);
+    const minFloor = goal === 'fat_loss' ? 180 : 150;
+    targetDuration = Math.max(minFloor, computedDuration);
+  }
+
+  const hasDistanceActivity = preferences?.preferredActivities?.some(
+    (a) => a === 'running' || a === 'cycling' || a === 'treadmill' || a === 'rowing'
+  );
+
+  return {
+    durationMinutes: {
+      enabled: true,
+      target: targetDuration,
+    },
+    distance: {
+      enabled: Boolean(hasDistanceActivity),
+      target: goal === 'fat_loss' ? 20 : 15,
+      unit: 'km',
+    },
+    sessions: {
+      enabled: true,
+      target: targetSessions,
+    },
+    isCustomized: false,
+  };
+}
+
+/**
+ * Resolves cardio goals safely without clobbering user manual custom targets.
+ * Existing customized goals are strictly preserved.
+ */
+export function resolveCardioWeeklyGoals(
+  existingGoals?: CardioWeeklyGoalSettings,
+  fitnessGoal?: string,
+  preferences?: UserCardioPreferences,
+  experienceLevel?: string
+): CardioWeeklyGoalSettings {
+  if (existingGoals && existingGoals.isCustomized) {
+    return existingGoals;
+  }
+
+  // Safeguard: if existing goal has values distinctly altered from default, treat as customized
+  if (
+    existingGoals &&
+    (existingGoals.durationMinutes?.target !== DEFAULT_CARDIO_GOALS.durationMinutes.target ||
+      existingGoals.sessions?.target !== DEFAULT_CARDIO_GOALS.sessions.target)
+  ) {
+    return {
+      ...existingGoals,
+      isCustomized: true,
+    };
+  }
+
+  return getRecommendedCardioGoals(fitnessGoal, preferences, experienceLevel);
+}
 
 /**
  * Normalizes distance between units (km, mi, m).

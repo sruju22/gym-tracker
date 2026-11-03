@@ -20,13 +20,21 @@ import {
   PersonalRecord,
   CardioSession,
   CardioWeeklyGoalSettings,
+  UserCardioPreferences,
+  CardioActivityType,
 } from '../types';
 import {
   getMondayOfWeek,
   getSundayOfWeek,
   STANDARD_MUSCLE_GROUPS,
 } from './analyticsEngine';
-import { calculateCardioWeeklyProgress, DEFAULT_CARDIO_GOALS } from './cardioGoals';
+import {
+  calculateCardioWeeklyProgress,
+  DEFAULT_CARDIO_GOALS,
+  normalizeFitnessGoal,
+  resolveCardioWeeklyGoals,
+  CanonicalFitnessGoal,
+} from './cardioGoals';
 import { parseLocalDate, formatDayName } from './formatters';
 
 export type CoachingPriority = 'high' | 'medium' | 'low';
@@ -141,6 +149,7 @@ export interface WeeklyCoachingContext {
   cardioSessions?: CardioSession[];
   weeklyPlan: WeeklySchedule;
   cardioGoals?: CardioWeeklyGoalSettings;
+  cardioPreferences?: UserCardioPreferences;
   fitnessGoal?: string;
   experienceLevel?: string;
   equipmentPreference?: string;
@@ -335,8 +344,14 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
   );
 
   // 4. Cardio Progress (Current week vs Previous week)
+  const canonicalGoal = normalizeFitnessGoal(context.fitnessGoal);
   const rawCardio = Array.isArray(context.cardioSessions) ? context.cardioSessions : [];
-  const cardioGoals = context.cardioGoals || DEFAULT_CARDIO_GOALS;
+  const cardioGoals = resolveCardioWeeklyGoals(
+    context.cardioGoals,
+    context.fitnessGoal,
+    context.cardioPreferences,
+    context.experienceLevel
+  );
 
   const curCardioProgress = calculateCardioWeeklyProgress(rawCardio, cardioGoals, refDate);
   const prevCardioProgress = calculateCardioWeeklyProgress(rawCardio, cardioGoals, prevWeekRef);
@@ -498,7 +513,7 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     });
   }
 
-  // 8. Recovery-Aware Guidance
+  // 8. Recovery-Aware Guidance & Leg Day Interference
   const recoveryAlerts: RecoveryAlert[] = [];
   const todayAudit = scheduleAudit[refDayIndex];
 
@@ -511,17 +526,63 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     });
   }
 
+  // Check lower-body training for interference safeguards
+  const isLegMuscle = (m: string) => {
+    const lower = (m || '').toLowerCase();
+    return (
+      lower === 'legs' ||
+      lower === 'quads' ||
+      lower === 'hamstrings' ||
+      lower === 'glutes' ||
+      lower === 'calves'
+    );
+  };
+
+  const sessionHasLegs = (s: WorkoutSession): boolean => {
+    if (Array.isArray(s.muscleGroups) && s.muscleGroups.some(isLegMuscle)) return true;
+    if (Array.isArray(s.exercises)) {
+      return s.exercises.some((e) => {
+        const p = (e.exercise?.primaryMuscle || (e as any).primaryMuscle || '').toLowerCase();
+        return isLegMuscle(p);
+      });
+    }
+    return false;
+  };
+
+  const dayHasLegs = (dayName: DayOfWeek): boolean => {
+    const cfg = weeklyPlan[dayName];
+    if (!cfg || cfg.isRest) return false;
+    const n = (cfg.name || '').toLowerCase();
+    if (n.includes('leg') || n.includes('lower') || n.includes('squat')) return true;
+    if (Array.isArray(cfg.muscleGroups)) {
+      return cfg.muscleGroups.some((mg) => mg && isLegMuscle(mg.name));
+    }
+    return false;
+  };
+
+  // Calendar day diff helper unaffected by time-of-day offsets
+  const calendarDayDiff = (d1: Date, d2: Date): number => {
+    const utc1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    const utc2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+    return Math.round((utc1 - utc2) / (1000 * 60 * 60 * 24));
+  };
+
   // Check if multiple heavy sessions were logged on consecutive days
   const trainedYesterday = curStrengthSessions.some((s) => {
     const sDate = parseLocalDate(s.completedAt || s.date);
-    const diff = Math.floor((refDate.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24));
-    return diff === 1;
+    return calendarDayDiff(refDate, sDate) === 1;
   });
+
+  const trainedLegsYesterday = curStrengthSessions.some((s) => {
+    const sDate = parseLocalDate(s.completedAt || s.date);
+    return calendarDayDiff(refDate, sDate) === 1 && sessionHasLegs(s);
+  });
+
+  const isTodayLegDay = Boolean(todayAudit && !todayAudit.isRest && dayHasLegs(todayAudit.day));
 
   const trainedToday = curStrengthSessions.some((s) => {
     const sDate = parseLocalDate(s.completedAt || s.date);
-    const diff = Math.floor((refDate.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24));
-    return diff === 0;
+    return calendarDayDiff(refDate, sDate) === 0;
   });
 
   if (trainedYesterday && trainedToday) {
@@ -530,6 +591,15 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
       title: 'Consecutive Days Trained',
       message:
         'You have logged workouts two days in a row. Maintain proper spacing between identical muscle groups to facilitate recovery.',
+    });
+  }
+
+  if (trainedLegsYesterday) {
+    recoveryAlerts.push({
+      type: 'active_recovery',
+      title: 'Lower-Body Recovery Window',
+      message:
+        'You completed a demanding leg workout yesterday. Prioritize low-impact cardio (walking, light cycling) to aid recovery without adding eccentric muscle strain.',
     });
   }
 
@@ -568,27 +638,89 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     });
   }
 
-  // Check 3: Active Cardio Goal Progress
+  // Check 3: Goal-Aware & Recovery-Aware Cardio Recommendation
   const cardioDurItem = curCardioProgress.items.find((i) => i.type === 'duration');
+  const userPrefs = context.cardioPreferences;
+  const preferredActivities = userPrefs?.preferredActivities || ['walking', 'running', 'cycling'];
+  const primaryPref = preferredActivities[0] || 'walking';
+  const formatActivityName = (act: string) => {
+    switch (act) {
+      case 'running':
+        return 'Run';
+      case 'walking':
+        return 'Brisk Walk';
+      case 'cycling':
+        return 'Cycling Session';
+      case 'treadmill':
+        return 'Treadmill Walk/Run';
+      case 'rowing':
+        return 'Rowing Session';
+      case 'elliptical':
+        return 'Elliptical';
+      case 'stair_climber':
+        return 'Stair Climber';
+      default:
+        return 'Cardio';
+    }
+  };
+
+  const isLegRecoveryContext = trainedLegsYesterday || isTodayLegDay;
+  const suggestedModality = isLegRecoveryContext
+    ? 'Low-Impact Walking or Light Cycle'
+    : formatActivityName(primaryPref);
+
   if (cardioDurItem && cardioDurItem.enabled && !cardioDurItem.isCompleted) {
     const remaining = cardioDurItem.remaining;
+
+    let cardioPriority: CoachingPriority = 'medium';
+    let cardioTitle = `Cardio Goal: ${formatMinutes(remaining)} Remaining`;
+    let cardioRationale = `You have completed ${formatMinutes(cardioDurItem.current)} of your ${formatMinutes(cardioDurItem.target)} weekly aerobic target (${cardioDurItem.percentage}% complete).`;
+
+    if (canonicalGoal === 'fat_loss') {
+      cardioPriority = 'high';
+      if (todayAudit && todayAudit.isRest) {
+        cardioTitle = `Active Conditioning: 30m ${suggestedModality}`;
+        cardioRationale = `On designated rest days in your Fat Loss plan, light aerobic work maintains daily metabolic expenditure while protecting joint recovery. (${formatMinutes(remaining)} left this week).`;
+      } else {
+        cardioTitle = `Cardio Conditioning: ${formatMinutes(remaining)} Target`;
+        cardioRationale = `Consistent aerobic output is co-primary in your Fat Loss & Conditioning plan to maintain elevated calorie burn alongside strength training.`;
+      }
+    } else if (canonicalGoal === 'longevity') {
+      cardioPriority = todayAudit?.isRest || remaining >= 60 ? 'high' : 'medium';
+      cardioTitle = `Aerobic Health: ${formatMinutes(remaining)} Remaining`;
+      cardioRationale = `Balanced cardiovascular training supports cellular health, blood pressure regulation, and joint longevity alongside your lifting schedule.`;
+    } else if (canonicalGoal === 'hypertrophy') {
+      cardioPriority = 'medium';
+      cardioTitle = `Supportive Cardio: ${formatMinutes(remaining)} Remaining`;
+      cardioRationale = isLegRecoveryContext
+        ? `Legs are recovering. Opt for low-impact walking or gentle spin to promote blood flow without interfering with muscle protein synthesis.`
+        : `Aerobic conditioning supports nutrient partitioning and intra-set recovery. Keep intensity moderate to protect caloric surplus.`;
+    } else if (canonicalGoal === 'strength') {
+      cardioPriority = 'medium';
+      cardioTitle = `Conditioning Base: ${formatMinutes(remaining)} Remaining`;
+      cardioRationale = isLegRecoveryContext
+        ? `Preserve lower-body power: choose easy walking today to clear metabolic waste without adding eccentric fatigue.`
+        : `Aerobic work capacity builds endurance between heavy working sets without dampening peak neural power.`;
+    }
+
     candidateSteps.push({
       id: 'step_cardio_duration_goal',
       category: 'cardio_goal',
-      priority: 'medium',
-      title: `Cardio Goal: ${formatMinutes(remaining)} Remaining`,
-      rationale: `You have completed ${formatMinutes(cardioDurItem.current)} of your ${formatMinutes(cardioDurItem.target)} weekly aerobic target (${cardioDurItem.percentage}% complete).`,
+      priority: cardioPriority,
+      title: cardioTitle,
+      rationale: cardioRationale,
       actionLabel: 'Log Cardio',
       actionRoute: '/history',
       actionType: 'log_cardio',
     });
   } else if (cardioDurItem && cardioDurItem.enabled && cardioDurItem.isCompleted) {
+    // Avoid recommending more cardio once weekly target is met; celebrate and advise recovery
     candidateSteps.push({
       id: 'step_cardio_goal_achieved',
       category: 'milestone',
       priority: 'low',
       title: 'Weekly Cardio Target Achieved',
-      rationale: `You hit your weekly aerobic target with ${formatMinutes(cardioDurItem.current)} logged across ${curCardioProgress.totalWeeklySessions} session(s). Great consistency!`,
+      rationale: `You hit your weekly aerobic target with ${formatMinutes(cardioDurItem.current)} logged across ${curCardioProgress.totalWeeklySessions} session(s). Target met—prioritize strength progression and recovery without adding unnecessary fatigue.`,
       actionLabel: 'View Analytics',
       actionRoute: '/progress',
       actionType: 'view_progress',
@@ -598,9 +730,10 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
   // Check 4: Underrepresented Muscle Coverage Gap
   const underrepresented = muscleCoverage.find((m) => m.status === 'needs_attention');
   if (underrepresented) {
-    const daysText = underrepresented.daysSinceLastTrained !== null
-      ? `${underrepresented.daysSinceLastTrained} days`
-      : 'an extended period';
+    const daysText =
+      underrepresented.daysSinceLastTrained !== null
+        ? `${underrepresented.daysSinceLastTrained} days`
+        : 'an extended period';
     candidateSteps.push({
       id: `step_coverage_${underrepresented.muscleGroup}`,
       category: 'muscle_balance',
@@ -656,9 +789,42 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     }
   }
 
-  // Sort candidate steps by priority (high > medium > low) and strictly cap at 3
-  const priorityScore: Record<CoachingPriority, number> = { high: 3, medium: 2, low: 1 };
-  const sortedSteps = candidateSteps.sort((a, b) => priorityScore[b.priority] - priorityScore[a.priority]);
+  // Rank candidate steps dynamically based on active fitness goal and priority
+  const isCardioTargetMet = Boolean(cardioDurItem && cardioDurItem.isCompleted);
+  const isRestDay = Boolean(todayAudit && todayAudit.isRest);
+
+  const getStepRankScore = (step: ActionableCoachingStep): number => {
+    let score = 0;
+    if (step.priority === 'high') score += 100;
+    else if (step.priority === 'medium') score += 50;
+    else score += 10;
+
+    if (canonicalGoal === 'fat_loss') {
+      if (step.category === 'cardio_goal' && !isCardioTargetMet) {
+        // In fat loss, on a rest day, cardio is #1; on training days it ranks alongside strength
+        score += isRestDay ? 25 : 15;
+      } else if (step.category === 'schedule_adherence') {
+        score += 10;
+      }
+    } else if (canonicalGoal === 'hypertrophy') {
+      if (step.category === 'schedule_adherence') score += 25;
+      if (step.category === 'progressive_overload') score += 15;
+      if (step.category === 'cardio_goal') score += 5;
+    } else if (canonicalGoal === 'strength') {
+      if (step.category === 'schedule_adherence') score += 25;
+      if (step.category === 'progressive_overload') score += 20;
+      if (step.category === 'recovery') score += 15;
+      if (step.category === 'cardio_goal') score += 5;
+    } else {
+      // longevity: balanced 50/50
+      if (step.category === 'schedule_adherence') score += 15;
+      if (step.category === 'cardio_goal' && !isCardioTargetMet) score += 15;
+    }
+
+    return score;
+  };
+
+  const sortedSteps = candidateSteps.sort((a, b) => getStepRankScore(b) - getStepRankScore(a));
   const actionableSteps = sortedSteps.slice(0, 3);
 
   // 10. Assemble Overview

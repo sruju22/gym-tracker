@@ -17,6 +17,10 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
+  Footprints,
+  Bike,
+  Timer,
+  Heart,
 } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
@@ -24,7 +28,17 @@ import { useAuthStore } from '../../store/authStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { getRecommendedTemplate } from '../../data/workoutTemplates';
 import { WorkoutTemplatesModal } from '../plan/WorkoutTemplatesModal';
-import { WorkoutTemplate, DayOfWeek } from '../../types';
+import {
+  WorkoutTemplate,
+  DayOfWeek,
+  CardioActivityType,
+  CardioIntensity,
+  UserCardioPreferences,
+} from '../../types';
+import {
+  DEFAULT_CARDIO_PREFERENCES,
+  getRecommendedCardioGoals,
+} from '../../utils/cardioGoals';
 
 interface OnboardingFlowProps {
   onCompleted?: () => void;
@@ -42,10 +56,17 @@ const DAYS_ORDER: { id: DayOfWeek; short: string }[] = [
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) => {
   const { currentUser, completeOnboarding, isLoading } = useAuthStore();
-  const { getUserData, updateCurrentWeight, updateUserSettings, applyWorkoutTemplate } = useWorkoutStore();
+  const {
+    getUserData,
+    updateCurrentWeight,
+    updateUserSettings,
+    applyWorkoutTemplate,
+    updateCardioPreferences,
+    updateCardioGoals,
+  } = useWorkoutStore();
 
   const [step, setStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   // Form State
   const [fitnessGoal, setFitnessGoal] = useState<string>('Muscle Building & Hypertrophy');
@@ -55,6 +76,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
   const [heightCm, setHeightCm] = useState<string>('');
   const [currentWeight, setCurrentWeight] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
+
+  // Cardio Preference Form State
+  const [preferredActivities, setPreferredActivities] = useState<CardioActivityType[]>([
+    'walking',
+    'running',
+    'cycling',
+  ]);
+  const [cardioDuration, setCardioDuration] = useState<number>(30);
+  const [cardioDays, setCardioDays] = useState<number>(3);
+  const [cardioIntensity, setCardioIntensity] = useState<CardioIntensity>('moderate');
 
   // Workout Split Selection State
   const [selectedCustomTemplate, setSelectedCustomTemplate] = useState<WorkoutTemplate | null>(null);
@@ -211,6 +242,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
         await applyWorkoutTemplate(activeUserId, matchedTemplate.id);
       }
 
+      if (!userData.cardioPreferences) {
+        updateCardioPreferences(activeUserId, DEFAULT_CARDIO_PREFERENCES);
+      }
+      if (!userData.cardioWeeklyGoals) {
+        const goalRec = getRecommendedCardioGoals(
+          currentUser?.fitnessGoal || fitnessGoal,
+          DEFAULT_CARDIO_PREFERENCES,
+          currentUser?.experienceLevel || experienceLevel
+        );
+        updateCardioGoals(activeUserId, goalRec);
+      }
+
       if (onCompleted) {
         onCompleted();
       } else {
@@ -258,17 +301,34 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
     const activeUserId = currentUser?.id || 'guest';
     const finalTemplate = matchedTemplate;
 
+    const cardioPreferences: UserCardioPreferences = {
+      preferredActivities,
+      preferredDurationMinutes: cardioDuration,
+      availableDaysPerWeek: cardioDays,
+      preferredIntensity: cardioIntensity,
+    };
+
     try {
       await completeOnboarding({
         fitnessGoal,
         experienceLevel,
         trainingDaysPerWeek: trainingDays,
         equipmentPreference,
+        cardioPreferences,
         heightCm: height,
         currentWeight: weight,
         weightUnit,
         selectedTemplateId: finalTemplate.id,
       });
+
+      // Save cardio preferences and initialize goal-aware cardio goals
+      updateCardioPreferences(activeUserId, cardioPreferences);
+      const recommendedCardio = getRecommendedCardioGoals(
+        fitnessGoal,
+        cardioPreferences,
+        experienceLevel
+      );
+      updateCardioGoals(activeUserId, recommendedCardio);
 
       // Automatically apply the tailored template to the user's weekly schedule
       await applyWorkoutTemplate(activeUserId, finalTemplate.id);
@@ -632,12 +692,154 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onCompleted }) =
           </div>
         )}
 
-        {/* STEP 5: PERSONALIZED WORKOUT SPLIT & OPTIONAL BODY STATS */}
+        {/* STEP 5: CARDIO & CONDITIONING PREFERENCES */}
         {step === 5 && (
+          <div className="flex-1 min-h-full flex flex-col justify-between animate-fade-in py-1 pb-2">
+            <div className="mb-2 sm:mb-4">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                Conditioning & Cardio
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                How do you prefer to do cardio?
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1 sm:mt-1.5 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                Select your favorite activities, available frequency, and session duration.
+              </p>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center gap-4 my-auto py-1">
+              {/* Preferred Activities Multi-select */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+                  Preferred Activities (Select all that apply)
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'walking', label: 'Walking', icon: Footprints },
+                    { id: 'running', label: 'Running', icon: Flame },
+                    { id: 'cycling', label: 'Cycling', icon: Bike },
+                    { id: 'treadmill', label: 'Treadmill', icon: Timer },
+                    { id: 'elliptical', label: 'Elliptical', icon: Activity },
+                    { id: 'rowing', label: 'Rowing', icon: Zap },
+                    { id: 'stair_climber', label: 'Stairs', icon: Award },
+                    { id: 'other', label: 'Other', icon: Heart },
+                  ].map((act) => {
+                    const isSelected = preferredActivities.includes(act.id as CardioActivityType);
+                    const Icon = act.icon;
+                    return (
+                      <button
+                        key={act.id}
+                        type="button"
+                        onClick={() => {
+                          setPreferredActivities((prev) => {
+                            if (prev.includes(act.id as CardioActivityType)) {
+                              if (prev.length <= 1) return prev;
+                              return prev.filter((x) => x !== act.id);
+                            }
+                            return [...prev, act.id as CardioActivityType];
+                          });
+                        }}
+                        className={`p-3 rounded-xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer select-none ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-red-500/25 to-rose-600/15 border-red-500/80 text-white shadow-xs'
+                            : 'bg-white/[0.04] border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-red-400' : 'text-zinc-400'}`} />
+                          <span className="text-xs font-bold truncate">{act.label}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cardio Days Per Week & Duration */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-[#0c0e17]/60 border border-white/10 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-300">Days Per Week</span>
+                    <span className="text-xs font-black text-red-400">{cardioDays} Days</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setCardioDays(d)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          cardioDays === d
+                            ? 'bg-red-500 text-white shadow-xs'
+                            : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-[#0c0e17]/60 border border-white/10 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-300">Session Duration</span>
+                    <span className="text-xs font-black text-red-400">{cardioDuration} Mins</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {[20, 30, 45, 60].map((dur) => (
+                      <button
+                        key={dur}
+                        type="button"
+                        onClick={() => setCardioDuration(dur)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          cardioDuration === dur
+                            ? 'bg-red-500 text-white shadow-xs'
+                            : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {dur}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferred Intensity */}
+              <div className="bg-[#0c0e17]/60 border border-white/10 rounded-2xl p-3.5 space-y-2">
+                <span className="text-xs font-bold text-zinc-300 block">Preferred Intensity</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'low', label: 'Low', desc: 'Zone 1–2 (Conversational)' },
+                    { id: 'moderate', label: 'Moderate', desc: 'Zone 2–3 (Steady aerobic)' },
+                    { id: 'high', label: 'High', desc: 'Zone 4+ (Intervals / Sprints)' },
+                  ].map((inte) => (
+                    <button
+                      key={inte.id}
+                      type="button"
+                      onClick={() => setCardioIntensity(inte.id as CardioIntensity)}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        cardioIntensity === inte.id
+                          ? 'bg-red-500/20 border-red-500 text-white'
+                          : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200'
+                      }`}
+                    >
+                      <div className="text-xs font-black">{inte.label}</div>
+                      <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight">{inte.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 6: PERSONALIZED WORKOUT SPLIT & OPTIONAL BODY STATS */}
+        {step === 6 && (
           <div className="flex-1 min-h-full flex flex-col justify-between animate-fade-in py-1 pb-2">
             <div className="mb-2 sm:mb-3">
               <span className="text-[10px] sm:text-[11px] font-black uppercase text-[var(--primary)] tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                Step 5 of 5 · Final Step
+                Step 6 of 6 · Final Step
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 Your Recommended Split

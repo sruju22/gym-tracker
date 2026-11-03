@@ -12,6 +12,12 @@ export interface IUser {
   experienceLevel?: string;
   trainingDaysPerWeek?: number;
   equipmentPreference?: string;
+  cardioPreferences?: {
+    preferredActivities: string[];
+    preferredDurationMinutes: number;
+    availableDaysPerWeek: number;
+    preferredIntensity?: 'low' | 'moderate' | 'high';
+  };
   selectedTemplateId?: string;
   heightCm?: number;
   currentWeight?: number;
@@ -80,6 +86,12 @@ const userSchema = new Schema<IUserDocument>(
     equipmentPreference: {
       type: String,
       default: '',
+    },
+    cardioPreferences: {
+      preferredActivities: [{ type: String }],
+      preferredDurationMinutes: { type: Number, default: 30 },
+      availableDaysPerWeek: { type: Number, default: 3 },
+      preferredIntensity: { type: String, enum: ['low', 'moderate', 'high'], default: 'moderate' },
     },
     selectedTemplateId: {
       type: String,
