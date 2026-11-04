@@ -1,4 +1,4 @@
-import { Exercise, WorkoutExercise, MuscleGroup, MuscleArea, MuscleGroupCoverage, CoverageItem } from '../types';
+import { Exercise, WorkoutExercise, MuscleGroup, MuscleArea, MuscleGroupCoverage, CoverageItem, CoverageStatus } from '../types';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getLegSection, isLegSubArea } from './legSection';
 
@@ -35,7 +35,93 @@ export function extractExercise(item: WorkoutExercise | Exercise): Exercise {
 }
 
 /**
+ * Determines whether an exercise provides direct or meaningful compound-supported
+ * involvement for a specific muscle sub-area.
+ */
+export function getExerciseAreaInvolvement(
+  ex: Exercise,
+  area: MuscleArea,
+  muscleGroup: MuscleGroup
+): 'direct' | 'supported' | 'none' {
+  const emphasis = Array.isArray(ex.muscleAreaEmphasis) ? ex.muscleAreaEmphasis : [];
+  const secondaries = Array.isArray(ex.secondaryMuscles) ? ex.secondaryMuscles : [];
+  const isCompound = ex.exerciseType === 'compound';
+
+  // 1. Direct involvement: the exercise explicitly targets this sub-area
+  if (emphasis.includes(area)) {
+    return 'direct';
+  }
+
+  // 2. Compound-Aware Secondary & Overlapping Involvement:
+  // --- A. Chest Overlap ---
+  if (muscleGroup === 'chest') {
+    // If a horizontal or incline compound press is performed, sternocostal / lower pectoral fibers
+    // receive meaningful compound stimulation even if mid_chest is the primary tag.
+    if (area === 'lower_chest' && isCompound && ex.primaryMuscle === 'chest') {
+      if (emphasis.includes('mid_chest') || emphasis.includes('upper_chest')) {
+        return 'supported';
+      }
+    }
+  }
+
+  // --- B. Deltoids (Shoulders) Overlap ---
+  if (muscleGroup === 'shoulders') {
+    // Anterior deltoids (front_delts) receive heavy compound loading in horizontal and incline chest presses
+    if (area === 'front_delts' && isCompound && ex.primaryMuscle === 'chest' && secondaries.includes('shoulders')) {
+      return 'supported';
+    }
+    // Lateral deltoids (side_delts) act as prime stabilizers in compound overhead pressing
+    if (area === 'side_delts' && isCompound && ex.primaryMuscle === 'shoulders') {
+      return 'supported';
+    }
+    // Posterior deltoids (rear_delts) receive heavy tension in compound horizontal and vertical back pulls/rows
+    if (area === 'rear_delts' && isCompound && ex.primaryMuscle === 'back' && secondaries.includes('shoulders')) {
+      return 'supported';
+    }
+  }
+
+  // --- C. Triceps Overlap ---
+  if (muscleGroup === 'triceps') {
+    // Lateral and medial triceps heads act as primary elbow extensors in compound chest and shoulder presses
+    if ((area === 'lateral_head_tricep' || area === 'medial_head_tricep') && isCompound && (ex.primaryMuscle === 'chest' || ex.primaryMuscle === 'shoulders') && secondaries.includes('triceps')) {
+      return 'supported';
+    }
+  }
+
+  // --- D. Biceps Overlap ---
+  if (muscleGroup === 'biceps') {
+    // Biceps brachii acts as primary elbow flexor in compound back rows and vertical pull-downs
+    if ((area === 'long_head_bicep' || area === 'short_head_bicep') && isCompound && ex.primaryMuscle === 'back' && secondaries.includes('biceps')) {
+      return 'supported';
+    }
+  }
+
+  // --- E. Back Sub-Areas Overlap ---
+  if (muscleGroup === 'back') {
+    if (area === 'traps' && isCompound && (ex.primaryMuscle === 'back' || ex.primaryMuscle === 'shoulders')) {
+      return 'supported';
+    }
+    if (area === 'lower_back' && isCompound && (ex.primaryMuscle === 'back' || ex.primaryMuscle === 'legs')) {
+      return 'supported';
+    }
+  }
+
+  // --- F. Legs / Glutes / Calves Overlap ---
+  if (muscleGroup === 'legs' || muscleGroup === 'glutes') {
+    if (area === 'glutes' && isCompound && (ex.primaryMuscle === 'legs' || secondaries.includes('glutes'))) {
+      return 'supported';
+    }
+    if (area === 'hamstrings' && isCompound && ex.primaryMuscle === 'legs' && emphasis.includes('quads')) {
+      return 'supported';
+    }
+  }
+
+  return 'none';
+}
+
+/**
  * Calculates muscle sub-area coverage for a given muscle group / section based on a set of exercises.
+ * Evaluates both direct targeting and compound secondary support.
  * Only exercises with at least one valid, recorded set contribute to coverage.
  */
 export function calculateMuscleCoverage(
@@ -57,17 +143,39 @@ export function calculateMuscleCoverage(
       calves: 'Calves',
     };
 
-    const coveringExercises = qualifyingExercises
+    const directExercises = qualifyingExercises
       .filter((ex) => getLegSection(ex) === legKey)
       .map((ex) => ex.name);
 
-    const uniqueExercises = Array.from(new Set(coveringExercises));
+    // Supporting exercises (e.g. squats supporting glutes/hamstrings)
+    const supportingExercises = qualifyingExercises
+      .filter((ex) => {
+        if (directExercises.includes(ex.name)) return false;
+        if (legKey === 'glutes' && ex.exerciseType === 'compound' && ex.primaryMuscle === 'legs') return true;
+        if (legKey === 'hamstrings' && ex.exerciseType === 'compound' && ex.primaryMuscle === 'legs') return true;
+        return false;
+      })
+      .map((ex) => ex.name);
+
+    const uniqueDirect = Array.from(new Set(directExercises));
+    const uniqueSupporting = Array.from(new Set(supportingExercises));
+
+    let status: CoverageStatus = 'optional';
+    if (uniqueDirect.length > 0) {
+      status = 'direct';
+    } else if (uniqueSupporting.length > 0) {
+      status = 'supported';
+    }
 
     const item: CoverageItem = {
       area: legKey as MuscleArea,
       displayName: legNames[legKey] || legKey,
-      covered: uniqueExercises.length > 0,
-      exercises: uniqueExercises,
+      covered: status === 'direct' || status === 'supported',
+      status,
+      exercises: uniqueDirect,
+      supportingExercises: uniqueSupporting,
+      directSets: uniqueDirect.length,
+      supportingSets: uniqueSupporting.length,
     };
 
     return {
@@ -75,6 +183,9 @@ export function calculateMuscleCoverage(
       areas: [item],
       totalAreas: 1,
       coveredAreas: item.covered ? 1 : 0,
+      directCount: status === 'direct' ? 1 : 0,
+      supportedCount: status === 'supported' ? 1 : 0,
+      optionalCount: status === 'optional' ? 1 : 0,
     };
   }
 
@@ -85,6 +196,9 @@ export function calculateMuscleCoverage(
       areas: [],
       totalAreas: 0,
       coveredAreas: 0,
+      directCount: 0,
+      supportedCount: 0,
+      optionalCount: 0,
     };
   }
 
@@ -93,29 +207,44 @@ export function calculateMuscleCoverage(
     ? meta.areas.filter((a) => targetSubAreas.includes(a.id))
     : meta.areas;
 
-  // Filter exercises relevant to this section
-  const mgExercises = qualifyingExercises.filter((ex) => {
-    if (targetSubAreas && targetSubAreas.length > 0) {
-      return ex.muscleAreaEmphasis.some((area) => targetSubAreas.includes(area));
-    }
-    return ex.primaryMuscle === muscleGroup || (ex.secondaryMuscles && ex.secondaryMuscles.includes(muscleGroup));
-  });
-
   const areas: CoverageItem[] = targetAreaDefs.map((areaDef) => {
-    const coveringExercises = mgExercises
-      .filter((ex) => ex.muscleAreaEmphasis.includes(areaDef.id))
-      .map((ex) => ex.name);
+    const directNames: string[] = [];
+    const supportingNames: string[] = [];
 
-    const uniqueExercises = Array.from(new Set(coveringExercises));
+    for (const ex of qualifyingExercises) {
+      const involvement = getExerciseAreaInvolvement(ex, areaDef.id, muscleGroup);
+      if (involvement === 'direct') {
+        directNames.push(ex.name);
+      } else if (involvement === 'supported') {
+        supportingNames.push(ex.name);
+      }
+    }
+
+    const uniqueDirect = Array.from(new Set(directNames));
+    const uniqueSupporting = Array.from(new Set(supportingNames)).filter((name) => !uniqueDirect.includes(name));
+
+    let status: CoverageStatus = 'optional';
+    if (uniqueDirect.length > 0) {
+      status = 'direct';
+    } else if (uniqueSupporting.length > 0) {
+      status = 'supported';
+    }
 
     return {
       area: areaDef.id,
       displayName: areaDef.name,
-      covered: uniqueExercises.length > 0,
-      exercises: uniqueExercises,
+      covered: status === 'direct' || status === 'supported',
+      status,
+      exercises: uniqueDirect,
+      supportingExercises: uniqueSupporting,
+      directSets: uniqueDirect.length,
+      supportingSets: uniqueSupporting.length,
     };
   });
 
+  const directCount = areas.filter((a) => a.status === 'direct').length;
+  const supportedCount = areas.filter((a) => a.status === 'supported').length;
+  const optionalCount = areas.filter((a) => a.status === 'optional').length;
   const coveredAreas = areas.filter((a) => a.covered).length;
 
   return {
@@ -123,26 +252,31 @@ export function calculateMuscleCoverage(
     areas,
     totalAreas: areas.length,
     coveredAreas,
+    directCount,
+    supportedCount,
+    optionalCount,
   };
 }
 
 /**
  * Detects missing muscle areas for a given muscle group section and returns suggested exercises from library.
+ * Only areas with status 'optional' (neither direct nor compound-supported) qualify as missing.
  */
 export function getMissingAreaSuggestions(
   muscleGroup: MuscleGroup,
   selectedExercises: (WorkoutExercise | Exercise)[],
-  allExercises: Exercise[],
+  allExercises: Exercise[] = [],
   targetSubAreas?: MuscleArea[]
 ): { missingArea: MuscleArea; missingAreaName: string; suggestedExercises: Exercise[] }[] {
   const coverage = calculateMuscleCoverage(muscleGroup, selectedExercises, targetSubAreas);
-  const uncovered = coverage.areas.filter((a) => !a.covered);
+  const uncovered = coverage.areas.filter((a) => a.status === 'optional');
 
   const existingIds = new Set(selectedExercises.map((item) => extractExercise(item).id));
+  const exerciseList = Array.isArray(allExercises) ? allExercises : [];
 
   return uncovered.map((areaItem) => {
     // Find exercises in the library that target this missing area
-    const matchingExercises = allExercises.filter(
+    const matchingExercises = exerciseList.filter(
       (ex) =>
         ex.muscleAreaEmphasis.includes(areaItem.area) &&
         !existingIds.has(ex.id)

@@ -13,6 +13,7 @@ import {
   LogIn,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useWorkoutStore } from '../../store/workoutStore';
 import { useThemeStore, ThemeMode } from '../../store/themeStore';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { ProfileAvatarButton } from './ProfileAvatarButton';
@@ -21,10 +22,18 @@ export const DesktopNav: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, openAccountModal } = useAuthStore();
   const { theme, setTheme, resolvedTheme } = useThemeStore();
+  const userId = currentUser?.id || 'guest';
+  const activeSession = useWorkoutStore((state) => state.getActiveSession(userId));
+  const hasActiveWorkout = Boolean(
+    activeSession &&
+    activeSession.status === 'in_progress' &&
+    activeSession.exercises &&
+    activeSession.exercises.length > 0
+  );
 
   const navLinks = [
     { to: '/', label: 'Home', icon: Home },
-    { to: '/workout', label: 'Workout', icon: Dumbbell },
+    { to: '/workout', label: 'Workout', icon: Dumbbell, hasPulsingBadge: hasActiveWorkout },
     { to: '/exercises', label: 'Exercises', icon: BookOpen },
     { to: '/history', label: 'History', icon: History },
     { to: '/progress', label: 'Progress', icon: TrendingUp },
@@ -68,6 +77,12 @@ export const DesktopNav: React.FC = () => {
               >
                 <Icon className="w-4 h-4 stroke-[2]" />
                 <span>{item.label}</span>
+                {item.hasPulsingBadge && (
+                  <span className="flex h-2 w-2 relative shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
+                )}
               </NavLink>
             );
           })}

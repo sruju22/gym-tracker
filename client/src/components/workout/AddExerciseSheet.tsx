@@ -72,6 +72,8 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
   const [showCreateCustom, setShowCreateCustom] = useState(false);
   const [activeTab, setActiveTab] = useState<'recommended' | 'all'>('recommended');
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+  const [isMultiSelect, setIsMultiSelect] = useState(false);
+  const [selectedExercisesMap, setSelectedExercisesMap] = useState<Map<string, Exercise>>(new Map());
 
   useEffect(() => {
     if (isOpen) {
@@ -80,6 +82,8 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
       setSearch('');
       setActiveTab('recommended');
       setShowCreateCustom(false);
+      setIsMultiSelect(false);
+      setSelectedExercisesMap(new Map());
 
       if (targetMuscleGroup) {
         setCustomMuscle(targetMuscleGroup);
@@ -194,8 +198,32 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
     onClose();
   };
 
+  const toggleExerciseMultiSelect = (ex: Exercise) => {
+    setSelectedExercisesMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(ex.id)) {
+        next.delete(ex.id);
+      } else {
+        next.set(ex.id, ex);
+      }
+      return next;
+    });
+  };
+
   const handleSelect = (ex: Exercise) => {
+    if (isMultiSelect) {
+      toggleExerciseMultiSelect(ex);
+      return;
+    }
     onSelectExercise(ex);
+    onClose();
+  };
+
+  const handleAddAllSelected = () => {
+    selectedExercisesMap.forEach((ex) => {
+      onSelectExercise(ex);
+    });
+    setSelectedExercisesMap(new Map());
     onClose();
   };
 
@@ -217,16 +245,40 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
     >
       {!showCreateCustom ? (
         <div className="space-y-3">
-          {/* 1. Search bar */}
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder={
-              isContextual && targetMuscleGroup
-                ? `Search ${MUSCLE_GROUPS[targetMuscleGroup]?.name || targetMuscleGroup} exercises...`
-                : 'Search exercises, muscles, equipment...'
-            }
-          />
+          {/* 1. Search bar & Multi-select Mode Toggle */}
+          <div className="space-y-2">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={
+                isContextual && targetMuscleGroup
+                  ? `Search ${MUSCLE_GROUPS[targetMuscleGroup]?.name || targetMuscleGroup} exercises...`
+                  : 'Search exercises, muscles, equipment...'
+              }
+            />
+
+            <div className="flex items-center justify-between gap-2 px-0.5">
+              <span className="text-[11px] text-[var(--text-muted)] font-medium">
+                {isMultiSelect
+                  ? `${selectedExercisesMap.size} selected`
+                  : 'Select an exercise or enable multi-select'}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMultiSelect(!isMultiSelect);
+                  if (isMultiSelect) setSelectedExercisesMap(new Map());
+                }}
+                className={`text-xs font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                  isMultiSelect
+                    ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                {isMultiSelect ? 'Single-select' : '+ Multi-Select'}
+              </button>
+            </div>
+          </div>
 
           {/* 2. Target-area filters (Contextual flow: scoped exclusively to target muscle group) */}
           {isContextual && targetMuscleGroup && MUSCLE_GROUPS[targetMuscleGroup]?.areas && (
@@ -433,10 +485,30 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
                       <button
                         type="button"
                         onClick={() => handleSelect(ex)}
-                        className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg py-2 px-3 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99] transition-all shadow-sm"
+                        className={`w-full rounded-lg py-2 px-3 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99] transition-all shadow-sm ${
+                          selectedExercisesMap.has(ex.id)
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : isMultiSelect
+                            ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                            : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
+                        }`}
                       >
-                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        <span>Add to Workout</span>
+                        {selectedExercisesMap.has(ex.id) ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Selected</span>
+                          </>
+                        ) : isMultiSelect ? (
+                          <>
+                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Select Exercise</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Add to Workout</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   );
@@ -466,44 +538,74 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
           {(isSearching || activeTab === 'all') && (
             <div className="space-y-1.5 pb-2">
               {filteredExercises.length > 0 ? (
-                filteredExercises.map((ex) => (
-                  <div
-                    key={ex.id}
-                    onClick={() => handleSelect(ex)}
-                    className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
-                  >
-                    <div className="flex items-center gap-3">
-                      {!imgErrors[ex.id] ? (
-                        <img
-                          src={ex.imageUrl}
-                          alt={ex.name}
-                          loading="lazy"
-                          className="w-10 h-10 rounded-lg object-cover bg-[var(--bg-card)] border border-[var(--border-subtle)]"
-                          onError={() => setImgErrors((prev) => ({ ...prev, [ex.id]: true }))}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
-                          <Dumbbell className="w-4 h-4 opacity-40" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-xs font-bold text-[var(--text-main)]">{ex.name}</div>
-                        <div className="text-[11px] text-[var(--text-secondary)] capitalize">
-                          {ex.primaryMuscle} • {ex.muscleAreaEmphasis.map((a) => getMuscleAreaName(a)).join(', ')} • {ex.equipmentName || ex.equipment}
+                filteredExercises.map((ex) => {
+                  const isSelected = selectedExercisesMap.has(ex.id);
+                  return (
+                    <div
+                      key={ex.id}
+                      onClick={() => handleSelect(ex)}
+                      className={`rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] border ${
+                        isSelected
+                          ? 'border-[var(--primary)] bg-red-500/10 ring-1 ring-[var(--primary)]'
+                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] hover:border-[var(--primary)]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {!imgErrors[ex.id] ? (
+                          <img
+                            src={ex.imageUrl}
+                            alt={ex.name}
+                            loading="lazy"
+                            className="w-10 h-10 rounded-lg object-cover bg-[var(--bg-card)] border border-[var(--border-subtle)]"
+                            onError={() => setImgErrors((prev) => ({ ...prev, [ex.id]: true }))}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
+                            <Dumbbell className="w-4 h-4 opacity-40" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-xs font-bold text-[var(--text-main)]">{ex.name}</div>
+                          <div className="text-[11px] text-[var(--text-secondary)] capitalize">
+                            {ex.primaryMuscle} • {ex.muscleAreaEmphasis.map((a) => getMuscleAreaName(a)).join(', ')} • {ex.equipmentName || ex.equipment}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--primary)] flex items-center justify-center font-black text-xs shrink-0">
-                      +
+                      <div
+                        className={`w-7 h-7 rounded-full border flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
+                          isSelected
+                            ? 'bg-[var(--primary)] border-[var(--primary)] text-white'
+                            : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--primary)]'
+                        }`}
+                      >
+                        {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '+'}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-xs text-[var(--text-secondary)] py-6 text-center font-medium">
                   No matching exercises found in library.
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Sticky Multi-Select Action Bar */}
+          {isMultiSelect && selectedExercisesMap.size > 0 && (
+            <div className="sticky bottom-0 -mx-1 pt-2 pb-1 px-3 bg-[var(--bg-modal)]/95 backdrop-blur-md border-t border-[var(--border-subtle)] flex items-center justify-between gap-3 shadow-lg z-10">
+              <span className="text-xs text-[var(--text-secondary)] font-medium">
+                {selectedExercisesMap.size} selected
+              </span>
+              <button
+                type="button"
+                onClick={handleAddAllSelected}
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs py-2 px-3.5 rounded-lg flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Add Selected ({selectedExercisesMap.size}) to Workout</span>
+              </button>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, StickyNote, Dumbbell, History, Trophy, Check } from 'lucide-react';
+import { Plus, Trash2, StickyNote, Dumbbell, History, Trophy, Check, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
 import { WorkoutExercise } from '../../types';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -17,6 +17,10 @@ interface ExerciseCardProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   onDone?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
@@ -24,6 +28,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   isExpanded,
   onToggleExpand,
   onDone,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp = false,
+  canMoveDown = false,
 }) => {
   const { exercise, sets, notes, completed } = workoutExercise;
   const { currentUser } = useAuthStore();
@@ -32,6 +40,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const {
     updateSet,
     toggleSetCompleted,
+    completeSetWithAutoFill,
     addSetToExercise,
     removeSetFromExercise,
     removeExerciseFromWorkout,
@@ -45,6 +54,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [imgError, setImgError] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [internalExpanded, setInternalExpanded] = useState(false);
+  const [showHistoryDetails, setShowHistoryDetails] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isCardExpanded = isExpanded !== undefined ? isExpanded : internalExpanded;
   const toggleExpand = onToggleExpand || (() => setInternalExpanded(!internalExpanded));
@@ -79,6 +90,33 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const summaryText = validSets.length > 0
     ? validSets.map((s) => `${s.weight} kg × ${s.reps}`).join(' · ')
     : null;
+
+  // Check if at least one set has valid weight and reps (> 0)
+  const hasValidSet = sets.some(
+    (s) => s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
+  );
+  const isDoneEnabled = Boolean(completed) || hasValidSet;
+
+  const handleDeleteTrigger = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Protect if any set has been logged or marked completed
+    if (hasValidSet || completed || sets.some((s) => s.completed || (s.weight && s.weight > 0) || (s.reps && s.reps > 0))) {
+      setShowDeleteConfirm(true);
+    } else {
+      removeExerciseFromWorkout(userId, workoutExercise.id);
+    }
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeExerciseFromWorkout(userId, workoutExercise.id);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(false);
+  };
 
   // COLLAPSED COMPLETED VIEW
   if (!isCardExpanded && completed) {
@@ -147,12 +185,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     );
   }
 
-  // Check if at least one set has valid weight and reps (> 0)
-  const hasValidSet = sets.some(
-    (s) => s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0
-  );
-  const isDoneEnabled = Boolean(completed) || hasValidSet;
-
   // EXPANDED ACTIVE VIEW
   return (
     <Card className={`mb-3 border transition-all ${completed ? 'border-[var(--success-border)] bg-[var(--bg-surface)] shadow-md' : 'border-[var(--border-strong)] bg-[var(--bg-surface)] shadow-md'}`}>
@@ -191,15 +223,43 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <span className="truncate min-w-0">{exercise.name}</span>
             </h3>
             <div className="flex items-center gap-1 shrink-0">
+              {/* Exercise Reordering Controls */}
+              {onMoveUp && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (canMoveUp) onMoveUp();
+                  }}
+                  disabled={!canMoveUp}
+                  className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer rounded hover:bg-[var(--bg-card)]"
+                  title="Move exercise up"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (canMoveDown) onMoveDown();
+                  }}
+                  disabled={!canMoveDown}
+                  className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer rounded hover:bg-[var(--bg-card)]"
+                  title="Move exercise down"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              )}
+
               <span className="text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors py-0.5 px-1.5 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)]">
                 Collapse
               </span>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeExerciseFromWorkout(userId, workoutExercise.id);
-                }}
-                className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors cursor-pointer"
+                type="button"
+                onClick={handleDeleteTrigger}
+                className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors cursor-pointer rounded hover:bg-[var(--danger-subtle)]"
                 title="Remove exercise"
               >
                 <Trash2 className="w-4 h-4" />
@@ -218,43 +278,98 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         </div>
       </div>
 
-      {/* PR & Previous Workout Comparison Panel */}
-      <div className="my-2.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 text-xs space-y-2.5 transition-all">
-        {/* Personal Record Info Row */}
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
-          <div className="flex items-center gap-1.5 text-amber-500 font-bold uppercase tracking-wider text-[11px]">
-            <Trophy className="w-3.5 h-3.5 text-amber-500" />
-            <span>PR (Best Lift)</span>
+      {/* Accidental Deletion Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="my-2 p-3 rounded-xl bg-[var(--danger-subtle)] border border-[var(--danger-border)] space-y-2 animate-fade-in">
+          <div className="flex items-center gap-2 text-xs font-black text-[var(--danger)]">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>Remove {exercise.name}?</span>
           </div>
-          {isNewPR ? (
-            <span className="text-[10px] font-black text-amber-500 bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
-              🏆 NEW PR
-            </span>
-          ) : exercisePR ? (
-            <span className="text-xs font-bold text-[var(--text-main)]">
-              {exercisePR.weight} kg × {exercisePR.reps} <span className="text-[11px] text-[var(--text-muted)] font-normal">(1RM: {exercisePR.estimated1RM} kg)</span>
-            </span>
-          ) : (
-            <span className="text-[11px] text-[var(--text-muted)] italic">No PR set yet</span>
-          )}
+          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+            This exercise has logged sets. Removing it will discard entered sets for this exercise.
+          </p>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleCancelDelete}
+              className="px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-main)] bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg cursor-pointer"
+            >
+              Keep Exercise
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              className="px-2.5 py-1 text-xs font-bold text-white bg-[var(--danger)] hover:opacity-90 rounded-lg cursor-pointer"
+            >
+              Remove
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* Previous Workout Section */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1.5 text-[var(--text-secondary)] font-bold uppercase tracking-wider text-[11px]">
-              <History className="w-3.5 h-3.5 text-[var(--primary)]" />
-              <span>Previous Workout</span>
+      {/* Compact High-Density History & PR Panel */}
+      <div className="my-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2.5 text-xs transition-all">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <History className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
+            <div className="text-[11px] text-[var(--text-secondary)] truncate">
+              {prevPerf && prevPerf.sets && prevPerf.sets.length > 0 ? (
+                <>
+                  <span className="text-[var(--text-muted)] font-medium mr-1.5">Last:</span>
+                  <span className="font-extrabold text-[var(--text-main)]">
+                    {prevPerf.sets.map((s) => `${s.weight}k×${s.reps}`).join(' · ')}
+                  </span>
+                </>
+              ) : (
+                <span className="italic text-[var(--text-muted)]">No previous history</span>
+              )}
             </div>
-            {prevPerf && (
-              <span className="text-[11px] text-[var(--text-muted)] font-medium">
-                {formatDateShort(prevPerf.date)}
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isNewPR ? (
+              <span className="text-[9px] font-black text-amber-500 bg-amber-500/15 border border-amber-500/40 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                🏆 NEW PR
               </span>
+            ) : exercisePR ? (
+              <span className="text-[10px] font-bold text-[var(--text-muted)] hidden xs:inline-block">
+                PR: {exercisePR.weight}kg × {exercisePR.reps}
+              </span>
+            ) : null}
+
+            {prevPerf && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowHistoryDetails(!showHistoryDetails);
+                }}
+                className="text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] px-2 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-subtle)] transition-colors cursor-pointer"
+              >
+                {showHistoryDetails ? 'Hide' : 'Details'}
+              </button>
             )}
           </div>
+        </div>
 
-          {prevPerf && prevPerf.sets && prevPerf.sets.length > 0 ? (
-            <div className="space-y-1 pt-0.5">
+        {/* Expandable History Detail Panel */}
+        {showHistoryDetails && prevPerf && (
+          <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] space-y-2 animate-fade-in">
+            {exercisePR && (
+              <div className="flex items-center justify-between text-[11px] pb-1.5 border-b border-[var(--border-subtle)]">
+                <span className="text-amber-500 font-bold flex items-center gap-1">
+                  <Trophy className="w-3 h-3" /> All-Time Best
+                </span>
+                <span className="font-extrabold text-[var(--text-main)]">
+                  {exercisePR.weight} kg × {exercisePR.reps} <span className="text-[var(--text-muted)] font-normal">(1RM: {exercisePR.estimated1RM} kg)</span>
+                </span>
+              </div>
+            )}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-bold uppercase">
+                <span>Previous Sets ({formatDateShort(prevPerf.date)})</span>
+                <span>Weight × Reps</span>
+              </div>
               {prevPerf.sets.map((s, idx) => (
                 <div
                   key={idx}
@@ -267,17 +382,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-xs text-[var(--text-muted)] italic py-0.5">
-              No previous workout
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Set Header */}
       <div className="flex items-center justify-between text-[10px] font-bold text-[var(--text-muted)] uppercase px-2 mb-1.5">
-        <span className="w-7 text-center">Set</span>
+        <span className="w-7 sm:w-8 text-center">Set</span>
         <span className="w-18 hidden sm:block">Previous</span>
         <span className="flex-1 text-center">Weight</span>
         <span className="w-3"></span>
@@ -287,17 +398,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       {/* Sets List */}
       <div className="space-y-1 mb-2.5">
-        {sets.map((set, idx) => (
-          <SetRow
-            key={set.id}
-            set={set}
-            prevSet={prevPerf?.sets[idx]}
-            onUpdate={(w, r) => updateSet(userId, workoutExercise.id, idx, w, r)}
-            onToggleComplete={() => toggleSetCompleted(userId, workoutExercise.id, idx)}
-            onRemove={() => removeSetFromExercise(userId, workoutExercise.id, idx)}
-            canRemove={sets.length > 1}
-          />
-        ))}
+        {sets.map((set, idx) => {
+          const correspondingPrev =
+            prevPerf?.sets?.[idx] ||
+            (prevPerf?.sets && prevPerf.sets.length > 0 ? prevPerf.sets[prevPerf.sets.length - 1] : undefined);
+
+          return (
+            <SetRow
+              key={set.id}
+              set={set}
+              prevSet={correspondingPrev}
+              onUpdate={(w, r) => updateSet(userId, workoutExercise.id, idx, w, r)}
+              onToggleComplete={() => toggleSetCompleted(userId, workoutExercise.id, idx)}
+              onCompleteWithAutoFill={(fw, fr) =>
+                completeSetWithAutoFill(userId, workoutExercise.id, idx, fw, fr)
+              }
+              onRemove={() => removeSetFromExercise(userId, workoutExercise.id, idx)}
+              canRemove={sets.length > 1}
+            />
+          );
+        })}
       </div>
 
       {/* Card Actions: Add Set, Notes, & Done */}

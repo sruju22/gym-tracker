@@ -202,15 +202,26 @@ interface WorkoutStore {
   addMuscleSectionToWorkout: (userId: string, muscleGroup: MuscleGroup) => void;
   updateSet: (userId: string, exerciseId: string, setIndex: number, weight: number | null, reps: number | null) => void;
   toggleSetCompleted: (userId: string, exerciseId: string, setIndex: number) => void;
+  completeSetWithAutoFill: (
+    userId: string,
+    exerciseId: string,
+    setIndex: number,
+    fallbackWeight?: number | null,
+    fallbackReps?: number | null
+  ) => boolean;
   addSetToExercise: (userId: string, exerciseId: string) => void;
   removeSetFromExercise: (userId: string, exerciseId: string, setIndex: number) => void;
   addExerciseToWorkout: (userId: string, exercise: Exercise) => void;
   removeExerciseFromWorkout: (userId: string, exerciseId: string) => void;
+  moveExerciseInWorkout: (userId: string, exerciseId: string, direction: 'up' | 'down') => void;
   toggleExerciseCompleted: (userId: string, exerciseId: string) => void;
   setExerciseCollapsed: (userId: string, exerciseId: string, isCollapsed: boolean) => void;
   toggleExerciseExpanded: (userId: string, exerciseId: string) => void;
   updateExerciseNotes: (userId: string, exerciseId: string, notes: string) => void;
-  finishWorkout: (userId: string) => Promise<boolean>;
+  finishWorkout: (
+    userId: string,
+    feedback?: { rating?: 'easy' | 'good' | 'hard' | null; notes?: string }
+  ) => Promise<boolean>;
   cancelWorkout: (userId: string) => void;
 
   // Actions - Custom Exercises (CRUD)
@@ -1662,6 +1673,78 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
       },
 
+      completeSetWithAutoFill: (
+        userId,
+        exerciseId,
+        setIndex,
+        fallbackWeight,
+        fallbackReps
+      ) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return false;
+
+        let didMutate = false;
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.exerciseId !== exerciseId && ex.id !== exerciseId) return ex;
+
+          const updatedSets = [...ex.sets];
+          const currentSet = updatedSets[setIndex];
+          if (currentSet) {
+            if (currentSet.completed) {
+              // Toggle uncomplete
+              updatedSets[setIndex] = { ...currentSet, completed: false };
+              didMutate = true;
+            } else {
+              const hasWeight = currentSet.weight !== null && currentSet.weight >= 0;
+              const hasReps = currentSet.reps !== null && currentSet.reps > 0;
+
+              if (hasWeight && hasReps) {
+                // User already entered valid input: preserve and mark completed
+                updatedSets[setIndex] = { ...currentSet, completed: true };
+                didMutate = true;
+              } else if (
+                fallbackWeight !== undefined &&
+                fallbackWeight !== null &&
+                fallbackWeight >= 0 &&
+                fallbackReps !== undefined &&
+                fallbackReps !== null &&
+                fallbackReps > 0
+              ) {
+                // One-tap autofill from previous performance
+                const finalWeight = hasWeight ? currentSet.weight : fallbackWeight;
+                const finalReps = hasReps ? currentSet.reps : fallbackReps;
+                updatedSets[setIndex] = {
+                  ...currentSet,
+                  weight: finalWeight,
+                  reps: finalReps,
+                  completed: true,
+                };
+                didMutate = true;
+              }
+            }
+          }
+          return { ...ex, sets: updatedSets };
+        });
+
+        if (didMutate) {
+          set((state) => ({
+            userDataMap: {
+              ...state.userDataMap,
+              [userId]: {
+                ...state.getUserData(userId),
+                [sessionKey]: {
+                  ...targetSession,
+                  exercises: updatedExercises,
+                },
+              },
+            },
+          }));
+        }
+        return didMutate;
+      },
+
       addSetToExercise: (userId, exerciseId) => {
         const userData = get().getUserData(userId);
         const targetSession = userData.editingSession || userData.activeSession;
@@ -1741,6 +1824,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
         if (targetSession.exercises.some((e) => e.exerciseId === exercise.id)) return;
 
+        const defaultSetsCount = get().settings?.defaultSetsPerExercise || 3;
+
         const newWorkoutExercise: WorkoutExercise = {
           id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
           exerciseId: exercise.id,
@@ -1749,7 +1834,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           notes: '',
           completed: false,
           isCollapsed: false,
-          sets: Array.from({ length: 3 }, (_, i) => ({
+          sets: Array.from({ length: defaultSetsCount }, (_, i) => ({
             id: `set_${Date.now()}_${i + 1}`,
             setNumber: i + 1,
             weight: null,
@@ -1808,7 +1893,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 muscleGroups: updatedMuscleGroups,
                 sections: updatedSections,
                 exercises: [...targetSession.exercises, newWorkoutExercise],
-                totalSets: targetSession.totalSets + 3,
+                totalSets: targetSession.totalSets + defaultSetsCount,
               },
             },
           },
@@ -1835,6 +1920,39 @@ export const useWorkoutStore = create<WorkoutStore>()(
               [sessionKey]: {
                 ...targetSession,
                 exercises: filtered,
+              },
+            },
+          },
+        }));
+      },
+
+      moveExerciseInWorkout: (userId, exerciseId, direction) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const exercises = [...targetSession.exercises];
+        const index = exercises.findIndex((ex) => ex.id === exerciseId || ex.exerciseId === exerciseId);
+        if (index === -1) return;
+
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= exercises.length) return;
+
+        const temp = exercises[index];
+        exercises[index] = exercises[targetIndex];
+        exercises[targetIndex] = temp;
+
+        const reordered = exercises.map((ex, idx) => ({ ...ex, order: idx + 1 }));
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: reordered,
               },
             },
           },
@@ -2354,7 +2472,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
       },
 
-      finishWorkout: async (userId: string) => {
+      finishWorkout: async (
+        userId: string,
+        feedback?: { rating?: 'easy' | 'good' | 'hard' | null; notes?: string }
+      ) => {
         const { isFinishing } = get();
         if (isFinishing) return false;
 
@@ -2601,7 +2722,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
               ? Math.max(0, Math.round((Date.now() - new Date(activeSession.startedAt).getTime()) / 1000))
               : 0,
             exercises: apiExercises,
-            notes: '',
+            notes: feedback?.notes !== undefined ? feedback.notes : (activeSession.notes || ''),
+            rating: feedback?.rating !== undefined ? feedback.rating : (activeSession.rating || null),
             totalVolume,
             totalSets: totalCompletedSets,
             workoutPlanId: userData.workoutPlanDocId || undefined,
@@ -2643,6 +2765,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
             duration: apiPayload.duration,
             totalVolume,
             totalSets: totalCompletedSets,
+            rating: apiPayload.rating,
+            notes: apiPayload.notes,
             newPRs: newPRsInSession,
             syncedToBackend,
             exercises: activeSession.exercises.map((ex) => ({

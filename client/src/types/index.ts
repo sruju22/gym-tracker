@@ -168,11 +168,17 @@ export interface DayConfig {
 export type WeeklySchedule = Record<DayOfWeek, DayConfig>;
 
 // ===== Coverage Types =====
+export type CoverageStatus = 'direct' | 'supported' | 'optional';
+
 export interface CoverageItem {
   area: MuscleArea;
   displayName: string;
   covered: boolean;
+  status: CoverageStatus;
   exercises: string[];
+  supportingExercises?: string[];
+  directSets?: number;
+  supportingSets?: number;
 }
 
 export interface MuscleGroupCoverage {
@@ -180,6 +186,9 @@ export interface MuscleGroupCoverage {
   areas: CoverageItem[];
   totalAreas: number;
   coveredAreas: number;
+  directCount: number;
+  supportedCount: number;
+  optionalCount: number;
 }
 
 // ===== Personal Records =====

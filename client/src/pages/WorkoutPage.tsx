@@ -38,6 +38,7 @@ export const WorkoutPage: React.FC = () => {
     startEditingWorkout,
     addExerciseToWorkout,
     addMuscleSectionToWorkout,
+    moveExerciseInWorkout,
     toggleExerciseCompleted,
     setExerciseCollapsed,
     toggleExerciseExpanded,
@@ -816,6 +817,10 @@ export const WorkoutPage: React.FC = () => {
                     />
                   );
                 }
+                const exIndex = currentSession.exercises.findIndex((e) => e.id === workEx.id);
+                const canMoveUp = exIndex > 0;
+                const canMoveDown = exIndex < currentSession.exercises.length - 1;
+
                 return (
                   <ExerciseCard
                     key={workEx.id}
@@ -823,6 +828,10 @@ export const WorkoutPage: React.FC = () => {
                     isExpanded={isExerciseExpanded(workEx)}
                     onToggleExpand={() => handleToggleExpand(workEx.id, workEx)}
                     onDone={() => handleExerciseDone(workEx.id)}
+                    canMoveUp={canMoveUp}
+                    canMoveDown={canMoveDown}
+                    onMoveUp={() => moveExerciseInWorkout(userId, workEx.id, 'up')}
+                    onMoveDown={() => moveExerciseInWorkout(userId, workEx.id, 'down')}
                   />
                 );
               })}

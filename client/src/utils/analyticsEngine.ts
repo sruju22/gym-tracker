@@ -5,12 +5,15 @@ import {
   WorkoutSetStage,
   Exercise,
   MuscleGroup,
+  MuscleArea,
   WeeklySchedule,
   DayOfWeek,
   PersonalRecord,
 } from '../types';
 import { calculate1RM as calc1RMBase } from './oneRM';
 import { parseLocalDate } from './formatters';
+import { getExerciseAreaInvolvement } from './coverage';
+import { MUSCLE_GROUPS } from '../data/muscleGroups';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -119,6 +122,14 @@ export interface TrainingConsistencyAnalytics {
   weeklyBreakdown: WeeklyConsistencyPoint[];
 }
 
+export interface SubAreaCoverageSummary {
+  area: MuscleArea;
+  displayName: string;
+  directSets: number;
+  supportingSets: number;
+  status: 'direct' | 'supported' | 'optional';
+}
+
 export interface MuscleGroupVolumeCoverage {
   muscleGroup: MuscleGroup;
   displayName: string;
@@ -131,6 +142,7 @@ export interface MuscleGroupVolumeCoverage {
   lastTrainedDate: string | null;
   daysSinceLastTrained: number | null;
   scheduledInSplit: boolean;
+  subAreaBreakdown?: SubAreaCoverageSummary[];
 }
 
 export interface PersonalRecordSummary {
@@ -1000,7 +1012,7 @@ export const STANDARD_MUSCLE_GROUPS: Array<{ key: MuscleGroup; name: string }> =
  */
 export function getMuscleGroupCoverageAnalytics(
   history: WorkoutSession[],
-  exercises: Exercise[],
+  exercises: Exercise[] = [],
   timeRange: AnalyticsTimeRange = '30d',
   weeklyPlan?: WeeklySchedule,
   now: Date = new Date()
@@ -1009,7 +1021,8 @@ export function getMuscleGroupCoverageAnalytics(
   const filteredSessions = filterSessionsByTimeRange(completedSessions, timeRange, now);
 
   const exerciseMap = new Map<string, Exercise>();
-  for (const ex of exercises) {
+  const exerciseList = Array.isArray(exercises) ? exercises : [];
+  for (const ex of exerciseList) {
     if (ex && ex.id) {
       exerciseMap.set(ex.id, ex);
     }
@@ -1037,6 +1050,8 @@ export function getMuscleGroupCoverageAnalytics(
     loadVolume: number;
     exerciseNames: Set<string>;
     lastTrainedDate: Date | null;
+    subAreaDirectSets: Map<MuscleArea, number>;
+    subAreaSupportingSets: Map<MuscleArea, number>;
   }
 
   const accumulators = new Map<MuscleGroup, MuscleAccumulator>();
@@ -1047,6 +1062,8 @@ export function getMuscleGroupCoverageAnalytics(
       loadVolume: 0,
       exerciseNames: new Set(),
       lastTrainedDate: null,
+      subAreaDirectSets: new Map(),
+      subAreaSupportingSets: new Map(),
     });
   }
 
@@ -1128,6 +1145,23 @@ export function getMuscleGroupCoverageAnalytics(
               acc.secondarySets += 1;
             }
           }
+
+          if (exDef) {
+            for (const mg of STANDARD_MUSCLE_GROUPS) {
+              const meta = MUSCLE_GROUPS[mg.key];
+              if (meta && accumulators.has(mg.key)) {
+                const acc = accumulators.get(mg.key)!;
+                for (const area of meta.areas) {
+                  const inv = getExerciseAreaInvolvement(exDef, area.id, mg.key);
+                  if (inv === 'direct') {
+                    acc.subAreaDirectSets.set(area.id, (acc.subAreaDirectSets.get(area.id) || 0) + 1);
+                  } else if (inv === 'supported') {
+                    acc.subAreaSupportingSets.set(area.id, (acc.subAreaSupportingSets.get(area.id) || 0) + 1);
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -1146,6 +1180,24 @@ export function getMuscleGroupCoverageAnalytics(
       daysSinceLastTrained = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
     }
 
+    const meta = MUSCLE_GROUPS[mg.key];
+    const subAreaBreakdown: SubAreaCoverageSummary[] = meta
+      ? meta.areas.map((a) => {
+          const direct = acc.subAreaDirectSets.get(a.id) || 0;
+          const supporting = acc.subAreaSupportingSets.get(a.id) || 0;
+          let status: 'direct' | 'supported' | 'optional' = 'optional';
+          if (direct > 0) status = 'direct';
+          else if (supporting > 0) status = 'supported';
+          return {
+            area: a.id,
+            displayName: a.name,
+            directSets: direct,
+            supportingSets: supporting,
+            status,
+          };
+        })
+      : [];
+
     return {
       muscleGroup: mg.key,
       displayName: mg.name,
@@ -1158,6 +1210,7 @@ export function getMuscleGroupCoverageAnalytics(
       lastTrainedDate: lastTrainedDateStr,
       daysSinceLastTrained,
       scheduledInSplit: scheduledMuscles.has(mg.key.toLowerCase()),
+      subAreaBreakdown,
     };
   });
 }

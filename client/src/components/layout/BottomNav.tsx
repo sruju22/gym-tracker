@@ -1,11 +1,23 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Dumbbell, BookOpen, History, TrendingUp } from 'lucide-react';
+import { useWorkoutStore } from '../../store/workoutStore';
+import { useAuthStore } from '../../store/authStore';
 
 export const BottomNav: React.FC = () => {
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const userId = currentUser?.id || 'guest';
+  const activeSession = useWorkoutStore((state) => state.getActiveSession(userId));
+  const hasActiveWorkout = Boolean(
+    activeSession &&
+    activeSession.status === 'in_progress' &&
+    activeSession.exercises &&
+    activeSession.exercises.length > 0
+  );
+
   const navItems = [
     { to: '/', label: 'Home', icon: Home },
-    { to: '/workout', label: 'Workout', icon: Dumbbell },
+    { to: '/workout', label: 'Workout', icon: Dumbbell, hasPulsingBadge: hasActiveWorkout },
     { to: '/exercises', label: 'Exercises', icon: BookOpen },
     { to: '/history', label: 'History', icon: History },
     { to: '/progress', label: 'Progress', icon: TrendingUp },
@@ -37,7 +49,7 @@ export const BottomNav: React.FC = () => {
               {({ isActive }) => (
                 <>
                   <div
-                    className={`w-10 h-6 sm:w-11 sm:h-6.5 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    className={`relative w-10 h-6 sm:w-11 sm:h-6.5 rounded-full flex items-center justify-center transition-all duration-200 ${
                       isActive
                         ? 'bg-[var(--primary-subtle)] text-[var(--primary)]'
                         : 'bg-transparent text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]'
@@ -48,6 +60,12 @@ export const BottomNav: React.FC = () => {
                         isActive ? 'stroke-[2.2px] scale-105' : 'stroke-[1.8px]'
                       }`}
                     />
+                    {item.hasPulsingBadge && !isActive && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                      </span>
+                    )}
                   </div>
                   <span
                     className={`text-[10px] tracking-tight leading-none mt-1 transition-colors duration-200 ${
