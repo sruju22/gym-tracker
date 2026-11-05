@@ -14,7 +14,7 @@
       "Lie down on the floor and secure your feet. Your legs should be bent at the knees.",
       "Place your hands behind or to the side of your head. You will begin with your back on the ground. This will be your starting position.",
       "Flex your hips and spine to raise your torso toward your knees.",
-      "At the top of the contraction your torso should be perpendicular to the ground. Reverse the motion, going only ¾ of the way down.",
+      "At the top of the contraction your torso should be perpendicular to the ground. Reverse the motion, going only \u00be of the way down.",
       "Repeat for the recommended amount of repetitions."
     ],
     "imageUrl": "/exercises/3_4_Sit-Up/0.jpg",
@@ -712,7 +712,8 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "front_delts"
+      "front_delts",
+      "side_delts"
     ],
     "equipment": "dumbbell",
     "exerciseType": "compound",
@@ -881,8 +882,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "front_delts",
-      "side_delts"
+      "rear_delts"
     ],
     "equipment": "bands",
     "exerciseType": "compound",
@@ -1147,8 +1147,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "front_delts",
-      "side_delts"
+      "rear_delts"
     ],
     "equipment": "bands",
     "exerciseType": "isolation",
@@ -1175,8 +1174,7 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "long_head_tricep"
     ],
     "equipment": "bands",
     "exerciseType": "isolation",
@@ -2152,16 +2150,13 @@
   {
     "id": "Bench_Press_-_Powerlifting",
     "name": "Bench Press - Powerlifting",
-    "primaryMuscle": "triceps",
+    "primaryMuscle": "chest",
     "secondaryMuscles": [
-      "chest",
-      "forearms",
-      "back",
+      "triceps",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "mid_chest"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -2220,15 +2215,13 @@
   {
     "id": "Bench_Press_with_Chains",
     "name": "Bench Press with Chains",
-    "primaryMuscle": "triceps",
+    "primaryMuscle": "chest",
     "secondaryMuscles": [
-      "chest",
-      "back",
+      "triceps",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "mid_chest"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -2443,7 +2436,7 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "side_delts"
+      "rear_delts"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -3159,7 +3152,9 @@
     "id": "Brachialis-SMR",
     "name": "Brachialis-SMR",
     "primaryMuscle": "biceps",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "forearms"
+    ],
     "muscleAreaEmphasis": [
       "short_head_bicep",
       "long_head_bicep"
@@ -3412,7 +3407,9 @@
     "id": "Cable_Hammer_Curls_-_Rope_Attachment",
     "name": "Cable Hammer Curls - Rope Attachment",
     "primaryMuscle": "biceps",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "forearms"
+    ],
     "muscleAreaEmphasis": [
       "long_head_bicep"
     ],
@@ -3529,7 +3526,7 @@
     "difficulty": "beginner",
     "instructions": [
       "Sit next to a low pulley sideways (with legs stretched in front of you or crossed) and grasp the single hand cable attachment with the arm nearest to the cable. Tip: If you can adjust the pulley's height, you can use a flat bench to sit on instead.",
-      "Position the elbow against your side with the elbow bent at 90° and the arm pointing towards the pulley. This will be your starting position.",
+      "Position the elbow against your side with the elbow bent at 90\u00b0 and the arm pointing towards the pulley. This will be your starting position.",
       "Pull the single hand cable attachment toward your body by internally rotating your shoulder until your forearm is across your abs. You will be creating an imaginary semi-circle. Tip: The forearm should be perpendicular to your torso at all times.",
       "Slowly go back to the initial position.",
       "Repeat for the recommended amount of repetitions and then repeat the movement with the next arm."
@@ -3626,7 +3623,7 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "long_head_tricep"
+      "medial_head_tricep"
     ],
     "equipment": "cable",
     "exerciseType": "isolation",
@@ -4399,7 +4396,7 @@
     "primaryMuscle": "back",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "lats"
+      "lower_back"
     ],
     "equipment": "other",
     "exerciseType": "isolation",
@@ -5141,7 +5138,6 @@
       "forearms"
     ],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
       "long_head_bicep"
     ],
     "equipment": "ez_bar",
@@ -5203,7 +5199,6 @@
       "forearms"
     ],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
       "long_head_bicep"
     ],
     "equipment": "barbell",
@@ -5299,7 +5294,6 @@
       "forearms"
     ],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
       "long_head_bicep"
     ],
     "equipment": "barbell",
@@ -5390,8 +5384,7 @@
       "forearms"
     ],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -5501,14 +5494,12 @@
   {
     "id": "Crossover_Reverse_Lunge",
     "name": "Crossover Reverse Lunge",
-    "primaryMuscle": "back",
+    "primaryMuscle": "legs",
     "secondaryMuscles": [
-      "core",
-      "glutes",
-      "legs"
+      "glutes"
     ],
     "muscleAreaEmphasis": [
-      "lower_back"
+      "quads"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -5836,8 +5827,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "long_head_tricep"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -7526,8 +7516,7 @@
       "forearms"
     ],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "long_head_tricep"
     ],
     "equipment": "ez_bar",
     "exerciseType": "isolation",
@@ -8192,12 +8181,12 @@
   {
     "id": "Flutter_Kicks",
     "name": "Flutter Kicks",
-    "primaryMuscle": "glutes",
+    "primaryMuscle": "core",
     "secondaryMuscles": [
       "legs"
     ],
     "muscleAreaEmphasis": [
-      "glutes"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -9102,7 +9091,9 @@
     "id": "Hammer_Curls",
     "name": "Hammer Curls",
     "primaryMuscle": "biceps",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "forearms"
+    ],
     "muscleAreaEmphasis": [
       "long_head_bicep"
     ],
@@ -9453,7 +9444,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "lower_abs"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -10176,7 +10167,9 @@
     "id": "Incline_Hammer_Curls",
     "name": "Incline Hammer Curls",
     "primaryMuscle": "biceps",
-    "secondaryMuscles": [],
+    "secondaryMuscles": [
+      "forearms"
+    ],
     "muscleAreaEmphasis": [
       "long_head_bicep"
     ],
@@ -10202,7 +10195,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -12774,11 +12767,12 @@
     "name": "Lunge Pass Through",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
+      "glutes",
       "calves",
-      "glutes"
+      "hamstrings"
     ],
     "muscleAreaEmphasis": [
-      "hamstrings"
+      "quads"
     ],
     "equipment": "kettlebell",
     "exerciseType": "compound",
@@ -12975,8 +12969,7 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "long_head_tricep"
     ],
     "equipment": "ez_bar",
     "exerciseType": "isolation",
@@ -13382,8 +13375,7 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "long_head_tricep"
     ],
     "equipment": "ez_bar",
     "exerciseType": "isolation",
@@ -13468,8 +13460,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "machine",
     "exerciseType": "isolation",
@@ -14926,7 +14917,7 @@
       "forearms"
     ],
     "muscleAreaEmphasis": [
-      "mid_back"
+      "lats"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -14990,8 +14981,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -15510,7 +15500,7 @@
     "exerciseType": "isolation",
     "difficulty": "beginner",
     "instructions": [
-      "Connect a standard handle to a tower, and—if possible—position the cable to shoulder height. If not, a low pulley will suffice.",
+      "Connect a standard handle to a tower, and\u2014if possible\u2014position the cable to shoulder height. If not, a low pulley will suffice.",
       "With your side to the cable, grab the handle with both hands and step away from the tower. You should be approximately arm's length away from the pulley, with the tension of the weight on the cable.",
       "With your feet positioned hip-width apart and knees slightly bent, hold the cable to the middle of your chest. This will be your starting position.",
       "Press the cable away from your chest, fully extending both arms. You core should be tight and engaged.",
@@ -15538,7 +15528,7 @@
       "triceps"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "cable",
     "exerciseType": "compound",
@@ -16363,8 +16353,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",
@@ -17118,16 +17107,13 @@
   {
     "id": "Reverse_Band_Bench_Press",
     "name": "Reverse Band Bench Press",
-    "primaryMuscle": "triceps",
+    "primaryMuscle": "chest",
     "secondaryMuscles": [
-      "chest",
-      "forearms",
-      "back",
+      "triceps",
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
-      "medial_head_tricep"
+      "mid_chest"
     ],
     "equipment": "barbell",
     "exerciseType": "compound",
@@ -17507,7 +17493,6 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "lateral_head_tricep",
       "medial_head_tricep"
     ],
     "equipment": "cable",
@@ -18400,7 +18385,8 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "long_head_tricep"
+      "lateral_head_tricep",
+      "medial_head_tricep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -18457,7 +18443,8 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "long_head_tricep"
+      "lateral_head_tricep",
+      "medial_head_tricep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -18732,8 +18719,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -19543,7 +19529,7 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -19595,7 +19581,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "bodyweight",
     "exerciseType": "compound",
@@ -19642,7 +19628,8 @@
       "back"
     ],
     "muscleAreaEmphasis": [
-      "side_delts"
+      "side_delts",
+      "front_delts"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -20314,7 +20301,7 @@
     "difficulty": "intermediate",
     "instructions": [
       "Roller skating is a fun activity which can be effective in improving cardiorespiratory fitness and muscular endurance. It requires relatively good balance and coordination. It is necessary to learn the basics of skating including turning and stopping and to wear protective gear to avoid possible injury.",
-      "You can skate at a comfortable pace for 30 minutes straight. If you want a cardio challenge, do interval skating — speed skate two minutes of every five minutes, using the remaining three minutes to recover. A 150 lb person will typically burn about 175 calories in 30 minutes skating at a comfortable pace, similar to brisk walking."
+      "You can skate at a comfortable pace for 30 minutes straight. If you want a cardio challenge, do interval skating \u2014 speed skate two minutes of every five minutes, using the remaining three minutes to recover. A 150 lb person will typically burn about 175 calories in 30 minutes skating at a comfortable pace, similar to brisk walking."
     ],
     "imageUrl": "/exercises/Skating/0.jpg",
     "tags": [
@@ -21578,8 +21565,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "ez_bar",
     "exerciseType": "isolation",
@@ -21812,11 +21798,12 @@
     "name": "Split Squats",
     "primaryMuscle": "legs",
     "secondaryMuscles": [
+      "glutes",
       "calves",
-      "glutes"
+      "hamstrings"
     ],
     "muscleAreaEmphasis": [
-      "hamstrings"
+      "quads"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -22134,7 +22121,8 @@
       "shoulders"
     ],
     "muscleAreaEmphasis": [
-      "long_head_tricep"
+      "lateral_head_tricep",
+      "medial_head_tricep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -22162,7 +22150,8 @@
     "primaryMuscle": "triceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "long_head_tricep"
+      "lateral_head_tricep",
+      "medial_head_tricep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -22395,8 +22384,7 @@
       "forearms"
     ],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -22737,8 +22725,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -24317,7 +24304,7 @@
     "primaryMuscle": "core",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "upper_abs"
+      "obliques"
     ],
     "equipment": "other",
     "exerciseType": "compound",
@@ -24609,8 +24596,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "dumbbell",
     "exerciseType": "isolation",
@@ -25577,8 +25563,7 @@
     "primaryMuscle": "biceps",
     "secondaryMuscles": [],
     "muscleAreaEmphasis": [
-      "short_head_bicep",
-      "long_head_bicep"
+      "short_head_bicep"
     ],
     "equipment": "barbell",
     "exerciseType": "isolation",

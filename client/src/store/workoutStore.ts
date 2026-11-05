@@ -83,6 +83,38 @@ import {
 } from '../api/cardioApi';
 import { calculatePace, calculateSpeed } from '../utils/cardioMetrics';
 
+export const canonicalExerciseMap = new Map<string, Exercise>(
+  INITIAL_EXERCISES.map((ex) => [ex.id, ex])
+);
+
+export function enrichExercisesWithCanonical(
+  exercises: WorkoutExercise[],
+  canonicalMap: Map<string, Exercise> = canonicalExerciseMap,
+  customMap?: Map<string, Exercise>
+): WorkoutExercise[] {
+  if (!Array.isArray(exercises)) return [];
+  return exercises.map((exItem) => {
+    if (!exItem) return exItem;
+    const exId = exItem.exerciseId || exItem.exercise?.id;
+    const canonical = (exId && canonicalMap.get(exId)) ||
+                      (exId && customMap && customMap.get(exId));
+    if (!canonical) return exItem;
+    return {
+      ...exItem,
+      exercise: {
+        ...exItem.exercise,
+        name: canonical.name || exItem.exercise?.name,
+        primaryMuscle: canonical.primaryMuscle,
+        secondaryMuscles: canonical.secondaryMuscles || [],
+        muscleAreaEmphasis: canonical.muscleAreaEmphasis || [],
+        exerciseType: canonical.exerciseType || exItem.exercise?.exerciseType || 'compound',
+        equipment: canonical.equipment || exItem.exercise?.equipment || 'barbell',
+        imageUrl: canonical.imageUrl || exItem.exercise?.imageUrl,
+      },
+    };
+  });
+}
+
 export interface UserWorkoutData {
   history: WorkoutSession[];
   personalRecords: PersonalRecord[];
@@ -479,7 +511,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }
 
         if (reconciled && reconciled.exercises) {
-          reconciled.exercises = normalizeCombinationExercises(reconciled.exercises);
+          const userData = get().getUserData(userId);
+          const customMap = new Map<string, Exercise>(
+            (userData.customExercises || []).map((ex) => [ex.id, ex])
+          );
+          reconciled.exercises = enrichExercisesWithCanonical(
+            normalizeCombinationExercises(reconciled.exercises),
+            canonicalExerciseMap,
+            customMap
+          );
         }
         return reconciled;
       },
@@ -487,7 +527,14 @@ export const useWorkoutStore = create<WorkoutStore>()(
       getEditingSession: (userId: string) => {
         const userData = get().getUserData(userId);
         if (userData.editingSession && userData.editingSession.exercises) {
-          userData.editingSession.exercises = normalizeCombinationExercises(userData.editingSession.exercises);
+          const customMap = new Map<string, Exercise>(
+            (userData.customExercises || []).map((ex) => [ex.id, ex])
+          );
+          userData.editingSession.exercises = enrichExercisesWithCanonical(
+            normalizeCombinationExercises(userData.editingSession.exercises),
+            canonicalExerciseMap,
+            customMap
+          );
         }
         return userData.editingSession || null;
       },
@@ -536,11 +583,18 @@ export const useWorkoutStore = create<WorkoutStore>()(
       getHistory: (userId: string) => {
         const userData = get().getUserData(userId);
         const history = userData.history || [];
+        const customMap = new Map<string, Exercise>(
+          (userData.customExercises || []).map((ex) => [ex.id, ex])
+        );
         const normalized = history
           .filter((session) => session.status === 'completed')
           .map((session) => ({
             ...session,
-            exercises: normalizeCombinationExercises(session.exercises || []),
+            exercises: enrichExercisesWithCanonical(
+              normalizeCombinationExercises(session.exercises || []),
+              canonicalExerciseMap,
+              customMap
+            ),
           }));
         return [...normalized].sort(
           (a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime()
@@ -867,42 +921,45 @@ export const useWorkoutStore = create<WorkoutStore>()(
               notes: w.notes,
               syncedToBackend: true,
               exercises: Array.isArray(w.exercises)
-                ? w.exercises.map((ex: any) => ({
-                    id: ex.id || ex.exerciseId,
-                    exerciseId: ex.exerciseId,
-                    exercise: {
-                      id: ex.exerciseId,
-                      name: ex.exerciseName,
-                      primaryMuscle: ex.primaryMuscle || 'chest',
-                      secondaryMuscles: [],
-                      muscleAreaEmphasis: ex.muscleAreaEmphasis || [],
-                      equipment: ex.equipment || 'barbell',
-                      exerciseType: ex.exerciseType || 'compound',
-                      difficulty: 'intermediate',
-                      instructions: [],
-                      imageUrl: `/exercises/${ex.exerciseName ? ex.exerciseName.replace(/ /g, '_') : 'default'}/0.jpg`,
-                      tags: [],
-                      isCustom: false,
-                    },
-                    order: ex.order || 1,
-                    sets: Array.isArray(ex.sets)
-                      ? ex.sets.map((s: any) => ({
-                          id: `set_${s.setNumber}`,
-                          setNumber: s.setNumber,
-                          weight: s.weight,
-                          reps: s.reps,
-                          completed: s.completed,
-                          stages: s.stages,
-                        }))
-                      : [],
-                    notes: ex.notes || '',
-                    combinationId: ex.combinationId,
-                    combinationName: ex.combinationName,
-                    combinationType: ex.combinationType,
-                    techniqueLabel: ex.techniqueLabel,
-                    stageDescription: ex.stageDescription,
-                    stageOrder: ex.stageOrder,
-                  }))
+                ? w.exercises.map((ex: any) => {
+                    const canonical = canonicalExerciseMap.get(ex.exerciseId);
+                    return {
+                      id: ex.id || ex.exerciseId,
+                      exerciseId: ex.exerciseId,
+                      exercise: {
+                        id: ex.exerciseId,
+                        name: canonical?.name || ex.exerciseName,
+                        primaryMuscle: canonical?.primaryMuscle || ex.primaryMuscle || 'chest',
+                        secondaryMuscles: canonical?.secondaryMuscles || [],
+                        muscleAreaEmphasis: canonical?.muscleAreaEmphasis || ex.muscleAreaEmphasis || [],
+                        equipment: canonical?.equipment || ex.equipment || 'barbell',
+                        exerciseType: canonical?.exerciseType || ex.exerciseType || 'compound',
+                        difficulty: canonical?.difficulty || 'intermediate',
+                        instructions: canonical?.instructions || [],
+                        imageUrl: canonical?.imageUrl || `/exercises/${ex.exerciseName ? ex.exerciseName.replace(/ /g, '_') : 'default'}/0.jpg`,
+                        tags: canonical?.tags || [],
+                        isCustom: false,
+                      },
+                      order: ex.order || 1,
+                      sets: Array.isArray(ex.sets)
+                        ? ex.sets.map((s: any) => ({
+                            id: `set_${s.setNumber}`,
+                            setNumber: s.setNumber,
+                            weight: s.weight,
+                            reps: s.reps,
+                            completed: s.completed,
+                            stages: s.stages,
+                          }))
+                        : [],
+                      notes: ex.notes || '',
+                      combinationId: ex.combinationId,
+                      combinationName: ex.combinationName,
+                      combinationType: ex.combinationType,
+                      techniqueLabel: ex.techniqueLabel,
+                      stageDescription: ex.stageDescription,
+                      stageOrder: ex.stageOrder,
+                    };
+                  })
                 : [],
             }));
 

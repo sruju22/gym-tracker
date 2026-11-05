@@ -86,12 +86,40 @@ export function getExerciseAreaInvolvement(
     if ((area === 'lateral_head_tricep' || area === 'medial_head_tricep') && isCompound && (ex.primaryMuscle === 'chest' || ex.primaryMuscle === 'shoulders') && secondaries.includes('triceps')) {
       return 'supported';
     }
+    // Intra-triceps synergy: In any elbow extension, non-primary triceps heads contribute as synergists
+    if (ex.primaryMuscle === 'triceps') {
+      if (emphasis.includes('medial_head_tricep') && (area === 'lateral_head_tricep' || area === 'long_head_tricep')) {
+        return 'supported';
+      }
+      if (emphasis.includes('lateral_head_tricep') && (area === 'medial_head_tricep' || area === 'long_head_tricep')) {
+        return 'supported';
+      }
+      if (emphasis.includes('long_head_tricep') && (area === 'lateral_head_tricep' || area === 'medial_head_tricep')) {
+        return 'supported';
+      }
+    }
   }
 
   // --- D. Biceps Overlap ---
   if (muscleGroup === 'biceps') {
     // Biceps brachii acts as primary elbow flexor in compound back rows and vertical pull-downs
     if ((area === 'long_head_bicep' || area === 'short_head_bicep') && isCompound && ex.primaryMuscle === 'back' && secondaries.includes('biceps')) {
+      return 'supported';
+    }
+    // Intra-biceps synergy: curling movements involve both heads as synergists
+    if (ex.primaryMuscle === 'biceps') {
+      if (emphasis.includes('short_head_bicep') && area === 'long_head_bicep') {
+        return 'supported';
+      }
+      if (emphasis.includes('long_head_bicep') && area === 'short_head_bicep') {
+        return 'supported';
+      }
+    }
+  }
+
+  // --- D2. Forearms Overlap ---
+  if (muscleGroup === 'forearms') {
+    if (area === 'forearm_flexors' && secondaries.includes('forearms')) {
       return 'supported';
     }
   }
