@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Trash2, Plus, Minus, AlertCircle } from 'lucide-react';
+import { Check, Trash2, AlertCircle } from 'lucide-react';
 import { WorkoutSet } from '../../types';
 
 interface SetRowProps {
@@ -40,7 +40,8 @@ export const SetRow: React.FC<SetRowProps> = ({
       ? set.weight
       : (prevSet && prevSet.weight > 0 ? prevSet.weight : 0);
     const nextVal = Math.max(0, Math.round((base + delta) * 10) / 10);
-    onUpdate(nextVal, set.reps);
+    const repsVal = set.reps !== null ? set.reps : (prevSet?.reps ?? null);
+    onUpdate(nextVal, repsVal);
     if (feedbackMsg) setFeedbackMsg(null);
   };
 
@@ -49,7 +50,8 @@ export const SetRow: React.FC<SetRowProps> = ({
       ? set.reps
       : (prevSet && prevSet.reps > 0 ? prevSet.reps : 0);
     const nextVal = Math.max(1, base + delta);
-    onUpdate(set.weight, nextVal);
+    const weightVal = set.weight !== null ? set.weight : (prevSet?.weight ?? null);
+    onUpdate(weightVal, nextVal);
     if (feedbackMsg) setFeedbackMsg(null);
   };
 
@@ -113,7 +115,7 @@ export const SetRow: React.FC<SetRowProps> = ({
             : 'bg-[var(--bg-card)] border border-[var(--border-subtle)]'
         }`}
       >
-        {/* Set Number & Mobile Previous Hint */}
+        {/* Set Number */}
         <div className="w-7 sm:w-8 flex flex-col items-center justify-center shrink-0">
           <span
             className={`text-xs font-black rounded-md w-6 h-6 flex items-center justify-center ${
@@ -131,69 +133,38 @@ export const SetRow: React.FC<SetRowProps> = ({
           {prevSet ? `${prevSet.weight}kg × ${prevSet.reps}` : '—'}
         </div>
 
-        {/* Weight Input & Steppers */}
-        <div className="flex-1 min-w-[80px]">
+        {/* Weight Input (Clean, touch-friendly, no overlapping buttons) */}
+        <div className="flex-1 min-w-[75px] sm:min-w-[90px]">
           <div className="relative flex items-center">
-            <button
-              type="button"
-              onClick={() => adjustWeight(-2.5)}
-              className="absolute left-1 z-10 w-5 h-5 flex items-center justify-center rounded text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer select-none"
-              title="-2.5 kg"
-            >
-              -
-            </button>
             <input
               type="number"
               inputMode="decimal"
+              step="any"
               placeholder={prevSet ? String(prevSet.weight) : 'kg'}
               value={set.weight !== null ? set.weight : ''}
               onChange={handleWeightChange}
-              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-6 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[42px]"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-xl px-3 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[42px] touch-manipulation transition-colors"
             />
-            <button
-              type="button"
-              onClick={() => adjustWeight(2.5)}
-              className="absolute right-5 sm:right-6 z-10 w-5 h-5 flex items-center justify-center rounded text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer select-none"
-              title="+2.5 kg"
-            >
-              +
-            </button>
-            <span className="absolute right-1 text-[9px] font-medium text-[var(--text-muted)] pointer-events-none">
+            <span className="absolute right-2 text-[10px] font-bold text-[var(--text-muted)] pointer-events-none select-none">
               kg
             </span>
           </div>
         </div>
 
-        <span className="text-xs text-[var(--text-muted)] font-bold">×</span>
+        <span className="text-xs text-[var(--text-muted)] font-black">×</span>
 
-        {/* Reps Input & Steppers */}
-        <div className="flex-1 min-w-[75px]">
+        {/* Reps Input (Clean, touch-friendly, no overlapping buttons) */}
+        <div className="flex-1 min-w-[70px] sm:min-w-[85px]">
           <div className="relative flex items-center">
-            <button
-              type="button"
-              onClick={() => adjustReps(-1)}
-              className="absolute left-1 z-10 w-5 h-5 flex items-center justify-center rounded text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer select-none"
-              title="-1 rep"
-            >
-              -
-            </button>
             <input
               type="number"
               inputMode="numeric"
               placeholder={prevSet ? String(prevSet.reps) : 'reps'}
               value={set.reps !== null ? set.reps : ''}
               onChange={handleRepsChange}
-              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-6 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[42px]"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-xl px-3 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[42px] touch-manipulation transition-colors"
             />
-            <button
-              type="button"
-              onClick={() => adjustReps(1)}
-              className="absolute right-5 sm:right-6 z-10 w-5 h-5 flex items-center justify-center rounded text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer select-none"
-              title="+1 rep"
-            >
-              +
-            </button>
-            <span className="absolute right-1 text-[9px] font-medium text-[var(--text-muted)] pointer-events-none">
+            <span className="absolute right-2 text-[10px] font-bold text-[var(--text-muted)] pointer-events-none select-none">
               r
             </span>
           </div>
@@ -225,16 +196,70 @@ export const SetRow: React.FC<SetRowProps> = ({
         )}
       </div>
 
-      {/* Compact Mobile Previous Hint & Feedback Notice */}
-      <div className="flex items-center justify-between px-2 text-[10px]">
-        <div className="sm:hidden text-[10px] text-[var(--text-muted)] font-medium truncate">
+      {/* Sub-row: Previous Performance & Quick Adjust Controls */}
+      <div className="flex items-center justify-between px-2 min-h-[22px] text-[10px]">
+        {/* Previous set hint */}
+        <div className="text-[10px] text-[var(--text-muted)] font-medium truncate">
           {prevSet ? `Prev: ${prevSet.weight}kg × ${prevSet.reps}` : 'First time set'}
         </div>
-        {feedbackMsg && (
+
+        {/* Feedback warning notice if user tapped check on empty row */}
+        {feedbackMsg ? (
           <span className="text-[10px] font-extrabold text-amber-500 flex items-center gap-1 ml-auto animate-pulse">
             <AlertCircle className="w-3 h-3" /> {feedbackMsg}
           </span>
-        )}
+        ) : !isCompleted ? (
+          /* Touch-friendly Quick Steppers: shown only when set is active/uncompleted */
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            {/* Weight quick adjust */}
+            <div className="inline-flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg p-0.5 shadow-2xs">
+              <span className="text-[8px] font-extrabold text-[var(--text-muted)] uppercase px-1">Wt</span>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => adjustWeight(-2.5)}
+                className="h-5 px-1.5 rounded text-[10px] font-extrabold text-[var(--text-secondary)] hover:text-[var(--text-main)] active:bg-[var(--primary-subtle)] active:text-[var(--primary)] transition-all cursor-pointer select-none touch-manipulation"
+                title="Decrease weight by 2.5 kg"
+              >
+                -2.5
+              </button>
+              <span className="w-px h-2.5 bg-[var(--border-subtle)]" />
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => adjustWeight(2.5)}
+                className="h-5 px-1.5 rounded text-[10px] font-extrabold text-[var(--text-secondary)] hover:text-[var(--text-main)] active:bg-[var(--primary-subtle)] active:text-[var(--primary)] transition-all cursor-pointer select-none touch-manipulation"
+                title="Increase weight by 2.5 kg"
+              >
+                +2.5
+              </button>
+            </div>
+
+            {/* Reps quick adjust */}
+            <div className="inline-flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg p-0.5 shadow-2xs">
+              <span className="text-[8px] font-extrabold text-[var(--text-muted)] uppercase px-1">Reps</span>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => adjustReps(-1)}
+                className="h-5 px-1.5 rounded text-[10px] font-extrabold text-[var(--text-secondary)] hover:text-[var(--text-main)] active:bg-[var(--primary-subtle)] active:text-[var(--primary)] transition-all cursor-pointer select-none touch-manipulation"
+                title="Decrease reps by 1"
+              >
+                -1
+              </button>
+              <span className="w-px h-2.5 bg-[var(--border-subtle)]" />
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => adjustReps(1)}
+                className="h-5 px-1.5 rounded text-[10px] font-extrabold text-[var(--text-secondary)] hover:text-[var(--text-main)] active:bg-[var(--primary-subtle)] active:text-[var(--primary)] transition-all cursor-pointer select-none touch-manipulation"
+                title="Increase reps by 1"
+              >
+                +1
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

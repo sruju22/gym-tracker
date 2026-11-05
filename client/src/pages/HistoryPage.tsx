@@ -451,21 +451,24 @@ export const HistoryPage: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-16 max-w-full overflow-x-hidden">
-      <div className="flex items-center justify-between">
-        <Header title="Workout History" subtitle="Your Training Archive" />
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            setCardioToEdit(null);
-            setIsLogCardioOpen(true);
-          }}
-          className="gap-1.5 font-bold shadow-sm"
-        >
-          <Flame className="w-3.5 h-3.5" />
-          <span>Log Cardio</span>
-        </Button>
-      </div>
+      <Header
+        title="Workout History"
+        subtitle="Your Training Archive"
+        action={
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setCardioToEdit(null);
+              setIsLogCardioOpen(true);
+            }}
+            className="gap-1.5 font-bold shadow-sm"
+          >
+            <Flame className="w-3.5 h-3.5" />
+            <span>Log Cardio</span>
+          </Button>
+        }
+      />
 
       {/* Category Segmented Selector: All | Strength | Cardio */}
       <div className="flex bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-subtle)] gap-1">

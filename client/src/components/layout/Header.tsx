@@ -59,8 +59,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2">
-          {action}
-
           {/* Theme Toggle Button */}
           <button
             onClick={cycleTheme}
@@ -116,8 +114,8 @@ export const Header: React.FC<HeaderProps> = ({
           </h1>
         </div>
       ) : title ? (
-        <div className="min-w-0 flex items-center justify-between">
-          <div>
+        <div className="min-w-0 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-[var(--text-main)] tracking-tight leading-tight truncate">
               {title}
             </h1>
@@ -127,9 +125,11 @@ export const Header: React.FC<HeaderProps> = ({
               </p>
             )}
           </div>
-          <div className="hidden md:flex items-center gap-2">
-            {action}
-          </div>
+          {action && (
+            <div className="flex items-center gap-2 shrink-0">
+              {action}
+            </div>
+          )}
         </div>
       ) : null}
     </header>
