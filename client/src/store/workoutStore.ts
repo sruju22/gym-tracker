@@ -25,7 +25,9 @@ import {
   CardioSession,
   CardioWeeklyGoalSettings,
   UserCardioPreferences,
+  EquipmentIncrementSettings,
 } from '../types';
+import { DEFAULT_EQUIPMENT_INCREMENTS } from '../utils/unifiedProgression';
 import {
   DEFAULT_CARDIO_GOALS,
   DEFAULT_CARDIO_PREFERENCES,
@@ -138,6 +140,10 @@ export interface UserWorkoutData {
   currentWeight?: number;
   progressSummary?: ProgressSummaryResponse;
   volumeTrend?: VolumeTrendPoint[];
+  appliedProgressionTargets?: Record<
+    string,
+    { targetWeight: number | null; targetReps: number; appliedAt: string }
+  >;
 }
 
 interface WorkoutStore {
@@ -339,6 +345,20 @@ interface WorkoutStore {
   getActiveTemplate: (userId: string) => WorkoutTemplate | undefined;
   applyWorkoutTemplate: (userId: string, templateId: string) => Promise<boolean>;
   updateUserSettings: (newSettings: Partial<UserSettings>) => void;
+  getAppliedProgressionTarget: (
+    userId: string,
+    exerciseId: string
+  ) => { targetWeight: number | null; targetReps: number; appliedAt: string } | null;
+  applyProgressionTarget: (
+    userId: string,
+    exerciseId: string,
+    targetWeight: number | null,
+    targetReps: number
+  ) => void;
+  clearProgressionTarget: (userId: string, exerciseId: string) => void;
+  updateEquipmentIncrementSettings: (
+    increments: Partial<EquipmentIncrementSettings>
+  ) => void;
   handleUserLogout: () => void;
 }
 
@@ -364,6 +384,7 @@ const createDefaultUserData = (): UserWorkoutData => {
     pendingDeletedCardioIds: [],
     cardioPreferences: DEFAULT_CARDIO_PREFERENCES,
     cardioWeeklyGoals: DEFAULT_CARDIO_GOALS,
+    appliedProgressionTargets: {},
   };
 };
 
@@ -376,6 +397,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         theme: 'dark',
         defaultSetsPerExercise: 3,
         rotationWindowDays: 7,
+        equipmentIncrements: DEFAULT_EQUIPMENT_INCREMENTS,
       },
       isFinishing: false,
       saveError: null,
@@ -1882,6 +1904,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
         if (targetSession.exercises.some((e) => e.exerciseId === exercise.id)) return;
 
         const defaultSetsCount = get().settings?.defaultSetsPerExercise || 3;
+        const appliedTarget = userData.appliedProgressionTargets?.[exercise.id];
+        const initialWeight = appliedTarget?.targetWeight !== undefined ? appliedTarget.targetWeight : null;
+        const initialReps = appliedTarget?.targetReps !== undefined ? appliedTarget.targetReps : null;
 
         const newWorkoutExercise: WorkoutExercise = {
           id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -1894,8 +1919,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
           sets: Array.from({ length: defaultSetsCount }, (_, i) => ({
             id: `set_${Date.now()}_${i + 1}`,
             setNumber: i + 1,
-            weight: null,
-            reps: null,
+            weight: initialWeight,
+            reps: initialReps,
             completed: false,
           })),
         };
@@ -2852,6 +2877,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
               (!h.clientSessionId || h.clientSessionId !== activeSession.id)
           );
 
+          // Clear applied progression targets for any exercises completed in this session
+          const remainingAppliedTargets = { ...(userData.appliedProgressionTargets || {}) };
+          activeSession.exercises.forEach((ex) => {
+            const exId = ex.exerciseId || ex.exercise?.id || ex.id;
+            if (exId && remainingAppliedTargets[exId]) {
+              delete remainingAppliedTargets[exId];
+            }
+          });
+
           // Update store state with completed workout, PRs, goals, and clear active session
           set((state) => ({
             isFinishing: false,
@@ -2864,6 +2898,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 history: [completedSession, ...filteredHistory],
                 personalRecords: updatedPRs,
                 goals: updatedGoals,
+                appliedProgressionTargets: remainingAppliedTargets,
                 activeSession: null,
               },
             },
@@ -4053,6 +4088,107 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       updateUserSettings: (newSettings) =>
         set((state) => ({ settings: { ...state.settings, ...newSettings } })),
+
+      getAppliedProgressionTarget: (userId: string, exerciseId: string) => {
+        const userData = get().getUserData(userId);
+        return userData.appliedProgressionTargets?.[exerciseId] || null;
+      },
+
+      applyProgressionTarget: (
+        userId: string,
+        exerciseId: string,
+        targetWeight: number | null,
+        targetReps: number
+      ) => {
+        const targetId = userId || 'guest';
+        set((state) => {
+          const userData = state.getUserData(targetId);
+          const existingTargets = userData.appliedProgressionTargets || {};
+          const updatedTargets = {
+            ...existingTargets,
+            [exerciseId]: {
+              targetWeight,
+              targetReps,
+              appliedAt: new Date().toISOString(),
+            },
+          };
+
+          // If there is an activeSession or editingSession with uncompleted sets of this exercise, update their weights and reps
+          const updateSessionSets = (session: WorkoutSession | null): WorkoutSession | null => {
+            if (!session) return null;
+            const hasEx = session.exercises.some(
+              (e) => (e.exerciseId || e.exercise?.id || e.id) === exerciseId
+            );
+            if (!hasEx) return session;
+
+            const updatedExercises = session.exercises.map((exItem) => {
+              const currentExId = exItem.exerciseId || exItem.exercise?.id || exItem.id;
+              if (currentExId !== exerciseId) return exItem;
+              return {
+                ...exItem,
+                sets: exItem.sets.map((s) => {
+                  if (s.completed) return s;
+                  return {
+                    ...s,
+                    weight: targetWeight !== null ? targetWeight : s.weight,
+                    reps: targetReps > 0 ? targetReps : s.reps,
+                  };
+                }),
+              };
+            });
+
+            return {
+              ...session,
+              exercises: updatedExercises,
+            };
+          };
+
+          const updatedActiveSession = updateSessionSets(userData.activeSession);
+          const updatedEditingSession = updateSessionSets(userData.editingSession || null);
+
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [targetId]: {
+                ...userData,
+                appliedProgressionTargets: updatedTargets,
+                activeSession: updatedActiveSession,
+                editingSession: updatedEditingSession,
+              },
+            },
+          };
+        });
+      },
+
+      clearProgressionTarget: (userId: string, exerciseId: string) => {
+        const targetId = userId || 'guest';
+        set((state) => {
+          const userData = state.getUserData(targetId);
+          const existing = { ...(userData.appliedProgressionTargets || {}) };
+          delete existing[exerciseId];
+          return {
+            userDataMap: {
+              ...state.userDataMap,
+              [targetId]: {
+                ...userData,
+                appliedProgressionTargets: existing,
+              },
+            },
+          };
+        });
+      },
+
+      updateEquipmentIncrementSettings: (increments: Partial<EquipmentIncrementSettings>) => {
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            equipmentIncrements: {
+              ...(state.settings.equipmentIncrements || DEFAULT_EQUIPMENT_INCREMENTS),
+              ...increments,
+            },
+          },
+        }));
+      },
     }),
     {
       name: 'gym-tracker-store-v4',

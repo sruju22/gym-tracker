@@ -22,7 +22,10 @@ import {
   CardioWeeklyGoalSettings,
   UserCardioPreferences,
   CardioActivityType,
+  Exercise,
+  EquipmentIncrementSettings,
 } from '../types';
+import { INITIAL_EXERCISES } from '../data/exercises';
 import {
   getMondayOfWeek,
   getSundayOfWeek,
@@ -36,6 +39,7 @@ import {
   CanonicalFitnessGoal,
 } from './cardioGoals';
 import { parseLocalDate, formatDayName } from './formatters';
+import { evaluateUnifiedProgression } from './unifiedProgression';
 
 export type CoachingPriority = 'high' | 'medium' | 'low';
 
@@ -155,6 +159,8 @@ export interface WeeklyCoachingContext {
   equipmentPreference?: string;
   trainingDaysPerWeek?: number;
   personalRecords?: PersonalRecord[];
+  exercises?: Exercise[];
+  equipmentIncrements?: EquipmentIncrementSettings;
   referenceDate?: Date;
 }
 
@@ -746,15 +752,26 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     });
   }
 
-  // Check 5: Progressive Overload on PR
+  // Check 5: Progressive Overload on PR (Unified Single Source of Truth)
   if (curWeekPR) {
+    const exerciseLibrary = context.exercises || INITIAL_EXERCISES;
+    const matchedEx = exerciseLibrary.find((e) => e.id === curWeekPR.exerciseId);
+    const progressionDecision = evaluateUnifiedProgression({
+      exerciseId: curWeekPR.exerciseId,
+      exerciseName: curWeekPR.exerciseName,
+      exercise: matchedEx,
+      history: completedStrength,
+      goal: canonicalGoal,
+      equipmentSettings: context.equipmentIncrements,
+    });
+
     candidateSteps.push({
       id: `step_pr_momentum_${curWeekPR.exerciseId}`,
       category: 'progressive_overload',
       priority: 'medium',
-      title: `Maintain Overload on ${curWeekPR.exerciseName}`,
-      rationale: `You reached a new peak of ${curWeekPR.weight} kg this week. Maintain this working weight or aim for 1 additional clean repetition in your next rotation.`,
-      actionLabel: 'View Records',
+      title: progressionDecision.title,
+      rationale: progressionDecision.reason,
+      actionLabel: progressionDecision.action === 'increase_weight' ? 'Review Weight Jump' : 'View Progress',
       actionRoute: '/progress',
       actionType: 'view_progress',
     });

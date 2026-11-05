@@ -46,6 +46,8 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
     getPersonalRecords,
     getUserData,
     getCardioPreferences,
+    getExercises,
+    settings,
   } = useWorkoutStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -72,6 +74,8 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
       equipmentPreference: currentUser?.equipmentPreference,
       trainingDaysPerWeek: currentUser?.trainingDaysPerWeek,
       personalRecords,
+      exercises: getExercises(userId),
+      equipmentIncrements: settings?.equipmentIncrements,
     });
   }, [
     userId,
@@ -85,6 +89,8 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
     currentUser?.equipmentPreference,
     currentUser?.trainingDaysPerWeek,
     personalRecords,
+    getExercises,
+    settings?.equipmentIncrements,
   ]);
 
   const { overview, actionableSteps, recoveryAlerts, muscleCoverage } = coaching;

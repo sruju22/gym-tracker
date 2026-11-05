@@ -28,6 +28,7 @@ import {
 } from '../../utils/progressionEngine';
 import { ExerciseProgressionInsightCard } from './ExerciseProgressionInsightCard';
 import { RoutinePlateauSummaryCard } from './RoutinePlateauSummaryCard';
+import { useWorkoutStore } from '../../store/workoutStore';
 
 interface TrainingAnalyticsViewProps {
   history: WorkoutSession[];
@@ -45,6 +46,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
   const [timeRange, setTimeRange] = useState<AnalyticsTimeRange>('30d');
   const [progressionMetric, setProgressionMetric] = useState<'1rm' | 'max_weight' | 'volume'>('1rm');
   const [showHistoryTable, setShowHistoryTable] = useState(false);
+  const settings = useWorkoutStore((s) => s.settings);
 
   // Derive comprehensive analytics memoized on history & timeRange
   const analytics = useMemo(() => {
@@ -122,14 +124,20 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
   // Deep progression & plateau report for the currently selected exercise
   const currentProgressionReport = useMemo(() => {
     const exFallback = exercises.find((e) => e.id === selectedExerciseId);
-    return analyzeExerciseProgression(history, {
-      id: selectedExerciseId,
-      name: exFallback?.name || currentProgression.exerciseName,
-      equipment: exFallback?.equipment,
-      primaryMuscle: exFallback?.primaryMuscle,
-      isCustom: exFallback?.isCustom ?? selectedExerciseId.startsWith('custom_'),
-    });
-  }, [history, selectedExerciseId, exercises, currentProgression.exerciseName]);
+    return analyzeExerciseProgression(
+      history,
+      {
+        id: selectedExerciseId,
+        name: exFallback?.name || currentProgression.exerciseName,
+        equipment: exFallback?.equipment,
+        primaryMuscle: exFallback?.primaryMuscle,
+        isCustom: exFallback?.isCustom ?? selectedExerciseId.startsWith('custom_'),
+      },
+      {
+        equipmentIncrements: settings?.equipmentIncrements,
+      }
+    );
+  }, [history, selectedExerciseId, exercises, currentProgression.exerciseName, settings?.equipmentIncrements]);
 
   // Empty state if user has no completed sessions
   if (analytics.consistency.totalWorkouts === 0) {

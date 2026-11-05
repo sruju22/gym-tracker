@@ -277,11 +277,56 @@ export interface User {
   createdAt: string;
 }
 
+export interface EquipmentIncrementSettings {
+  dumbbellIncrementKg?: number;
+  barbellIncrementKg?: number;
+  cableIncrementKg?: number;
+  machineIncrementKg?: number;
+  dumbbellConvention?: 'per_dumbbell' | 'combined';
+  availableDumbbellWeightsKg?: number[];
+  availablePlatesKg?: number[];
+}
+
+export type ProgressionAction =
+  | 'increase_weight'
+  | 'increase_reps'
+  | 'maintain_load'
+  | 'reduce_load'
+  | 'insufficient_data';
+
+export interface UnifiedProgressionDecision {
+  exerciseId: string;
+  exerciseName: string;
+  equipment: Equipment;
+  isBodyweight: boolean;
+  currentWorkingWeight: number;
+  currentReps: number;
+  completedSetsCount: number;
+  allSetsHitUpperTarget: boolean;
+  previousWorkingWeight: number | null;
+  previousReps: number | null;
+  targetRepRange: { min: number; max: number };
+  action: ProgressionAction;
+  title: string;
+  recommendedWeight: number | null;
+  recommendedReps: number;
+  loadChangeKg: number | null;
+  reason: string;
+  evidenceHeadline: string;
+  evidenceDetails: string[];
+  equipmentIncrementKg: number | null;
+  equipmentConvention: 'per_dumbbell' | 'combined';
+  isJumpTooLarge: boolean;
+  nextSessionApplicable: boolean;
+  isApplied?: boolean;
+}
+
 export interface UserSettings {
   weightUnit: 'kg' | 'lbs';
   theme: 'dark' | 'light' | 'system';
   defaultSetsPerExercise: number;
   rotationWindowDays: number;
+  equipmentIncrements?: EquipmentIncrementSettings;
 }
 
 // ===== Workout Template Types =====

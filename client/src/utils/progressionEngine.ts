@@ -16,9 +16,12 @@ import {
   Exercise,
   Equipment,
   MuscleGroup,
+  UnifiedProgressionDecision,
+  EquipmentIncrementSettings,
 } from '../types';
 import { calculate1RM } from './oneRM';
 import { parseLocalDate, formatDateShort } from './formatters';
+import { evaluateUnifiedProgression } from './unifiedProgression';
 
 export type ProgressionStatus =
   | 'insufficient_data'
@@ -109,6 +112,7 @@ export interface ExerciseProgressionReport {
   };
 
   recommendation: ProgressionRecommendation;
+  decision?: UnifiedProgressionDecision;
   exposures: ExerciseSessionExposure[];
 }
 
@@ -128,6 +132,9 @@ export interface AnalyzeProgressionOptions {
   weightUnit?: 'kg' | 'lbs';
   minExposuresForPlateau?: number; // default: 3
   dormantThresholdDays?: number; // default: 60
+  equipmentIncrements?: EquipmentIncrementSettings;
+  goal?: string;
+  appliedTarget?: { targetWeight: number | null; targetReps: number; appliedAt?: string } | null;
 }
 
 /**
@@ -290,6 +297,16 @@ export function analyzeExerciseProgression(
 
   const totalExposures = exposures.length;
 
+  const decision = evaluateUnifiedProgression({
+    exerciseId,
+    exerciseName,
+    exercise: exercise as Exercise,
+    history: completedSessions,
+    goal: options.goal,
+    equipmentSettings: options.equipmentIncrements,
+    appliedTarget: options.appliedTarget,
+  });
+
   // 1. EMPTY DATA / ZERO EXPOSURES
   if (totalExposures === 0) {
     return {
@@ -331,6 +348,7 @@ export function analyzeExerciseProgression(
         actionText: 'Log one more workout with this exercise so we can track your progress more reliably.',
         rationale: 'Logging your first workout will establish a starting benchmark for tracking your strength progress.',
       },
+      decision,
       exposures: [],
     };
   }
@@ -415,6 +433,7 @@ export function analyzeExerciseProgression(
         rationale:
           'Because this exercise has been out of rotation for several weeks, restart with a comfortable working weight before trying to add more load.',
       },
+      decision,
       exposures,
     };
   }
@@ -475,6 +494,7 @@ export function analyzeExerciseProgression(
         actionText: `Log ${neededText} with this exercise so we can track your progress more reliably.`,
         rationale: `We need at least ${minExposures} workouts with this exercise to spot trends and check whether your strength is increasing.`,
       },
+      decision,
       exposures,
     };
   }
@@ -721,6 +741,7 @@ export function analyzeExerciseProgression(
       hasSufficientData: true,
     },
     recommendation,
+    decision,
     exposures,
   };
 }

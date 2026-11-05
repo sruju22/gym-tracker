@@ -472,7 +472,13 @@ export function getExerciseStrengthProgression(
   if (trendDeltaPercent >= 2.5) {
     trend = 'improving';
     const sign = trendDeltaPercent > 0 ? '+' : '';
-    trendReason = `Strength progressed: ${previous.maxWeight} kg → ${latest.maxWeight} kg (${sign}${trendDeltaPercent}% estimated 1RM improvement over previous session).`;
+    if (latest.maxWeight > previous.maxWeight) {
+      trendReason = `Working weight increased: ${previous.maxWeight} kg → ${latest.maxWeight} kg (${sign}${trendDeltaPercent}% estimated 1RM improvement over previous session).`;
+    } else if (latest.maxWeight === previous.maxWeight && latest.bestReps > previous.bestReps) {
+      trendReason = `Repetitions improved: ${previous.bestReps} → ${latest.bestReps} reps at ${latest.maxWeight} kg (${sign}${trendDeltaPercent}% estimated 1RM improvement over previous session).`;
+    } else {
+      trendReason = `Estimated 1RM improved: ${previous.bestEstimated1RM} kg → ${latest.bestEstimated1RM} kg (${sign}${trendDeltaPercent}% improvement over previous session).`;
+    }
   } else if (trendDeltaPercent <= -2.5) {
     trend = 'declining';
     trendReason = `Recent working load was lower: ${latest.maxWeight} kg vs ${previous.maxWeight} kg (${trendDeltaPercent}% difference). Variations in performance across sessions are a normal part of training cycles.`;
