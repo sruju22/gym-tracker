@@ -40,14 +40,27 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
 
   const handleApplyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const targetWeight = decision?.recommendedWeight ?? (
-      recommendation.suggestedLoadChangeKg
+    let targetWeight: number | null = null;
+    let targetReps = 10;
+
+    if (decision) {
+      if (decision.action === 'increase_weight') {
+        targetWeight = decision.recommendedWeight;
+      } else if (decision.action === 'reduce_load') {
+        targetWeight = decision.recommendedWeight;
+      } else if (decision.action === 'insufficient_data') {
+        targetWeight = null;
+      } else {
+        // increase_reps or maintain_load
+        targetWeight = decision.currentWorkingWeight > 0 ? decision.currentWorkingWeight : null;
+      }
+      targetReps = decision.recommendedReps;
+    } else {
+      targetWeight = recommendation.suggestedLoadChangeKg
         ? ((latestExposure?.topSet.weight || 0) + recommendation.suggestedLoadChangeKg)
-        : (latestExposure?.topSet.weight ?? null)
-    );
-    const targetReps = decision?.recommendedReps ?? (
-      recommendation.suggestedRepTarget || latestExposure?.topSet.reps || 10
-    );
+        : (latestExposure?.topSet.weight ?? null);
+      targetReps = recommendation.suggestedRepTarget || latestExposure?.topSet.reps || 10;
+    }
 
     applyProgressionTarget(userId, report.exerciseId, targetWeight, targetReps);
     setJustApplied(true);
@@ -237,9 +250,24 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
             <span className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">
               {decision?.title || recommendation.title}
             </span>
-            {decision && decision.equipmentIncrementKg !== null && decision.equipmentIncrementKg > 0 && (
+            {decision?.action === 'increase_weight' && decision.loadChangeKg !== null && decision.loadChangeKg > 0 && (
               <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
-                +{decision.equipmentIncrementKg} kg available step ({decision.equipmentConvention === 'per_dumbbell' ? 'each DB' : 'total'})
+                +{decision.loadChangeKg} kg step ({decision.equipmentConvention === 'per_dumbbell' && decision.equipment === 'dumbbell' ? 'each DB' : 'total'})
+              </span>
+            )}
+            {decision?.action === 'increase_reps' && (
+              <>
+                <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
+                  Maintain {decision.currentWorkingWeight > 0 ? `${decision.currentWorkingWeight} kg` : 'weight'} ({decision.equipmentConvention === 'per_dumbbell' && decision.equipment === 'dumbbell' ? 'each DB' : 'total'})
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
+                  Target: {decision.recommendedReps} reps
+                </span>
+              </>
+            )}
+            {decision?.action === 'maintain_load' && (
+              <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
+                Hold at {decision.currentWorkingWeight > 0 ? `${decision.currentWorkingWeight} kg` : 'current load'}
               </span>
             )}
             {decision?.isJumpTooLarge && (
@@ -249,7 +277,7 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
             )}
           </div>
           <div className="text-xs font-bold text-[var(--text-main)]">
-            {recommendation.actionText}
+            {decision?.actionHeadline || recommendation.actionText}
           </div>
           <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
             {decision?.reason || recommendation.rationale}

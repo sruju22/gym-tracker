@@ -23,6 +23,7 @@ import {
 } from '../unifiedProgression';
 import { deriveWeeklyCoaching } from '../weeklyCoaching';
 import { getExerciseStrengthProgression } from '../analyticsEngine';
+import { analyzeExerciseProgression } from '../progressionEngine';
 import { useWorkoutStore } from '../../store/workoutStore';
 import {
   Exercise,
@@ -715,7 +716,189 @@ async function runUnifiedProgressionTestSuite() {
     console.log('✓ Staging pre-fills active workout sets and safely clears upon finish.');
   }
 
-  console.log('\n=== ALL 10 UNIFIED PROGRESSION & EQUIPMENT-AWARE TESTS PASSED ===\n');
+  // ==========================================================================
+  // Test 11: Exact Screenshot Reproduction & Zero UI Contradiction
+  // ==========================================================================
+  console.log('--- Test 11: Exact Screenshot Reproduction & Zero UI Contradiction ---');
+  {
+    // Reproduce exact Dumbbell Bench Press performance from bug screenshot:
+    // 3 sets at 20 kg: Set 1 = 12 reps, Set 2 = 10 reps, Set 3 = 8 reps
+    const history: WorkoutSession[] = [
+      {
+        id: 'sess_prev_1',
+        date: '2026-10-20T10:00:00Z',
+        dayOfWeek: 'monday',
+        status: 'completed',
+        totalVolume: 1200,
+        totalSets: 3,
+        muscleGroups: ['chest'],
+        exercises: [
+          {
+            id: 'we_prev_1',
+            exerciseId: 'ex_db_bench',
+            exercise: dumbbellBenchPress,
+            order: 1,
+            notes: '',
+            sets: [
+              { id: 's1', setNumber: 1, weight: 20, reps: 10, completed: true },
+              { id: 's2', setNumber: 2, weight: 20, reps: 10, completed: true },
+              { id: 's3', setNumber: 3, weight: 20, reps: 8, completed: true },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'sess_prev_2',
+        date: '2026-10-25T10:00:00Z',
+        dayOfWeek: 'saturday',
+        status: 'completed',
+        totalVolume: 1300,
+        totalSets: 3,
+        muscleGroups: ['chest'],
+        exercises: [
+          {
+            id: 'we_prev_2',
+            exerciseId: 'ex_db_bench',
+            exercise: dumbbellBenchPress,
+            order: 1,
+            notes: '',
+            sets: [
+              { id: 's1', setNumber: 1, weight: 20, reps: 11, completed: true },
+              { id: 's2', setNumber: 2, weight: 20, reps: 10, completed: true },
+              { id: 's3', setNumber: 3, weight: 20, reps: 9, completed: true },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'sess_screenshot_bug',
+        date: '2026-11-01T10:00:00Z',
+        dayOfWeek: 'thursday',
+        status: 'completed',
+        totalVolume: 1400,
+        totalSets: 3,
+        muscleGroups: ['chest'],
+        exercises: [
+          {
+            id: 'we_db_screenshot',
+            exerciseId: 'ex_db_bench',
+            exercise: dumbbellBenchPress,
+            order: 1,
+            notes: '',
+            sets: [
+              { id: 's1', setNumber: 1, weight: 20, reps: 12, completed: true },
+              { id: 's2', setNumber: 2, weight: 20, reps: 10, completed: true },
+              { id: 's3', setNumber: 3, weight: 20, reps: 8, completed: true },
+            ],
+          },
+        ],
+      },
+    ];
+
+    // 1. Evaluate pure deterministic decision engine
+    const decision = evaluateUnifiedProgression({
+      exerciseId: 'ex_db_bench',
+      exercise: dumbbellBenchPress,
+      history,
+    });
+
+    assertEqual(decision.action, 'increase_reps', 'Decision action must be increase_reps');
+    assertEqual(decision.title, 'Build Consistent Volume', 'Decision title must be Build Consistent Volume');
+    assertEqual(
+      decision.actionHeadline,
+      'Maintain 20 kg and aim for 12 reps across all sets',
+      'Action headline must explicitly direct user to maintain 20 kg'
+    );
+    assertEqual(decision.recommendedWeight, 20, 'Recommended weight must remain 20 kg, NOT 22 or 22.5 kg');
+    assertEqual(decision.recommendedReps, 12, 'Recommended reps must be 12 reps');
+    assert(
+      !decision.actionHeadline.includes('Try adding'),
+      `actionHeadline must NOT say "Try adding". Got: "${decision.actionHeadline}"`
+    );
+    assert(
+      !decision.actionHeadline.includes('+2 kg') && !decision.actionHeadline.includes('+2.5 kg'),
+      `actionHeadline must NOT mention weight increments. Got: "${decision.actionHeadline}"`
+    );
+    assert(
+      decision.reason.includes('Maintain 20 kg and aim to bring all 3 sets to 12 reps before adding weight'),
+      `Reason must instruct maintaining 20 kg until all sets reach 12 reps. Got: "${decision.reason}"`
+    );
+
+    // 2. Evaluate Exercise Progression Report (Single Source of Truth)
+    const report = analyzeExerciseProgression(history, dumbbellBenchPress, {
+      referenceDate: new Date('2026-11-02T10:00:00Z'),
+    });
+
+    assertEqual(report.status, 'progressing', 'Status is progressing');
+    assertEqual(report.recommendation.title, 'Build Consistent Volume', 'Report recommendation title matches decision');
+    assertEqual(
+      report.recommendation.actionText,
+      'Maintain 20 kg and aim for 12 reps across all sets',
+      'Report recommendation headline matches decision headline'
+    );
+    assert(
+      !report.recommendation.actionText.includes('Try adding'),
+      'Report actionText must NOT contain legacy "Try adding +2 kg"'
+    );
+    assert(
+      !report.recommendation.actionText.includes('+2 kg'),
+      'Report actionText must NOT contain "+2 kg"'
+    );
+    assertEqual(
+      report.recommendation.suggestedLoadChangeKg,
+      undefined,
+      'suggestedLoadChangeKg must be undefined for increase_reps'
+    );
+    assertEqual(report.recommendation.suggestedRepTarget, 12, 'suggestedRepTarget must be 12 reps');
+    assertEqual(report.recommendation.rationale, decision.reason, 'Rationale must match decision reason');
+
+    // 3. Apply in Workout Safety & Preservation of User-Entered Values
+    const testUserId = 'user_exact_bug_test';
+    const store = useWorkoutStore.getState();
+
+    // Start a fresh active workout with Dumbbell Bench Press
+    store.startTodayWorkout(testUserId);
+    store.addExerciseToWorkout(testUserId, dumbbellBenchPress);
+
+    let activeSession = store.getActiveSession(testUserId);
+    assert(Boolean(activeSession), 'Active workout session exists');
+    let exItem = activeSession!.exercises.find((e) => e.exerciseId === 'ex_db_bench');
+    assert(Boolean(exItem), 'Dumbbell bench press is in active session');
+
+    // User manually entered 20 kg x 11 reps on Set 1, but has not completed it yet
+    store.updateSet(testUserId, 'ex_db_bench', 0, 20, 11);
+
+    // Verify Set 1 has manually entered values and Set 2 is untouched
+    activeSession = store.getActiveSession(testUserId);
+    exItem = activeSession!.exercises.find((e) => e.exerciseId === 'ex_db_bench');
+    assertEqual(exItem!.sets[0].weight, 20, 'Set 1 has manually entered weight 20 kg');
+    assertEqual(exItem!.sets[0].reps, 11, 'Set 1 has manually entered reps 11');
+    assertEqual(exItem!.sets[1].weight, null, 'Set 2 has null weight before staging');
+
+    // Now user applies progression recommendation: targetWeight = 20, targetReps = 12
+    const targetWeightToStage = decision.recommendedWeight;
+    const targetRepsToStage = decision.recommendedReps;
+    assertEqual(targetWeightToStage, 20, 'Staged target weight is 20 kg (never 22 or 22.5 kg)');
+    assertEqual(targetRepsToStage, 12, 'Staged target reps is 12');
+
+    store.applyProgressionTarget(testUserId, 'ex_db_bench', targetWeightToStage, targetRepsToStage);
+
+    // Verify:
+    // Set 1 (manually entered 20 kg x 11 reps) MUST BE PRESERVED and NOT overwritten!
+    // Set 2 & Set 3 (empty sets) MUST BE PRE-FILLED with 20 kg x 12 reps!
+    activeSession = store.getActiveSession(testUserId);
+    exItem = activeSession!.exercises.find((e) => e.exerciseId === 'ex_db_bench');
+
+    assertEqual(exItem!.sets[0].reps, 11, 'Set 1 manual value 11 reps MUST NOT be overwritten by staged 12 reps');
+    assertEqual(exItem!.sets[1].weight, 20, 'Set 2 empty set is pre-filled with staged 20 kg');
+    assertEqual(exItem!.sets[1].reps, 12, 'Set 2 empty set is pre-filled with staged 12 reps');
+    assertEqual(exItem!.sets[2].weight, 20, 'Set 3 empty set is pre-filled with staged 20 kg');
+    assertEqual(exItem!.sets[2].reps, 12, 'Set 3 empty set is pre-filled with staged 12 reps');
+
+    console.log('✓ Exact screenshot reproduction passed: Zero UI contradiction, correct headline, and safe staging.');
+  }
+
+  console.log('\n=== ALL 11 UNIFIED PROGRESSION & EQUIPMENT-AWARE TESTS PASSED ===\n');
 }
 
 runUnifiedProgressionTestSuite().catch((err) => {

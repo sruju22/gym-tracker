@@ -4128,6 +4128,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 ...exItem,
                 sets: exItem.sets.map((s) => {
                   if (s.completed) return s;
+                  // Preserve sets that have manually entered values
+                  const hasUserEnteredValues =
+                    (s.weight !== null && s.weight > 0) || (s.reps !== null && s.reps > 0);
+                  if (hasUserEnteredValues) return s;
                   return {
                     ...s,
                     weight: targetWeight !== null ? targetWeight : s.weight,

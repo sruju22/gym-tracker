@@ -344,9 +344,11 @@ export function analyzeExerciseProgression(
       },
       recommendation: {
         type: 'maintain_baseline',
-        title: 'Keep Logging Workouts',
-        actionText: 'Log one more workout with this exercise so we can track your progress more reliably.',
-        rationale: 'Logging your first workout will establish a starting benchmark for tracking your strength progress.',
+        title: decision.title,
+        actionText: decision.actionHeadline,
+        suggestedLoadChangeKg: undefined,
+        suggestedRepTarget: decision.recommendedReps,
+        rationale: decision.reason,
       },
       decision,
       exposures: [],
@@ -633,72 +635,26 @@ export function analyzeExerciseProgression(
     }
   }
 
-  // 5. CONSERVATIVE ACTIONABLE RECOMMENDATION
-  let recommendation: ProgressionRecommendation;
-
-  if (status === 'progressing') {
-    if (!isBodyweight && latest.topSet.reps >= 10) {
-      const bumpKg = equipment === 'dumbbell' ? 2.0 : 2.5;
-      recommendation = {
-        type: 'double_progression_increase',
-        title: 'Ready to Increase Weight',
-        actionText: `Try adding +${bumpKg} kg next workout`,
-        suggestedLoadChangeKg: bumpKg,
-        rationale: `You consistently completed ${latest.topSet.reps} reps at ${latest.topSet.weight} kg. You've earned a small weight increase!`,
-      };
-    } else {
-      recommendation = {
-        type: 'continue_load',
-        title: 'Keep Up the Great Work',
-        actionText: 'Stick with this weight and aim for 1 more rep next workout',
-        rationale:
-          'Your strength is moving in the right direction. Focus on clean, controlled reps and let progress build naturally.',
-      };
-    }
-  } else if (status === 'potential_plateau') {
-    if (isBodyweight) {
-      recommendation = {
-        type: 'plateau_volume_adjust',
-        title: 'Add an Extra Set or Change the Pace',
-        actionText: 'Try 1 additional set or slow down your descent (negative reps)',
-        rationale: `Reps have stayed steady at ${latest.topSet.reps} reps. Adding an extra set or slowing down each rep increases the challenge without needing extra equipment.`,
-      };
-    } else if (latest.topSet.reps <= 5) {
-      // Low-rep compound plateau: Micro-loading or rep range shift
-      recommendation = {
-        type: 'plateau_microload',
-        title: 'Try a Small Weight Increase or More Reps',
-        actionText: 'Use smaller plates (+1.0 to 1.25 kg) or aim for 6–8 reps for 2 weeks',
-        suggestedLoadChangeKg: 1.25,
-        rationale: `Progress may have slowed at ${latest.topSet.weight} kg × ${latest.topSet.reps} reps across ${stallDurationSessions} workouts. Micro-loading with smaller weight jumps or temporarily shifting rep targets is an effective way to keep moving forward.`,
-      };
-    } else {
-      // Moderate-rep plateau: Double progression consolidation or movement variation
-      recommendation = {
-        type: 'plateau_rep_range_rotation',
-        title: 'Try a Slight Variation or Slower Tempo',
-        actionText: 'Try a complementary movement variation or focus on controlled reps',
-        rationale: `Weight and reps have stayed steady at ${latest.topSet.weight} kg over ${stallDurationSessions} workouts. A slight change in angle, grip, or repetition tempo stimulates muscles in a fresh way.`,
-      };
-    }
-  } else if (status === 'deload_or_regressing') {
-    recommendation = {
-      type: 'maintain_baseline',
-      title: 'Listen to Your Body & Recover',
-      actionText: 'Keep weights comfortable until you feel fully recovered',
-      rationale:
-        'Taking lighter workouts when fatigued or following an intense training block helps your body recover and prevents injury.',
-    };
-  } else {
-    // Fluctuating
-    recommendation = {
-      type: 'maintain_baseline',
-      title: 'Focus on Consistency & Clean Form',
-      actionText: `Keep working with ${latest.topSet.weight} kg and aim for steady reps`,
-      rationale:
-        'Small fluctuations from workout to workout are completely normal. Focus on smooth, controlled reps and stay consistent.',
-    };
+  // 5. CONSERVATIVE ACTIONABLE RECOMMENDATION DERIVED FROM UNIFIED DECISION
+  let recType: ProgressionRecommendationType = 'maintain_baseline';
+  if (decision.action === 'increase_weight') {
+    recType = 'double_progression_increase';
+  } else if (decision.action === 'increase_reps') {
+    recType = 'continue_load';
+  } else if (decision.action === 'maintain_load') {
+    recType = latest.topSet.reps <= 5 ? 'plateau_microload' : 'plateau_rep_range_rotation';
+  } else if (decision.action === 'reduce_load') {
+    recType = 'maintain_baseline';
   }
+
+  const recommendation: ProgressionRecommendation = {
+    type: recType,
+    title: decision.title,
+    actionText: decision.actionHeadline,
+    suggestedLoadChangeKg: decision.action === 'increase_weight' ? decision.loadChangeKg : undefined,
+    suggestedRepTarget: decision.recommendedReps,
+    rationale: decision.reason,
+  };
 
   const headline =
     status === 'progressing'

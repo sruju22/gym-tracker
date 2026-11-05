@@ -125,6 +125,7 @@ export function getExerciseTargetRepRange(
   if (exercise?.exerciseType === 'compound') {
     if (isStrength) return { min: 4, max: 6 };
     if (isEndurance) return { min: 10, max: 15 };
+    if (exercise?.equipment === 'barbell') return { min: 6, max: 10 };
     return { min: 8, max: 12 };
   }
 
@@ -270,6 +271,7 @@ export function evaluateUnifiedProgression(
       targetRepRange,
       action: 'insufficient_data',
       title: 'Establish Your Baseline',
+      actionHeadline: `Establish baseline strength for ${resolvedName}`,
       recommendedWeight: null,
       recommendedReps: targetRepRange.min,
       loadChangeKg: null,
@@ -306,12 +308,12 @@ export function evaluateUnifiedProgression(
       ? Math.round((latestExp.workingSets.reduce((sum, s) => sum + s.reps, 0) / completedSetsCount) * 10) / 10
       : currentReps;
 
-  const eqIncrement = getEquipmentIncrement(equipment, equipmentSettings);
   const { nextWeight, loadChangeKg, isJumpTooLarge } = calculateNextAvailableWeight(
     currentWorkingWeight,
     equipment,
     equipmentSettings
   );
+  const eqIncrement = loadChangeKg > 0 ? loadChangeKg : getEquipmentIncrement(equipment, equipmentSettings);
 
   // Check 3-session stagnation/plateau
   let isStagnant3Sessions = false;
@@ -351,6 +353,7 @@ export function evaluateUnifiedProgression(
         targetRepRange,
         action: 'increase_reps',
         title: 'Repetition Target Achieved',
+        actionHeadline: `Aim for ${targetRepRange.max + 2} clean reps next workout`,
         recommendedWeight: 0,
         recommendedReps: targetRepRange.max + 2,
         loadChangeKg: 0,
@@ -382,6 +385,7 @@ export function evaluateUnifiedProgression(
       targetRepRange,
       action: 'increase_reps',
       title: 'Build Working Repetitions',
+      actionHeadline: `Aim for ${Math.min(targetRepRange.max, currentReps + 1)} clean reps next workout`,
       recommendedWeight: 0,
       recommendedReps: Math.min(targetRepRange.max, currentReps + 1),
       loadChangeKg: 0,
@@ -418,6 +422,7 @@ export function evaluateUnifiedProgression(
         targetRepRange,
         action: 'increase_reps',
         title: 'Consolidate Reps Before Weight Jump',
+        actionHeadline: `Maintain ${currentWorkingWeight} kg and aim for ${targetRepRange.max + 2} reps`,
         recommendedWeight: currentWorkingWeight,
         recommendedReps: targetRepRange.max + 2,
         loadChangeKg: 0,
@@ -450,6 +455,7 @@ export function evaluateUnifiedProgression(
       targetRepRange,
       action: 'increase_weight',
       title: 'Ready to Increase Weight',
+      actionHeadline: `Increase to ${nextWeight} kg for ${targetRepRange.min} reps next workout`,
       recommendedWeight: nextWeight,
       recommendedReps: targetRepRange.min, // Drop back to lower rep bound at heavier weight
       loadChangeKg,
@@ -483,6 +489,7 @@ export function evaluateUnifiedProgression(
       targetRepRange,
       action: 'increase_reps',
       title: 'Build Consistent Volume',
+      actionHeadline: `Maintain ${currentWorkingWeight} kg and aim for ${targetRepRange.max} reps across all sets`,
       recommendedWeight: currentWorkingWeight,
       recommendedReps: targetRepRange.max,
       loadChangeKg: 0,
@@ -516,6 +523,7 @@ export function evaluateUnifiedProgression(
       targetRepRange,
       action: 'maintain_load',
       title: 'Progress May Have Slowed',
+      actionHeadline: `Maintain ${currentWorkingWeight} kg and focus on controlled tempo`,
       recommendedWeight: currentWorkingWeight,
       recommendedReps: currentReps,
       loadChangeKg: 0,
@@ -554,6 +562,7 @@ export function evaluateUnifiedProgression(
       targetRepRange,
       action: 'reduce_load',
       title: 'Consider a Conservative Deload',
+      actionHeadline: `Reduce load to ${deloadWeight} kg for recovery`,
       recommendedWeight: deloadWeight,
       recommendedReps: targetRepRange.min,
       loadChangeKg: -deloadDropKg,
@@ -587,6 +596,7 @@ export function evaluateUnifiedProgression(
     targetRepRange,
     action: 'increase_reps',
     title: 'Maintain Weight & Build Reps',
+    actionHeadline: `Maintain ${currentWorkingWeight} kg and aim for ${targetNextReps} reps`,
     recommendedWeight: currentWorkingWeight,
     recommendedReps: targetNextReps,
     loadChangeKg: 0,

@@ -308,6 +308,7 @@ export interface UnifiedProgressionDecision {
   targetRepRange: { min: number; max: number };
   action: ProgressionAction;
   title: string;
+  actionHeadline: string;
   recommendedWeight: number | null;
   recommendedReps: number;
   loadChangeKg: number | null;
