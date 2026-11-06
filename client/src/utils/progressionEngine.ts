@@ -17,11 +17,15 @@ import {
   Equipment,
   MuscleGroup,
   UnifiedProgressionDecision,
+  AdaptiveTrainingDecision,
+  WeeklySchedule,
+  MuscleIntelligenceSummary,
   EquipmentIncrementSettings,
 } from '../types';
 import { calculate1RM } from './oneRM';
 import { parseLocalDate, formatDateShort } from './formatters';
 import { evaluateUnifiedProgression } from './unifiedProgression';
+import { evaluateAdaptiveDecision } from './adaptiveDecisionEngine';
 
 export type ProgressionStatus =
   | 'insufficient_data'
@@ -113,6 +117,7 @@ export interface ExerciseProgressionReport {
 
   recommendation: ProgressionRecommendation;
   decision?: UnifiedProgressionDecision;
+  adaptiveDecision?: AdaptiveTrainingDecision;
   exposures: ExerciseSessionExposure[];
 }
 
@@ -135,6 +140,9 @@ export interface AnalyzeProgressionOptions {
   equipmentIncrements?: EquipmentIncrementSettings;
   goal?: string;
   appliedTarget?: { targetWeight: number | null; targetReps: number; appliedAt?: string } | null;
+  weeklyPlan?: WeeklySchedule;
+  exercises?: Exercise[];
+  precomputedMuscleIntelligence?: MuscleIntelligenceSummary;
 }
 
 /**
@@ -307,6 +315,20 @@ export function analyzeExerciseProgression(
     appliedTarget: options.appliedTarget,
   });
 
+  const adaptiveDecision = evaluateAdaptiveDecision({
+    exerciseId,
+    exerciseName,
+    exercise: exercise as Exercise,
+    history: completedSessions,
+    weeklyPlan: options.weeklyPlan,
+    goal: options.goal,
+    equipmentSettings: options.equipmentIncrements,
+    appliedTarget: options.appliedTarget,
+    now: options.referenceDate,
+    exercises: options.exercises,
+    precomputedMuscleIntelligence: options.precomputedMuscleIntelligence,
+  });
+
   // 1. EMPTY DATA / ZERO EXPOSURES
   if (totalExposures === 0) {
     return {
@@ -351,6 +373,7 @@ export function analyzeExerciseProgression(
         rationale: decision.reason,
       },
       decision,
+      adaptiveDecision,
       exposures: [],
     };
   }
@@ -436,6 +459,7 @@ export function analyzeExerciseProgression(
           'Because this exercise has been out of rotation for several weeks, restart with a comfortable working weight before trying to add more load.',
       },
       decision,
+      adaptiveDecision,
       exposures,
     };
   }
@@ -497,6 +521,7 @@ export function analyzeExerciseProgression(
         rationale: `We need at least ${minExposures} workouts with this exercise to spot trends and check whether your strength is increasing.`,
       },
       decision,
+      adaptiveDecision,
       exposures,
     };
   }
@@ -698,6 +723,7 @@ export function analyzeExerciseProgression(
     },
     recommendation,
     decision,
+    adaptiveDecision,
     exposures,
   };
 }

@@ -40,6 +40,7 @@ import {
 } from './cardioGoals';
 import { parseLocalDate, formatDayName } from './formatters';
 import { evaluateUnifiedProgression } from './unifiedProgression';
+import { evaluateAdaptiveDecision } from './adaptiveDecisionEngine';
 
 export type CoachingPriority = 'high' | 'medium' | 'low';
 
@@ -752,7 +753,7 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     });
   }
 
-  // Check 5: Progressive Overload on PR (Unified Single Source of Truth)
+  // Check 5: Progressive Overload on PR (Adaptive Single Source of Truth)
   if (curWeekPR) {
     const exerciseLibrary = context.exercises || INITIAL_EXERCISES;
     const matchedEx = exerciseLibrary.find((e) => e.id === curWeekPR.exerciseId);
@@ -765,13 +766,35 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
       equipmentSettings: context.equipmentIncrements,
     });
 
+    const adaptiveDecision = evaluateAdaptiveDecision({
+      exerciseId: curWeekPR.exerciseId,
+      exerciseName: curWeekPR.exerciseName,
+      exercise: matchedEx,
+      history: completedStrength,
+      weeklyPlan: context.weeklyPlan,
+      goal: canonicalGoal,
+      equipmentSettings: context.equipmentIncrements,
+      exercises: exerciseLibrary,
+      now: refDate,
+    });
+
+    const isAdaptiveActionable = adaptiveDecision.primaryAction !== 'insufficient_data';
+    const finalTitle = isAdaptiveActionable ? adaptiveDecision.title : progressionDecision.title;
+    const finalRationale = isAdaptiveActionable ? adaptiveDecision.primaryRationale : progressionDecision.reason;
+    const finalAction = isAdaptiveActionable ? adaptiveDecision.primaryAction : progressionDecision.action;
+
     candidateSteps.push({
       id: `step_pr_momentum_${curWeekPR.exerciseId}`,
       category: 'progressive_overload',
       priority: 'medium',
-      title: progressionDecision.title,
-      rationale: progressionDecision.reason,
-      actionLabel: progressionDecision.action === 'increase_weight' ? 'Review Weight Jump' : 'View Progress',
+      title: finalTitle,
+      rationale: finalRationale,
+      actionLabel:
+        finalAction === 'increase_weight'
+          ? 'Review Weight Jump'
+          : finalAction === 'recovery_aware_recommendation'
+          ? 'Review Recovery'
+          : 'View Progress',
       actionRoute: '/progress',
       actionType: 'view_progress',
     });

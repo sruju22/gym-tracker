@@ -118,16 +118,14 @@ export const HistoryPage: React.FC = () => {
 
   const userId = currentUser?.id || 'guest';
 
-  // 1. Raw Strength Workouts
-  const rawHistory = useWorkoutStore((state) =>
+  // 1. Strength Workouts with canonical exercise enrichment
+  const userHistoryVersion = useWorkoutStore((state) =>
     currentUser?.id ? state.userDataMap[currentUser.id]?.history : state.userDataMap['guest']?.history
   );
+  const getHistory = useWorkoutStore((state) => state.getHistory);
   const history = useMemo(() => {
-    if (!rawHistory) return [];
-    return rawHistory
-      .filter((s) => s.status === 'completed')
-      .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
-  }, [rawHistory]);
+    return getHistory(userId);
+  }, [getHistory, userId, userHistoryVersion]);
 
   // 2. Raw Cardio Sessions
   const rawCardio = useWorkoutStore((state) =>

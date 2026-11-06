@@ -12,6 +12,7 @@ interface EditCustomExerciseModalProps {
   onSave: (updatedData: {
     name: string;
     primaryMuscle: MuscleGroup;
+    secondaryMuscles: MuscleGroup[];
     muscleAreaEmphasis: MuscleArea[];
     equipment: Equipment;
     exerciseType: ExerciseType;
@@ -47,6 +48,7 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
 }) => {
   const [name, setName] = useState('');
   const [primaryMuscle, setPrimaryMuscle] = useState<MuscleGroup>('chest');
+  const [secondaryMuscles, setSecondaryMuscles] = useState<MuscleGroup[]>([]);
   const [selectedSubAreas, setSelectedSubAreas] = useState<MuscleArea[]>([]);
   const [equipment, setEquipment] = useState<Equipment>('barbell');
   const [exerciseType, setExerciseType] = useState<ExerciseType>('compound');
@@ -56,6 +58,7 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
     if (exercise) {
       setName(exercise.name);
       setPrimaryMuscle(exercise.primaryMuscle);
+      setSecondaryMuscles(exercise.secondaryMuscles || []);
       setSelectedSubAreas(exercise.muscleAreaEmphasis || []);
       setEquipment(exercise.equipment);
       setExerciseType(exercise.exerciseType);
@@ -75,6 +78,14 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
     }
   };
 
+  const toggleSecondaryMuscle = (mg: MuscleGroup) => {
+    if (secondaryMuscles.includes(mg)) {
+      setSecondaryMuscles(secondaryMuscles.filter((m) => m !== mg));
+    } else {
+      setSecondaryMuscles([...secondaryMuscles, mg]);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -82,6 +93,7 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
     onSave({
       name: name.trim(),
       primaryMuscle,
+      secondaryMuscles,
       muscleAreaEmphasis: selectedSubAreas,
       equipment,
       exerciseType,
@@ -111,6 +123,7 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
               const mg = e.target.value as MuscleGroup;
               setPrimaryMuscle(mg);
               setSelectedSubAreas([]);
+              setSecondaryMuscles((prev) => prev.filter((m) => m !== mg));
             }}
             className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] capitalize"
           >
@@ -125,7 +138,7 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
         {currentMuscleGroupInfo && currentMuscleGroupInfo.areas.length > 0 && (
           <div>
             <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
-              Target Sub-Areas
+              Target Sub-Areas (Direct Prime Mover)
             </label>
             <div className="flex flex-wrap gap-1.5">
               {currentMuscleGroupInfo.areas.map((sa) => {
@@ -148,6 +161,33 @@ export const EditCustomExerciseModal: React.FC<EditCustomExerciseModalProps> = (
             </div>
           </div>
         )}
+
+        <div>
+          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
+            Secondary / Synergist Muscles (Optional)
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {Object.values(MUSCLE_GROUPS)
+              .filter((mg) => mg.id !== primaryMuscle)
+              .map((mg) => {
+                const isSelected = secondaryMuscles.includes(mg.id as MuscleGroup);
+                return (
+                  <button
+                    type="button"
+                    key={mg.id}
+                    onClick={() => toggleSecondaryMuscle(mg.id as MuscleGroup)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 font-bold shadow-sm'
+                        : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    {mg.name}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>

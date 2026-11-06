@@ -34,16 +34,19 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
   const appliedTarget = useWorkoutStore((s) => s.getAppliedProgressionTarget(userId, report.exerciseId));
   const applyProgressionTarget = useWorkoutStore((s) => s.applyProgressionTarget);
 
-  const { status, recommendation, evidence, metricDeltas, latestExposure, decision } = report;
+  const { status, recommendation, evidence, metricDeltas, latestExposure, decision, adaptiveDecision } = report;
 
-  const isStaged = Boolean(appliedTarget) || justApplied || decision?.isApplied;
+  const isStaged = Boolean(appliedTarget) || justApplied || adaptiveDecision?.targets.isApplied || decision?.isApplied;
 
   const handleApplyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     let targetWeight: number | null = null;
     let targetReps = 10;
 
-    if (decision) {
+    if (adaptiveDecision) {
+      targetWeight = adaptiveDecision.targets.recommendedWeight;
+      targetReps = adaptiveDecision.targets.recommendedReps;
+    } else if (decision) {
       if (decision.action === 'increase_weight') {
         targetWeight = decision.recommendedWeight;
       } else if (decision.action === 'reduce_load') {
@@ -248,39 +251,49 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
         <div className="space-y-1 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">
-              {decision?.title || recommendation.title}
+              {adaptiveDecision?.title || decision?.title || recommendation.title}
             </span>
-            {decision?.action === 'increase_weight' && decision.loadChangeKg !== null && decision.loadChangeKg > 0 && (
-              <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
-                +{decision.loadChangeKg} kg step ({decision.equipmentConvention === 'per_dumbbell' && decision.equipment === 'dumbbell' ? 'each DB' : 'total'})
+            {adaptiveDecision?.primaryAction === 'recovery_aware_recommendation' && (
+              <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 font-semibold">
+                Recovery Window: Hold Load
               </span>
             )}
-            {decision?.action === 'increase_reps' && (
+            {adaptiveDecision?.confidence === 'provisional' && (
+              <span className="text-[10px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20 font-semibold">
+                Provisional Mapping
+              </span>
+            )}
+            {(adaptiveDecision?.primaryAction === 'increase_weight' || decision?.action === 'increase_weight') && (adaptiveDecision?.targets.loadChangeKg || decision?.loadChangeKg) ? (
+              <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
+                +{(adaptiveDecision?.targets.loadChangeKg || decision?.loadChangeKg)} kg step ({decision?.equipmentConvention === 'per_dumbbell' && report.equipment === 'dumbbell' ? 'each DB' : 'total'})
+              </span>
+            ) : null}
+            {(adaptiveDecision?.primaryAction === 'increase_reps' || decision?.action === 'increase_reps') && (
               <>
                 <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
-                  Maintain {decision.currentWorkingWeight > 0 ? `${decision.currentWorkingWeight} kg` : 'weight'} ({decision.equipmentConvention === 'per_dumbbell' && decision.equipment === 'dumbbell' ? 'each DB' : 'total'})
+                  Maintain {(adaptiveDecision?.currentWorkingWeight || decision?.currentWorkingWeight || 0) > 0 ? `${adaptiveDecision?.currentWorkingWeight || decision?.currentWorkingWeight} kg` : 'weight'}
                 </span>
                 <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
-                  Target: {decision.recommendedReps} reps
+                  Target: {adaptiveDecision?.targets.recommendedReps || decision?.recommendedReps} reps
                 </span>
               </>
             )}
-            {decision?.action === 'maintain_load' && (
+            {(adaptiveDecision?.primaryAction === 'maintain_progression' || decision?.action === 'maintain_load') && (
               <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] font-mono">
-                Hold at {decision.currentWorkingWeight > 0 ? `${decision.currentWorkingWeight} kg` : 'current load'}
+                Hold at {(adaptiveDecision?.currentWorkingWeight || decision?.currentWorkingWeight || 0) > 0 ? `${adaptiveDecision?.currentWorkingWeight || decision?.currentWorkingWeight} kg` : 'current load'}
               </span>
             )}
-            {decision?.isJumpTooLarge && (
+            {(adaptiveDecision?.targets.isJumpTooLarge || decision?.isJumpTooLarge) && (
               <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 font-semibold">
                 Large Jump Guardrail Active
               </span>
             )}
           </div>
           <div className="text-xs font-bold text-[var(--text-main)]">
-            {decision?.actionHeadline || recommendation.actionText}
+            {adaptiveDecision?.actionHeadline || decision?.actionHeadline || recommendation.actionText}
           </div>
           <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            {decision?.reason || recommendation.rationale}
+            {adaptiveDecision?.primaryRationale || decision?.reason || recommendation.rationale}
           </p>
         </div>
 
@@ -310,6 +323,30 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
           </button>
         )}
       </div>
+
+      {/* 5. Additional Training Recommendations (Phase 10: Multi-Output Guidance) */}
+      {adaptiveDecision?.additionalRecommendations && adaptiveDecision.additionalRecommendations.length > 0 && (
+        <div className="space-y-1.5 pt-0.5">
+          {adaptiveDecision.additionalRecommendations.map((addRec, idx) => (
+            <div
+              key={idx}
+              className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-xs space-y-1"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
+                  {addRec.title}
+                </span>
+                <span className="text-[10px] text-[var(--text-secondary)] font-medium">
+                  {addRec.actionText}
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                {addRec.rationale}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

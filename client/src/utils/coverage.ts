@@ -6,25 +6,83 @@ import { getLegSection, isLegSubArea } from './legSection';
  * Checks whether an exercise item has at least one valid, recorded set.
  * Valid set rules:
  * - set.completed must be true
- * - weight must be non-null and > 0
  * - reps must be non-null and > 0
+ * - weight validation:
+ *   - bodyweight exercises (equipment === 'bodyweight' or exerciseType === 'bodyweight'):
+ *     weight must be non-null and >= 0 (permits pure bodyweight w=0, and weighted bodyweight w>0)
+ *   - loaded exercises (barbell, dumbbell, machine, cable, etc.):
+ *     weight must be non-null and > 0
  * Empty sets, untouched default values, invalid entries, and exercises with no completed sets
  * return false.
  */
 export function hasValidRecordedSet(item: WorkoutExercise | Exercise): boolean {
   if ('sets' in item && Array.isArray((item as WorkoutExercise).sets)) {
     const workoutEx = item as WorkoutExercise;
+    const ex = extractExercise(item);
+    const isBw = ex?.equipment === 'bodyweight' || ex?.exerciseType === 'bodyweight';
+
     return workoutEx.sets.some((s) => {
+      if (!s || !s.completed) return false;
+
       if (Array.isArray(s.stages) && s.stages.length > 0) {
-        return s.stages.some(
-          (st) => Boolean(st.completed && st.weight !== null && st.weight > 0 && st.reps !== null && st.reps > 0)
-        );
+        return s.stages.some((st) => {
+          if (!st || !st.completed) return false;
+          const stageIsBw = isBw || st.weight === 0;
+          const validW = stageIsBw
+            ? st.weight !== null && st.weight >= 0
+            : st.weight !== null && st.weight > 0;
+          return Boolean(validW && st.reps !== null && st.reps > 0);
+        });
       }
-      return Boolean(s.completed && s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0);
+
+      const validW = isBw
+        ? s.weight !== null && s.weight >= 0
+        : s.weight !== null && s.weight > 0;
+      return Boolean(validW && s.reps !== null && s.reps > 0);
     });
   }
   // Plain Exercise without sets array (e.g. from static library / planning utils)
   return true;
+}
+
+/**
+ * Counts qualifying completed working sets for an exercise item.
+ * Excludes incomplete sets and unentered/invalid sets.
+ * Accurately includes completed bodyweight sets with weight >= 0.
+ */
+export function countQualifyingSets(item: WorkoutExercise | Exercise): number {
+  if ('sets' in item && Array.isArray((item as WorkoutExercise).sets)) {
+    const workoutEx = item as WorkoutExercise;
+    const ex = extractExercise(item);
+    const isBw = ex?.equipment === 'bodyweight' || ex?.exerciseType === 'bodyweight';
+
+    let count = 0;
+    for (const s of workoutEx.sets) {
+      if (!s || !s.completed) continue;
+
+      if (Array.isArray(s.stages) && s.stages.length > 0) {
+        for (const st of s.stages) {
+          if (!st || !st.completed) continue;
+          const stageIsBw = isBw || st.weight === 0;
+          const validW = stageIsBw
+            ? st.weight !== null && st.weight >= 0
+            : st.weight !== null && st.weight > 0;
+          if (validW && st.reps !== null && st.reps > 0) {
+            count++;
+          }
+        }
+      } else {
+        const validW = isBw
+          ? s.weight !== null && s.weight >= 0
+          : s.weight !== null && s.weight > 0;
+        if (validW && s.reps !== null && s.reps > 0) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+  return 1;
 }
 
 /**
@@ -171,22 +229,33 @@ export function calculateMuscleCoverage(
       calves: 'Calves',
     };
 
-    const directExercises = qualifyingExercises
-      .filter((ex) => getLegSection(ex) === legKey)
-      .map((ex) => ex.name);
+    const directExercises: string[] = [];
+    let directSets = 0;
+    const supportingExercises: string[] = [];
+    let supportingSets = 0;
 
-    // Supporting exercises (e.g. squats supporting glutes/hamstrings)
-    const supportingExercises = qualifyingExercises
-      .filter((ex) => {
-        if (directExercises.includes(ex.name)) return false;
-        if (legKey === 'glutes' && ex.exerciseType === 'compound' && ex.primaryMuscle === 'legs') return true;
-        if (legKey === 'hamstrings' && ex.exerciseType === 'compound' && ex.primaryMuscle === 'legs') return true;
-        return false;
-      })
-      .map((ex) => ex.name);
+    for (const item of qualifyingItems) {
+      const ex = extractExercise(item);
+      const setsCount = countQualifyingSets(item);
+      const isDirect = getLegSection(ex) === legKey;
+      if (isDirect) {
+        directExercises.push(ex.name);
+        directSets += setsCount;
+      } else {
+        const isSupporting =
+          (legKey === 'glutes' && ex.exerciseType === 'compound' && ex.primaryMuscle === 'legs') ||
+          (legKey === 'hamstrings' && ex.exerciseType === 'compound' && ex.primaryMuscle === 'legs');
+        if (isSupporting) {
+          supportingExercises.push(ex.name);
+          supportingSets += setsCount;
+        }
+      }
+    }
 
     const uniqueDirect = Array.from(new Set(directExercises));
-    const uniqueSupporting = Array.from(new Set(supportingExercises));
+    const uniqueSupporting = Array.from(new Set(supportingExercises)).filter(
+      (name) => !uniqueDirect.includes(name)
+    );
 
     let status: CoverageStatus = 'optional';
     if (uniqueDirect.length > 0) {
@@ -202,8 +271,8 @@ export function calculateMuscleCoverage(
       status,
       exercises: uniqueDirect,
       supportingExercises: uniqueSupporting,
-      directSets: uniqueDirect.length,
-      supportingSets: uniqueSupporting.length,
+      directSets,
+      supportingSets,
     };
 
     return {
@@ -238,13 +307,19 @@ export function calculateMuscleCoverage(
   const areas: CoverageItem[] = targetAreaDefs.map((areaDef) => {
     const directNames: string[] = [];
     const supportingNames: string[] = [];
+    let directSets = 0;
+    let supportingSets = 0;
 
-    for (const ex of qualifyingExercises) {
+    for (const item of qualifyingItems) {
+      const ex = extractExercise(item);
+      const setsCount = countQualifyingSets(item);
       const involvement = getExerciseAreaInvolvement(ex, areaDef.id, muscleGroup);
       if (involvement === 'direct') {
         directNames.push(ex.name);
+        directSets += setsCount;
       } else if (involvement === 'supported') {
         supportingNames.push(ex.name);
+        supportingSets += setsCount;
       }
     }
 
@@ -265,8 +340,8 @@ export function calculateMuscleCoverage(
       status,
       exercises: uniqueDirect,
       supportingExercises: uniqueSupporting,
-      directSets: uniqueDirect.length,
-      supportingSets: uniqueSupporting.length,
+      directSets,
+      supportingSets,
     };
   });
 

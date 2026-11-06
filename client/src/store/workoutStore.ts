@@ -268,6 +268,7 @@ interface WorkoutStore {
     exerciseData: {
       name: string;
       primaryMuscle: MuscleGroup;
+      secondaryMuscles?: MuscleGroup[];
       muscleAreaEmphasis: MuscleArea[];
       equipment: Equipment;
       exerciseType: ExerciseType;
@@ -282,6 +283,7 @@ interface WorkoutStore {
     exerciseData: Partial<{
       name: string;
       primaryMuscle: MuscleGroup;
+      secondaryMuscles?: MuscleGroup[];
       muscleAreaEmphasis: MuscleArea[];
       equipment: Equipment;
       exerciseType: ExerciseType;
@@ -2984,7 +2986,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
           name: exerciseData.name,
           primaryMuscle: exerciseData.primaryMuscle,
-          secondaryMuscles: [],
+          secondaryMuscles: Array.isArray(exerciseData.secondaryMuscles) ? exerciseData.secondaryMuscles : [],
           muscleAreaEmphasis: exerciseData.muscleAreaEmphasis,
           equipment: exerciseData.equipment,
           exerciseType: exerciseData.exerciseType,
@@ -3023,6 +3025,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
             ...exerciseData,
             name: exerciseData.name ?? ex.name,
             primaryMuscle: exerciseData.primaryMuscle ?? ex.primaryMuscle,
+            secondaryMuscles:
+              exerciseData.secondaryMuscles !== undefined
+                ? exerciseData.secondaryMuscles
+                : (ex.secondaryMuscles || []),
             muscleAreaEmphasis: exerciseData.muscleAreaEmphasis ?? ex.muscleAreaEmphasis,
             equipment: exerciseData.equipment ?? ex.equipment,
             exerciseType: exerciseData.exerciseType ?? ex.exerciseType,

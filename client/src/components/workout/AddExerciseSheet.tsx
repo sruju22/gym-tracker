@@ -98,6 +98,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
   // Custom Exercise Form state
   const [customName, setCustomName] = useState('');
   const [customMuscle, setCustomMuscle] = useState<MuscleGroup>(targetMuscleGroup || 'chest');
+  const [customSecondaryMuscles, setCustomSecondaryMuscles] = useState<MuscleGroup[]>([]);
   const [customEquipment, setCustomEquipment] = useState<Equipment>('dumbbell');
   const [customType, setCustomType] = useState<ExerciseType>('isolation');
   const [customArea, setCustomArea] = useState<MuscleArea>('mid_chest');
@@ -185,8 +186,9 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
     if (!customName.trim()) return;
 
     const newEx = addCustomExercise(userId, {
-      name: customName,
+      name: customName.trim(),
       primaryMuscle: customMuscle,
+      secondaryMuscles: customSecondaryMuscles,
       muscleAreaEmphasis: [customArea],
       equipment: customEquipment,
       exerciseType: customType,
@@ -195,6 +197,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
     onSelectExercise(newEx);
     setShowCreateCustom(false);
     setCustomName('');
+    setCustomSecondaryMuscles([]);
     onClose();
   };
 
@@ -640,6 +643,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
               onChange={(e) => {
                 const mg = e.target.value as MuscleGroup;
                 setCustomMuscle(mg);
+                setCustomSecondaryMuscles((prev) => prev.filter((m) => m !== mg));
                 const info = MUSCLE_GROUPS[mg];
                 if (info && info.areas.length > 0) {
                   setCustomArea(info.areas[0].id);
@@ -657,7 +661,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
           <div>
             <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
-              Muscle Area Emphasis
+              Primary Area Emphasis
             </label>
             <select
               value={customArea}
@@ -670,6 +674,39 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
+              Secondary / Synergist Muscles (Optional)
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.values(MUSCLE_GROUPS)
+                .filter((mg) => mg.id !== customMuscle)
+                .map((mg) => {
+                  const isSelected = customSecondaryMuscles.includes(mg.id as MuscleGroup);
+                  return (
+                    <button
+                      type="button"
+                      key={mg.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setCustomSecondaryMuscles(customSecondaryMuscles.filter((m) => m !== mg.id));
+                        } else {
+                          setCustomSecondaryMuscles([...customSecondaryMuscles, mg.id as MuscleGroup]);
+                        }
+                      }}
+                      className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 font-bold shadow-sm'
+                          : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-main)]'
+                      }`}
+                    >
+                      {mg.name}
+                    </button>
+                  );
+                })}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">

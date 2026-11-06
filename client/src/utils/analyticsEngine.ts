@@ -1102,8 +1102,10 @@ export function getMuscleGroupCoverageAnalytics(
         if (Array.isArray(set.stages) && set.stages.length > 0) {
           // Combination stages
           for (const st of set.stages) {
-            if (st.completed && st.weight && st.weight > 0 && st.reps && st.reps > 0) {
-              const stageDef = exerciseMap.get(st.exerciseId);
+            const stageDef = exerciseMap.get(st.exerciseId);
+            const stageIsBw = stageDef?.equipment === 'bodyweight' || stageDef?.exerciseType === 'bodyweight';
+            const isStageValid = st.completed && (stageIsBw ? st.weight !== null && st.weight >= 0 : st.weight !== null && st.weight > 0) && st.reps !== null && st.reps > 0;
+            if (isStageValid) {
               const stageRawPrimary = (stageDef?.primaryMuscle || '').toLowerCase();
               const stagePrimary: MuscleGroup =
                 stageRawPrimary === 'quads' || stageRawPrimary === 'hamstrings'
@@ -1118,7 +1120,7 @@ export function getMuscleGroupCoverageAnalytics(
               if (accumulators.has(stagePrimary)) {
                 const acc = accumulators.get(stagePrimary)!;
                 acc.directSets += 1;
-                acc.loadVolume += st.weight * st.reps;
+                acc.loadVolume += (st.weight || 0) * (st.reps || 0);
                 acc.exerciseNames.add(st.exerciseName || stageDef?.name || 'Exercise');
                 if (!acc.lastTrainedDate || sessionDate > acc.lastTrainedDate) {
                   acc.lastTrainedDate = sessionDate;
@@ -1133,36 +1135,40 @@ export function getMuscleGroupCoverageAnalytics(
               }
             }
           }
-        } else if (set.completed && set.weight && set.weight > 0 && set.reps && set.reps > 0) {
-          // Standalone set
-          if (accumulators.has(primaryMuscle)) {
-            const acc = accumulators.get(primaryMuscle)!;
-            acc.directSets += 1;
-            acc.loadVolume += set.weight * set.reps;
-            acc.exerciseNames.add(exDef?.name || exAny.exerciseName || 'Exercise');
-            if (!acc.lastTrainedDate || sessionDate > acc.lastTrainedDate) {
-              acc.lastTrainedDate = sessionDate;
+        } else {
+          const isBw = exDef?.equipment === 'bodyweight' || exDef?.exerciseType === 'bodyweight' || exAny?.equipment === 'bodyweight';
+          const isSetValid = set.completed && (isBw ? set.weight !== null && set.weight >= 0 : set.weight !== null && set.weight > 0) && set.reps !== null && set.reps > 0;
+          if (isSetValid) {
+            // Standalone set
+            if (accumulators.has(primaryMuscle)) {
+              const acc = accumulators.get(primaryMuscle)!;
+              acc.directSets += 1;
+              acc.loadVolume += (set.weight || 0) * (set.reps || 0);
+              acc.exerciseNames.add(exDef?.name || exAny.exerciseName || 'Exercise');
+              if (!acc.lastTrainedDate || sessionDate > acc.lastTrainedDate) {
+                acc.lastTrainedDate = sessionDate;
+              }
             }
-          }
 
-          for (const sec of secondaryMuscles) {
-            if (accumulators.has(sec) && sec !== primaryMuscle) {
-              const acc = accumulators.get(sec)!;
-              acc.secondarySets += 1;
+            for (const sec of secondaryMuscles) {
+              if (accumulators.has(sec) && sec !== primaryMuscle) {
+                const acc = accumulators.get(sec)!;
+                acc.secondarySets += 1;
+              }
             }
-          }
 
-          if (exDef) {
-            for (const mg of STANDARD_MUSCLE_GROUPS) {
-              const meta = MUSCLE_GROUPS[mg.key];
-              if (meta && accumulators.has(mg.key)) {
-                const acc = accumulators.get(mg.key)!;
-                for (const area of meta.areas) {
-                  const inv = getExerciseAreaInvolvement(exDef, area.id, mg.key);
-                  if (inv === 'direct') {
-                    acc.subAreaDirectSets.set(area.id, (acc.subAreaDirectSets.get(area.id) || 0) + 1);
-                  } else if (inv === 'supported') {
-                    acc.subAreaSupportingSets.set(area.id, (acc.subAreaSupportingSets.get(area.id) || 0) + 1);
+            if (exDef) {
+              for (const mg of STANDARD_MUSCLE_GROUPS) {
+                const meta = MUSCLE_GROUPS[mg.key];
+                if (meta && accumulators.has(mg.key)) {
+                  const acc = accumulators.get(mg.key)!;
+                  for (const area of meta.areas) {
+                    const inv = getExerciseAreaInvolvement(exDef, area.id, mg.key);
+                    if (inv === 'direct') {
+                      acc.subAreaDirectSets.set(area.id, (acc.subAreaDirectSets.get(area.id) || 0) + 1);
+                    } else if (inv === 'supported') {
+                      acc.subAreaSupportingSets.set(area.id, (acc.subAreaSupportingSets.get(area.id) || 0) + 1);
+                    }
                   }
                 }
               }

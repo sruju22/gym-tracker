@@ -28,6 +28,7 @@ import {
 } from '../../utils/progressionEngine';
 import { ExerciseProgressionInsightCard } from './ExerciseProgressionInsightCard';
 import { RoutinePlateauSummaryCard } from './RoutinePlateauSummaryCard';
+import { MuscleIntelligenceCard } from './MuscleIntelligenceCard';
 import { useWorkoutStore } from '../../store/workoutStore';
 
 interface TrainingAnalyticsViewProps {
@@ -755,7 +756,14 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
         )}
       </Card>
 
-      {/* 5. Muscle-Group Coverage Breakdown */}
+      {/* 5. Phase 9A Muscle Intelligence Engine */}
+      <MuscleIntelligenceCard
+        history={history}
+        exercises={exercises}
+        weeklyPlan={weeklyPlan}
+      />
+
+      {/* 6. Muscle-Group Coverage Breakdown */}
       <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
           <div className="flex items-center gap-2">

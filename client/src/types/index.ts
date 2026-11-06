@@ -191,6 +191,112 @@ export interface MuscleGroupCoverage {
   optionalCount: number;
 }
 
+// ===== Phase 9A Muscle Intelligence Engine Types =====
+export type MuscleContributionTier =
+  | 'prime'              // 1.00 - Prime mover / direct focus
+  | 'major_synergist'    // 0.70 - 0.75 - Heavy compound co-activation
+  | 'moderate_synergist' // 0.40 - 0.50 - Meaningful secondary assistance
+  | 'stabilizer';        // 0.20 - 0.25 - Dynamic stabilization & isometric hold
+
+export type MuscleReadinessStatus = 'ready' | 'recovering' | 'fatigued' | 'dormant';
+
+export interface ExerciseBiomechanicalContribution {
+  muscleGroup: MuscleGroup;
+  subArea?: MuscleArea;
+  tier: MuscleContributionTier;
+  factor: number;
+  isDirect: boolean;
+  isUncertainMapping?: boolean;
+}
+
+export interface SubRegionStimulusSummary {
+  area: MuscleArea;
+  displayName: string;
+  directSets7d: number;
+  supportedSets7d: number;
+  stimulusScore7d: number;
+  confirmedStimulus7d?: number;
+  uncertainStimulus7d?: number;
+  directSets28d: number;
+  supportedSets28d: number;
+  stimulusScore28d: number;
+  confirmedStimulus28d?: number;
+  uncertainStimulus28d?: number;
+  status: 'direct' | 'supported' | 'optional';
+  contributingExercises: string[];
+}
+
+export interface MuscleIntelligenceGroupReport {
+  muscleGroup: MuscleGroup;
+  displayName: string;
+  isScheduledInSplit: boolean;
+  // 7-day metrics
+  directSets7d: number;
+  supportedSets7d: number;
+  effectiveStimulus7d: number;
+  confirmedStimulus7d: number;
+  uncertainStimulus7d: number;
+  hasUncertainContributions7d: boolean;
+  // 28-day metrics
+  directSets28d: number;
+  supportedSets28d: number;
+  effectiveStimulus28d: number;
+  confirmedStimulus28d: number;
+  uncertainStimulus28d: number;
+  averageWeeklyStimulus28d: number;
+  confirmedAverageWeeklyStimulus28d: number;
+  hasUncertainContributions28d: boolean;
+  // Sub-region breakdown
+  subRegions: SubRegionStimulusSummary[];
+  // Recovery & Readiness
+  readiness: {
+    status: MuscleReadinessStatus;
+    label: string;
+    acuteLoadScore: number;
+    hoursSinceLastTrained: number | null;
+    daysSinceLastTrained: number | null;
+    explanation: string;
+  };
+  // Alerts & Observations
+  isPersistentlyUnderexposed: boolean;
+  isCompoundSupportedOnly: boolean;
+  hasSingleSessionDensitySpike: boolean;
+  observations: string[];
+  contributingExercises: string[];
+}
+
+export interface MuscleIntelligenceSummary {
+  auditPeriodDays: number;
+  referenceDate: string;
+  activeSplitName?: string;
+  groups: MuscleIntelligenceGroupReport[];
+  persistentUnderexposureAlerts: {
+    target: string;
+    muscleGroup: MuscleGroup;
+    subArea?: MuscleArea;
+    averageWeeklyStimulus: number;
+    evidence: string;
+    recommendation: string;
+  }[];
+  workloadDensityAlerts: {
+    target: string;
+    sessionDate: string;
+    totalSets: number;
+    evidence: string;
+  }[];
+  uncertainMappings: {
+    exerciseId: string;
+    exerciseName: string;
+    muscleGroup?: MuscleGroup;
+    factor?: number;
+    setsRecorded7d?: number;
+    setsRecorded28d?: number;
+    estimatedStimulus7d?: number;
+    estimatedStimulus28d?: number;
+    reason: string;
+  }[];
+}
+
 // ===== Personal Records =====
 export interface PersonalRecord {
   id: string;
@@ -320,6 +426,113 @@ export interface UnifiedProgressionDecision {
   isJumpTooLarge: boolean;
   nextSessionApplicable: boolean;
   isApplied?: boolean;
+}
+
+// ===== Phase 10 Adaptive Training Decision Engine Types =====
+export type AdaptivePrimaryAction =
+  | 'increase_weight'
+  | 'increase_reps'
+  | 'maintain_progression'
+  | 'insufficient_data'
+  | 'recovery_aware_recommendation';
+
+export type AdaptiveAdditionalRecommendationType =
+  | 'volume_adjustment'
+  | 'stimulus_exercise_adjustment'
+  | 'recovery_advisory'
+  | 'performance_review';
+
+export type AdaptiveConfidenceLevel =
+  | 'high'
+  | 'medium'
+  | 'provisional'
+  | 'insufficient_data';
+
+export type AdaptivePrimaryReasonCode =
+  | 'OVERLOAD_WEIGHT_INCREMENT'
+  | 'OVERLOAD_REPS_BUILDING'
+  | 'OVERLOAD_REPS_CONSOLIDATE_HIGH_INCREMENT'
+  | 'OVERLOAD_REPS_ALL_SETS_UNFINISHED'
+  | 'BODYWEIGHT_REPS_OVERLOAD'
+  | 'RECOVERY_PRIMARY_ACUTE_FATIGUE_HOLD'
+  | 'RECOVERY_PERFORMANCE_COLLAPSE_DELOAD'
+  | 'PLATEAU_STAGNANT_PERFORMANCE_REVIEW'
+  | 'BASELINE_INSUFFICIENT_DATA';
+
+export interface AdaptiveAdditionalRecommendation {
+  type: AdaptiveAdditionalRecommendationType;
+  title: string;
+  actionText: string;
+  rationale: string;
+  reasonCode: string;
+  suggestedExerciseId?: string;
+  suggestedExerciseName?: string;
+  targetMuscleGroup?: MuscleGroup;
+  targetSubArea?: MuscleArea;
+}
+
+export interface AdaptiveTrainingDecision {
+  exerciseId: string;
+  exerciseName: string;
+  equipment: Equipment;
+  isBodyweight: boolean;
+  primaryMuscle: MuscleGroup;
+  primarySubArea?: MuscleArea;
+
+  // Integrated performance state from last session
+  currentWorkingWeight: number;
+  currentReps: number;
+  completedSetsCount: number;
+  allSetsHitUpperTarget: boolean;
+  targetRepRange: { min: number; max: number };
+
+  // Primary Progression Decision (Exactly ONE)
+  primaryAction: AdaptivePrimaryAction;
+  primaryReasonCode: AdaptivePrimaryReasonCode;
+  title: string;
+  actionHeadline: string;
+  primaryRationale: string;
+  supportingEvidence: string[];
+
+  // Actionable Targets (staged via Apply in Workout)
+  targets: {
+    recommendedWeight: number | null;
+    recommendedReps: number;
+    recommendedSets?: number;
+    loadChangeKg: number | null;
+    isJumpTooLarge: boolean;
+    nextSessionApplicable: boolean;
+    isApplied: boolean;
+  };
+
+  // Additional Training Recommendations (Zero or more explainable recommendations)
+  additionalRecommendations: AdaptiveAdditionalRecommendation[];
+
+  // Context & Diagnostics
+  confidence: AdaptiveConfidenceLevel;
+  warnings: string[];
+  limitations: string[];
+  dataSufficiency: {
+    totalExposures: number;
+    hasSufficientHistory: boolean;
+    statusLabel: string;
+  };
+
+  // Muscle Intelligence context snapshot
+  intelligenceContext: {
+    primaryReadiness: MuscleReadinessStatus;
+    primaryAcuteLoadScore: number;
+    hoursSinceLastTrained: number | null;
+    daysSinceLastTrained: number | null;
+    synergistReadinessSummary: {
+      muscleGroup: MuscleGroup;
+      status: MuscleReadinessStatus;
+      acuteLoadScore: number;
+    }[];
+    isScheduledInSplit: boolean;
+    isCompoundSupportedOnly: boolean;
+    hasUncertainMappingExposure: boolean;
+  };
 }
 
 export interface UserSettings {
