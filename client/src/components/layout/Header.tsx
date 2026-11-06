@@ -1,8 +1,9 @@
 import React from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore, ThemeMode } from '../../store/themeStore';
-import { Sun, Moon, Laptop, LogIn } from 'lucide-react';
+import { Sun, Moon, Laptop, LogIn, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCoachStore } from '../../store/coachStore';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { ProfileAvatarButton } from './ProfileAvatarButton';
 
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const { currentUser, openAccountModal } = useAuthStore();
+  const { openCoach } = useCoachStore();
   const { theme, setTheme, resolvedTheme } = useThemeStore();
 
   const cycleTheme = () => {
@@ -59,6 +61,17 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2">
+          {/* AI Coach Trigger Button */}
+          <button
+            type="button"
+            onClick={() => openCoach()}
+            className="p-2 rounded-xl bg-red-600/10 hover:bg-red-600/20 border border-red-500/30 text-red-400 hover:text-red-300 transition-all cursor-pointer flex items-center justify-center shrink-0"
+            title="Open AI Coach"
+            aria-label="Open AI Personal Training Coach"
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+
           {/* Theme Toggle Button */}
           <button
             onClick={cycleTheme}

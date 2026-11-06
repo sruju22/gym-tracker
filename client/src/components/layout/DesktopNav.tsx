@@ -11,16 +11,19 @@ import {
   Moon,
   Laptop,
   LogIn,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useThemeStore, ThemeMode } from '../../store/themeStore';
+import { useCoachStore } from '../../store/coachStore';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { ProfileAvatarButton } from './ProfileAvatarButton';
 
 export const DesktopNav: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, openAccountModal } = useAuthStore();
+  const { openCoach } = useCoachStore();
   const { theme, setTheme, resolvedTheme } = useThemeStore();
   const userId = currentUser?.id || 'guest';
   const activeSession = useWorkoutStore((state) => state.getActiveSession(userId));
@@ -88,8 +91,20 @@ export const DesktopNav: React.FC = () => {
           })}
         </nav>
 
-        {/* Right Controls: Theme Toggle & Profile Button */}
-        <div className="flex items-center gap-3">
+        {/* Right Controls: AI Coach, Theme Toggle & Profile Button */}
+        <div className="flex items-center gap-2.5">
+          {/* AI Coach Trigger Button */}
+          <button
+            type="button"
+            onClick={() => openCoach()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 border border-red-500/30 text-red-400 hover:text-red-300 text-xs font-bold transition-all cursor-pointer shadow-xs shadow-red-500/10"
+            title="Open AI Personal Training Coach"
+            aria-label="Open AI Personal Training Coach"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI Coach</span>
+          </button>
+
           <button
             onClick={cycleTheme}
             className="p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:border-[var(--border-strong)] transition-all cursor-pointer"

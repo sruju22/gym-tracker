@@ -4,6 +4,7 @@ import { Dumbbell, ArrowRight } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 import { DesktopNav } from './DesktopNav';
 import { UserModal } from '../auth/UserModal';
+import { AICoachDrawer } from '../coach/AICoachDrawer';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -69,6 +70,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       <BottomNav />
       <UserModal />
+      <AICoachDrawer />
     </div>
   );
 };
