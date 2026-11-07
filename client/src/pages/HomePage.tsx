@@ -4,7 +4,6 @@ import { WeekCalendarStrip } from '../components/home/WeekCalendarStrip';
 import { TodayCard } from '../components/home/TodayCard';
 import { WeeklyProgressCard } from '../components/home/WeeklyProgressCard';
 import { WeeklyCoachingCard } from '../components/home/WeeklyCoachingCard';
-import { AICoachHomeCard } from '../components/home/AICoachHomeCard';
 import { EditPlanModal } from '../components/plan/EditPlanModal';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
@@ -61,10 +60,9 @@ export const HomePage: React.FC = () => {
           />
         </div>
 
-        {/* Secondary Column: Expanded Weekly Progress with Prominent Streak, AI Coach, 7-Day Schedule & Adaptive Coaching */}
+        {/* Secondary Column: Expanded Weekly Progress with Streak, 7-Day Schedule & Adaptive Coaching */}
         <div className="md:col-span-5 lg:col-span-6 xl:col-span-5 flex flex-col space-y-4">
           <WeeklyProgressCard onOpenEditPlan={() => setIsEditPlanOpen(true)} />
-          <AICoachHomeCard />
           <WeeklyCoachingCard onOpenEditPlan={() => setIsEditPlanOpen(true)} />
         </div>
       </div>

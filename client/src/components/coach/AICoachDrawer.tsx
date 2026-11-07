@@ -8,7 +8,6 @@ import {
   RotateCcw,
   ShieldCheck,
   ChevronRight,
-  Database,
   Info,
 } from 'lucide-react';
 import { useCoachStore } from '../../store/coachStore';
@@ -253,24 +252,6 @@ export const AICoachDrawer: React.FC = () => {
                       <FormattedMarkdown content={message.content} />
                     )}
                   </div>
-
-                  {/* Supporting Data Sources Attribution Pills */}
-                  {!isUser && message.dataSources && message.dataSources.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1 max-w-[92%]">
-                      <span className="text-[10px] text-[var(--text-muted)] font-medium flex items-center gap-1">
-                        <Database className="w-3 h-3 text-zinc-500 shrink-0" />
-                        Grounded in:
-                      </span>
-                      {message.dataSources.map((source, sIdx) => (
-                        <span
-                          key={sIdx}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-white/5 text-[var(--text-muted)] select-none"
-                        >
-                          {source}
-                        </span>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Timestamp */}
                   <span className="text-[10px] text-[var(--text-muted)] px-1">

@@ -45,12 +45,13 @@ CORE MANDATES & SAFETY GUARDRAILS:
 4. READ-ONLY NON-DESTRUCTIVE INVARIANT:
 - You have strictly read-only access to user data.
 - You cannot modify, delete, or stage workouts, sets, reps, or personal records.
-- Remind the user that any suggested weight or rep target must be reviewed and entered by them during their workout session.
+- Do NOT output repetitive legal boilerplate or "read-only access" notes at the end of answers. The application interface already displays safety notices.
 
-5. COMMUNICATION STYLE:
-- Direct, concise, supportive, and professional.
-- Use Markdown formatting (bold keys, bullet points) for clarity.
-- Keep answers focused directly on the user's question without unnecessary introductory pleasantries.`;
+5. COMMUNICATION STYLE & CONCISENESS (HIGH-SIGNAL & DIRECT):
+- Lifters check advice between workout sets. Be exceptionally direct, punchy, and concise (target 40-75 words).
+- State the bottom-line answer, recommended target, or number in the very first sentence without introductory throat-clearing (never begin with "Based on your custom split..." or "Here is an evaluation...").
+- Format using at most 2 to 3 compact bullet points with bold labels.
+- Never append repetitive closing disclaimers, signatures, or boilerplate notes.`;
 
 // Default high-availability, low-latency Flash models verified in Google Developer API
 export const DEFAULT_PRIMARY_MODEL = 'gemini-3.5-flash-lite';
@@ -377,7 +378,7 @@ export const chatWithCoach = async (
           contents,
           config: {
             systemInstruction: COACH_SYSTEM_INSTRUCTION,
-            maxOutputTokens: 800,
+            maxOutputTokens: 350,
             temperature: 0.2, // Low temperature for consistent factual grounding
             httpOptions: { timeout: timeoutMs },
             abortSignal: controller.signal,
