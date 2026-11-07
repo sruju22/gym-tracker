@@ -9,9 +9,16 @@ import {
   ShieldCheck,
   ChevronRight,
   Info,
+  TrendingUp,
+  Flame,
+  Target,
+  Dumbbell,
+  Zap,
+  Calendar,
 } from 'lucide-react';
 import { useCoachStore } from '../../store/coachStore';
 import { FormattedMarkdown } from './FormattedMarkdown';
+import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
@@ -22,6 +29,51 @@ export const SUGGESTED_QUESTIONS = [
   'What should I train next?',
   'Explain my latest progression recommendation.',
   'Review my last 28 days of training.',
+];
+
+const PROMPT_CARDS = [
+  {
+    title: 'Strength Progress',
+    subtitle: 'Analyze 1RM & volume gains',
+    icon: TrendingUp,
+    iconBg: 'bg-red-500/15 text-red-400 border-red-500/30',
+    question: 'Analyse my strength progress.',
+  },
+  {
+    title: 'Why Plateauing?',
+    subtitle: 'Find fatigue & stick points',
+    icon: Flame,
+    iconBg: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    question: 'Why am I plateauing?',
+  },
+  {
+    title: 'Muscle Focus',
+    subtitle: 'Check undertrained muscles',
+    icon: Target,
+    iconBg: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+    question: 'Which muscles need more attention?',
+  },
+  {
+    title: 'What Next?',
+    subtitle: 'Next split recommendation',
+    icon: Dumbbell,
+    iconBg: 'bg-red-500/15 text-red-400 border-red-500/30',
+    question: 'What should I train next?',
+  },
+  {
+    title: 'Explain Overload',
+    subtitle: 'Break down progression targets',
+    icon: Zap,
+    iconBg: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+    question: 'Explain my latest progression recommendation.',
+  },
+  {
+    title: '28-Day Review',
+    subtitle: 'Last 4 weeks summary',
+    icon: Calendar,
+    iconBg: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+    question: 'Review my last 28 days of training.',
+  },
 ];
 
 export const AICoachDrawer: React.FC = () => {
@@ -38,6 +90,7 @@ export const AICoachDrawer: React.FC = () => {
 
   const [inputText, setInputText] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isSafetyExpanded, setIsSafetyExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -106,7 +159,7 @@ export const AICoachDrawer: React.FC = () => {
           className="w-screen max-w-full md:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)] shadow-2xl flex flex-col h-[100dvh] overflow-hidden animate-slide-left text-[var(--text-main)]"
         >
           {/* 1. Header */}
-          <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 backdrop-blur-sm z-10 shrink-0">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-red-500/20 bg-[var(--bg-surface)]/95 backdrop-blur-md shadow-[0_4px_20px_rgba(220,38,38,0.08)] z-10 shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-red-600 to-red-500 flex items-center justify-center text-white shadow-sm shadow-red-500/20 shrink-0">
                 <Sparkles className="w-4 h-4" />
@@ -183,49 +236,102 @@ export const AICoachDrawer: React.FC = () => {
           <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-4 select-text">
             {/* Empty State / Welcome Screen */}
             {messages.length === 0 && (
-              <div className="flex flex-col space-y-4 py-2 animate-fade-in">
-                {/* Welcome Card */}
-                <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-2">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <Sparkles className="w-4 h-4 text-red-400 shrink-0" />
-                    <span>Welcome to your Personal Training Coach</span>
+              <div className="flex flex-col space-y-3.5 py-1 animate-fade-in">
+                {/* 1. Hero Welcome Card with GymTrackie Logo & Red Ambient Glow */}
+                <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-red-950/40 via-zinc-900/90 to-zinc-950 border border-red-500/30 shadow-lg shadow-red-950/40 space-y-2.5">
+                  {/* Subtle red ambient glow in the top-right corner */}
+                  <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 bg-red-600/15 rounded-full blur-2xl pointer-events-none" />
+
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-red-600 to-red-500 flex items-center justify-center shadow-md shadow-red-600/30 text-white shrink-0">
+                        <GymTrackieLogo variant="icon" height={22} width={22} className="w-5.5 h-5.5 object-contain" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+                          Personal Training Intelligence
+                          <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                            AI
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400">
+                          Real-time advice grounded in your logged sets, PRs & recovery.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                    I analyse your logged workouts, strength trajectories, muscle stimulus balance, and progression recommendations to help you make smarter training decisions.
-                  </p>
+
+                  <div className="relative z-10 flex items-center gap-2 pt-1 border-t border-white/5 text-[11px]">
+                    <span className="flex items-center gap-1.5 text-emerald-400 font-semibold text-[10.5px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Training Context Active
+                    </span>
+                    <span className="text-zinc-600">•</span>
+                    <span className="text-zinc-400 text-[10.5px]">Zero Hallucination Grounding</span>
+                  </div>
                 </div>
 
-                {/* Safety & Non-Medical Trust Notice */}
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-[var(--text-muted)] leading-relaxed">
-                  <ShieldCheck className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-zinc-300">Safety & Transparency Notice:</span>
-                    <ul className="list-disc pl-3.5 space-y-0.5 mt-1 text-[10.5px] text-[var(--text-muted)]">
-                      <li>Recommendations are based on recorded GymTrackie training data.</li>
-                      <li>Some muscle stimulus and progression assessments are estimates.</li>
-                      <li>The coach is not a medical professional.</li>
-                      <li>It cannot diagnose injuries or replace professional medical advice.</li>
-                    </ul>
-                  </div>
+                {/* 2. Sleek Collapsible Safety & Transparency Notice */}
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsSafetyExpanded(!isSafetyExpanded)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 text-[11px] text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+                      <span className="font-semibold text-zinc-300">Safety & Transparency Notice</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 font-medium">
+                      {isSafetyExpanded ? 'Hide ▲' : 'View Details ▼'}
+                    </span>
+                  </button>
+
+                  {isSafetyExpanded && (
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-[var(--text-muted)] space-y-1 animate-fade-in">
+                      <ul className="list-disc pl-3.5 space-y-1 text-[10.5px] text-[var(--text-muted)]">
+                        <li>Recommendations are based on recorded GymTrackie training data.</li>
+                        <li>Some muscle stimulus and progression assessments are estimates.</li>
+                        <li>The coach is not a medical professional.</li>
+                        <li>It cannot diagnose injuries or replace professional medical advice.</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
-                {/* Suggested Questions Section */}
-                <div className="space-y-2 pt-2">
-                  <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider px-1">
-                    Suggested Questions
+                {/* 3. 2-Column Grid of Eye-Catchy Interactive Action Cards */}
+                <div className="space-y-2 pt-1">
+                  <div className="text-[11px] font-black text-zinc-400 uppercase tracking-wider px-1 flex items-center justify-between">
+                    <span>Suggested Topics</span>
+                    <span className="text-[10px] font-normal text-zinc-500">Tap to ask</span>
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    {SUGGESTED_QUESTIONS.map((question, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handlePromptClick(question)}
-                        className="w-full text-left p-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] active:scale-[0.99] border border-[var(--border-subtle)] hover:border-red-500/40 text-xs sm:text-sm font-medium text-[var(--text-main)] transition-all flex items-center justify-between group cursor-pointer"
-                      >
-                        <span className="group-hover:text-white transition-colors">{question}</span>
-                        <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-red-400 transition-colors shrink-0 ml-2" />
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 gap-2">
+                    {PROMPT_CARDS.map((card, idx) => {
+                      const Icon = card.icon;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handlePromptClick(card.question)}
+                          className="text-left p-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 active:scale-95 border border-white/5 hover:border-red-500/50 shadow-sm transition-all duration-150 flex flex-col justify-between group cursor-pointer min-h-[96px]"
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center border ${card.iconBg} shrink-0`}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-red-400 transition-colors" />
+                          </div>
+                          <div className="mt-2">
+                            <div className="text-xs font-bold text-white group-hover:text-red-300 transition-colors leading-tight">
+                              {card.title}
+                            </div>
+                            <div className="text-[10px] text-zinc-400 group-hover:text-zinc-300 leading-tight mt-0.5 line-clamp-1">
+                              {card.subtitle}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -304,7 +410,7 @@ export const AICoachDrawer: React.FC = () => {
           </div>
 
           {/* 3. Input Footer */}
-          <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 sm:p-4 shrink-0 space-y-2">
+          <div className="border-t border-white/5 bg-[var(--bg-surface)]/95 backdrop-blur-md p-3 sm:p-4 shrink-0 space-y-2 shadow-[0_-4px_20px_rgba(0,0,0,0.4)]">
             {/* Quick Starter Chips above input when messages exist */}
             {messages.length > 0 && (
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
@@ -313,7 +419,7 @@ export const AICoachDrawer: React.FC = () => {
                     key={qIdx}
                     type="button"
                     onClick={() => handlePromptClick(prompt)}
-                    className="shrink-0 px-2.5 py-1 rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer truncate max-w-[200px]"
+                    className="shrink-0 px-2.5 py-1 rounded-full bg-zinc-900/80 hover:bg-zinc-800 border border-white/5 hover:border-red-500/40 text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer truncate max-w-[200px]"
                   >
                     {prompt}
                   </button>
@@ -332,7 +438,7 @@ export const AICoachDrawer: React.FC = () => {
                 rows={1}
                 maxLength={1000}
                 disabled={isLoading}
-                className="flex-1 min-h-[44px] max-h-28 py-2.5 pl-3.5 pr-10 rounded-xl bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-red-500 focus:outline-hidden text-xs sm:text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] resize-none transition-colors"
+                className="flex-1 min-h-[44px] max-h-28 py-2.5 pl-3.5 pr-10 rounded-xl bg-zinc-900/90 border border-zinc-800 focus:border-red-500/80 focus:shadow-[0_0_15px_rgba(239,68,68,0.2)] focus:outline-hidden text-xs sm:text-sm text-white placeholder-zinc-500 resize-none transition-all"
               />
 
               <button
@@ -341,7 +447,7 @@ export const AICoachDrawer: React.FC = () => {
                 disabled={!inputText.trim() || isLoading}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${
                   inputText.trim() && !isLoading
-                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-500/20 active:scale-95'
+                    ? 'bg-gradient-to-tr from-red-600 to-red-500 text-white shadow-lg shadow-red-600/30 active:scale-95 hover:brightness-110'
                     : 'bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-60'
                 }`}
                 title="Send Message (Enter)"

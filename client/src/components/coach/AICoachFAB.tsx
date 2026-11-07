@@ -1,13 +1,15 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useCoachStore } from '../../store/coachStore';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { Sparkles } from 'lucide-react';
 
 export const AICoachFAB: React.FC = () => {
+  const location = useLocation();
   const { isOpen, openCoach } = useCoachStore();
 
-  // Hide the floating button while the drawer is open to prevent overlapping
-  if (isOpen) {
+  // The AI floating icon is ONLY displayed on the Home page ('/') and when drawer is closed
+  if (location.pathname !== '/' || isOpen) {
     return null;
   }
 
