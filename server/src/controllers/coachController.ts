@@ -288,7 +288,9 @@ export const chatWithCoach = async (
     }
 
     // 3. Verify server-side Gemini API key configuration
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    const rawApiKey = process.env.GEMINI_API_KEY?.trim();
+    // Strip surrounding quotes if pasted with quotes in cloud deployment dashboards
+    const apiKey = rawApiKey ? rawApiKey.replace(/^["']|["']$/g, '').trim() : '';
     if (!apiKey) {
       res.status(503).json({
         message:
