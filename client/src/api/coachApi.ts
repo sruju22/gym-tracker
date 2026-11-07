@@ -73,7 +73,7 @@ export async function sendCoachMessage(
       },
       body: JSON.stringify(payload),
     });
-  } catch (_networkErr) {
+  } catch {
     throw new CoachApiError(
       'Unable to connect to the GymTrackie server. Please check your internet connection.',
       0,
@@ -90,17 +90,37 @@ export async function sendCoachMessage(
   }
 
   if (!response.ok) {
-    const errorMsg =
-      data?.message ||
-      (response.status === 401
-        ? 'Your session has expired. Please log in again.'
-        : response.status === 429
-        ? 'You have reached the AI Coach request limit. Please wait a few minutes before trying again.'
-        : response.status === 503
-        ? 'The AI Coach is temporarily unavailable on the server. Please try again shortly.'
-        : `AI Coach error (${response.status})`);
+    let errorMsg = data?.message;
 
-    throw new CoachApiError(errorMsg, response.status, data?.error || 'HTTP_ERROR', data?.dataSources);
+    if (!errorMsg || typeof errorMsg !== 'string') {
+      const code = data?.error;
+      if (code === 'DAILY_LIMIT_REACHED') {
+        errorMsg = 'You have reached your daily AI Coach limit. Your limit will reset tomorrow.';
+      } else if (code === 'PROVIDER_QUOTA_EXCEEDED') {
+        errorMsg = 'The AI Coach provider capacity has been temporarily exhausted. Please try again shortly.';
+      } else if (code === 'API_KEY_NOT_CONFIGURED') {
+        errorMsg = 'The AI Coach service is not currently configured on the server. Please contact support.';
+      } else if (code === 'PROVIDER_TIMEOUT' || response.status === 504) {
+        errorMsg = 'The AI Coach request timed out. Please try again in a few moments.';
+      } else if (code === 'PROVIDER_BUSY' || response.status === 503) {
+        errorMsg = 'The AI Coach is experiencing high demand. Please try again in a moment.';
+      } else if (code === 'RATE_LIMITED' || response.status === 429) {
+        errorMsg = 'You have sent too many requests. Please wait a moment before asking again.';
+      } else if (response.status === 401) {
+        errorMsg = 'Your session has expired. Please log in again to chat with the AI Coach.';
+      } else if (response.status === 400) {
+        errorMsg = 'Invalid chat request. Please try a different question.';
+      } else {
+        errorMsg = `AI Coach is temporarily unavailable (Status ${response.status}).`;
+      }
+    }
+
+    throw new CoachApiError(
+      errorMsg,
+      response.status,
+      data?.error || (response.status === 401 ? 'UNAUTHORIZED' : 'HTTP_ERROR'),
+      data?.dataSources
+    );
   }
 
   return data as CoachChatResponse;

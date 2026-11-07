@@ -468,7 +468,7 @@ async function runCoachVerificationSuite() {
   const ModelsPrototype = Object.getPrototypeOf(dummyClient.models);
 
   ModelsPrototype.generateContentInternal = async () => {
-    throw new Error('RESOURCE_EXHAUSTED: Rate limit exceeded on AI backend');
+    throw new Error('INTERNAL: Unknown provider server failure');
   };
 
   const authReqFailing: any = {

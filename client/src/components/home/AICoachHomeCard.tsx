@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useCoachStore } from '../../store/coachStore';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { SUGGESTED_QUESTIONS } from '../coach/AICoachDrawer';
 
 interface AICoachHomeCardProps {
@@ -19,37 +20,38 @@ export const AICoachHomeCard: React.FC<AICoachHomeCardProps> = ({ className = ''
       className={`border-[var(--border-subtle)] hover:border-red-500/30 transition-all p-4.5 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)] shadow-xs select-none ${className}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-red-600 to-red-500 flex items-center justify-center text-white shadow-xs shadow-red-500/20 shrink-0">
-            <Sparkles className="w-4 h-4" />
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-red-600/15 border border-red-500/30 flex items-center justify-center text-red-500 shrink-0 mt-0.5 shadow-xs shadow-red-500/10">
+            <Sparkles className="w-4.5 h-4.5" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-sm font-black text-white tracking-tight">
-                Strength Intelligence Coach
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-black text-white tracking-tight">
+                Your Personal Training Coach
               </h3>
               <Badge variant="primary" size="sm" className="text-[10px] px-1.5 py-0 uppercase font-extrabold tracking-wider">
-                AI Live
+                AI
               </Badge>
             </div>
-            <p className="text-[11px] text-[var(--text-secondary)]">
-              Grounded in your workout logs, 1RM deltas & fatigue
+            <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+              Understand your progress, get personalised training advice, and make smarter workout decisions.
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => openCoach()}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 active:scale-95 text-white text-xs font-bold transition-all shadow-xs shadow-red-500/20 cursor-pointer shrink-0"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs shadow-red-500/20"
         >
-          <span>Chat</span>
+          <span>Open Coach</span>
           <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
-      {/* Suggested Quick Prompt Chips */}
+      {/* Suggested Quick Starter Chips */}
       <div className="space-y-1.5 mb-3">
         <div className="text-[11px] font-semibold text-[var(--text-muted)] flex items-center gap-1">
           <MessageSquare className="w-3 h-3 text-red-400" />
@@ -73,7 +75,7 @@ export const AICoachHomeCard: React.FC<AICoachHomeCardProps> = ({ className = ''
       {/* Trust Notice */}
       <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] border-t border-white/5 pt-2">
         <ShieldCheck className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-        <span>Read-only analytics. Progression targets require manual confirmation.</span>
+        <span>Grounded in your workout logs, 1RM trajectories & muscle readiness.</span>
       </div>
     </Card>
   );

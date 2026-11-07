@@ -16,6 +16,7 @@ export interface CoachChatResponseBody {
   message: string;
   dataSources: string[];
   error: string | null;
+  retryAfter?: number;
 }
 
 export const COACH_SYSTEM_INSTRUCTION = `You are GymTrackie's Personal Training Intelligence Coach.
@@ -50,6 +51,152 @@ CORE MANDATES & SAFETY GUARDRAILS:
 - Direct, concise, supportive, and professional.
 - Use Markdown formatting (bold keys, bullet points) for clarity.
 - Keep answers focused directly on the user's question without unnecessary introductory pleasantries.`;
+
+// Default high-availability, low-latency Flash models verified in Google Developer API
+export const DEFAULT_PRIMARY_MODEL = 'gemini-3.5-flash-lite';
+export const DEFAULT_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+export const DEFAULT_TIMEOUT_MS = 25000;
+
+export interface ClassifiedProviderError {
+  isRetryable: boolean;
+  errorCode:
+    | 'PROVIDER_BUSY'
+    | 'PROVIDER_QUOTA_EXCEEDED'
+    | 'PROVIDER_TIMEOUT'
+    | 'PROVIDER_AUTH_ERROR'
+    | 'PROVIDER_ERROR';
+  statusCode: number;
+  userMessage: string;
+}
+
+/**
+ * Classifies an upstream provider error into retryable vs non-retryable
+ * and maps to frontend-safe status and error codes.
+ */
+export function classifyProviderError(err: any): ClassifiedProviderError {
+  const status = Number(err?.status || err?.statusCode || err?.response?.status || 0);
+  const name = String(err?.name || '');
+  const message = String(err?.message || '').toLowerCase();
+
+  // 1. Timeout / Abort errors
+  if (
+    name === 'TimeoutError' ||
+    name === 'AbortError' ||
+    status === 504 ||
+    status === 408 ||
+    message.includes('timeout') ||
+    message.includes('timed out') ||
+    message.includes('deadline exceeded')
+  ) {
+    return {
+      isRetryable: true,
+      errorCode: 'PROVIDER_TIMEOUT',
+      statusCode: 504,
+      userMessage: 'The AI Coach request timed out. Please try again shortly.',
+    };
+  }
+
+  // 2. Authentication & Permission errors (401 / 403) - NEVER RETRY
+  if (
+    status === 401 ||
+    status === 403 ||
+    message.includes('api key not valid') ||
+    message.includes('permission_denied') ||
+    message.includes('unauthenticated') ||
+    message.includes('forbidden')
+  ) {
+    return {
+      isRetryable: false,
+      errorCode: 'PROVIDER_AUTH_ERROR',
+      statusCode: 502,
+      userMessage:
+        'The AI Coach encountered an authentication error with the AI provider. Please notify support.',
+    };
+  }
+
+  // 3. Invalid Request errors (400) - NEVER RETRY
+  if (
+    status === 400 ||
+    message.includes('invalid_argument') ||
+    message.includes('bad request')
+  ) {
+    return {
+      isRetryable: false,
+      errorCode: 'PROVIDER_ERROR',
+      statusCode: 400,
+      userMessage: 'The AI Coach received an invalid request format from the provider.',
+    };
+  }
+
+  // 4. Rate Limiting / Quota (429)
+  if (status === 429 || message.includes('resource_exhausted')) {
+    const isPermanentProjectExhaustion =
+      message.includes('quota metric') ||
+      message.includes('check your plan and billing') ||
+      message.includes('exceeded your current quota') ||
+      message.includes('daily limit');
+
+    if (isPermanentProjectExhaustion) {
+      return {
+        isRetryable: false, // Cannot be resolved by calling another model on the same project
+        errorCode: 'PROVIDER_QUOTA_EXCEEDED',
+        statusCode: 429,
+        userMessage:
+          'The AI Coach service has temporarily exceeded its provider capacity. Please try again later.',
+      };
+    }
+
+    // Transient RPM spike on this specific model: allow fallback to a model with distinct RPM pool
+    return {
+      isRetryable: true,
+      errorCode: 'PROVIDER_QUOTA_EXCEEDED',
+      statusCode: 429,
+      userMessage:
+        'The AI Coach service is receiving high traffic. Please try again shortly.',
+    };
+  }
+
+  // 5. Provider Capacity / High Demand (503)
+  if (
+    status === 503 ||
+    message.includes('high demand') ||
+    message.includes('unavailable') ||
+    message.includes('service unavailable')
+  ) {
+    return {
+      isRetryable: true,
+      errorCode: 'PROVIDER_BUSY',
+      statusCode: 503,
+      userMessage:
+        'The AI Coach service is currently experiencing high demand. Please try again in a few moments.',
+    };
+  }
+
+  // 6. Network connectivity errors (ECONNRESET, ETIMEDOUT, fetch failed)
+  if (
+    message.includes('econnreset') ||
+    message.includes('etimedout') ||
+    message.includes('fetch failed') ||
+    message.includes('network')
+  ) {
+    return {
+      isRetryable: true,
+      errorCode: 'PROVIDER_ERROR',
+      statusCode: 502,
+      userMessage:
+        'Unable to connect to the AI Coach service. Please check your internet connection.',
+    };
+  }
+
+  // 7. Generic Provider 500 / other errors
+  return {
+    isRetryable: status >= 500,
+    errorCode: 'PROVIDER_ERROR',
+    statusCode: 502,
+    userMessage:
+      'The AI Coach service encountered an unexpected provider error. Please try again shortly.',
+  };
+}
 
 /**
  * Validates the incoming chat request body
@@ -158,15 +305,22 @@ export const chatWithCoach = async (
       validation.sanitizedSnapshot
     );
 
-    // 5. Initialize Google GenAI client with configurable model (default: gemini-3.8-flash)
-    const primaryModel = process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
-    const modelsToTry = [primaryModel];
-    if (primaryModel !== 'gemini-3.5-flash') {
-      modelsToTry.push('gemini-3.5-flash');
+    // 5. Determine primary and fallback models (Bounded to at most 1 fallback attempt)
+    const primaryModel = process.env.GEMINI_MODEL?.trim() || DEFAULT_PRIMARY_MODEL;
+    let fallbackModel = process.env.GEMINI_FALLBACK_MODEL?.trim() || DEFAULT_FALLBACK_MODEL;
+    if (fallbackModel === primaryModel) {
+      fallbackModel =
+        primaryModel === DEFAULT_PRIMARY_MODEL ? DEFAULT_FALLBACK_MODEL : DEFAULT_PRIMARY_MODEL;
     }
+    const modelsToTry = [primaryModel, fallbackModel].filter(Boolean);
+
+    // 6. Determine request timeout (default: 25000 ms)
+    const rawTimeout = parseInt(process.env.GEMINI_TIMEOUT_MS?.trim() || '', 10);
+    const timeoutMs = !isNaN(rawTimeout) && rawTimeout >= 1000 ? rawTimeout : DEFAULT_TIMEOUT_MS;
+
     const ai = new GoogleGenAI({ apiKey });
 
-    // 6. Build prompt turns
+    // 7. Build prompt turns
     const contextPrefix = `[GYMTRACKIE_USER_WORKOUT_CONTEXT]\n${JSON.stringify(contextPayload, null, 2)}\n[END_GYMTRACKIE_USER_WORKOUT_CONTEXT]\n\n`;
 
     const contents: any[] = [];
@@ -191,59 +345,97 @@ export const chatWithCoach = async (
       ],
     });
 
-    // 7. Execute AI Generation with cost control & high-availability fallback
+    // 8. Execute AI Generation with timeout and bounded high-availability fallback
     let aiResponse: any = null;
-    let lastProviderError: any = null;
+    let lastErrorClassification: ClassifiedProviderError | null = null;
+    let lastRawError: any = null;
 
-    for (const model of modelsToTry) {
+    for (let i = 0; i < modelsToTry.length; i++) {
+      const model = modelsToTry[i];
+      const isFallbackAttempt = i > 0;
+
+      const controller = new AbortController();
+      let timer: NodeJS.Timeout | null = null;
+
       try {
-        aiResponse = await ai.models.generateContent({
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            controller.abort();
+            const timeoutErr: any = new Error(
+              `Request to model ${model} timed out after ${timeoutMs}ms`
+            );
+            timeoutErr.name = 'TimeoutError';
+            timeoutErr.status = 504;
+            reject(timeoutErr);
+          }, timeoutMs);
+        });
+
+        const apiPromise = ai.models.generateContent({
           model,
           contents,
           config: {
             systemInstruction: COACH_SYSTEM_INSTRUCTION,
             maxOutputTokens: 800,
             temperature: 0.2, // Low temperature for consistent factual grounding
+            httpOptions: { timeout: timeoutMs },
+            abortSignal: controller.signal,
           },
         });
+
+        aiResponse = await Promise.race([apiPromise, timeoutPromise]);
+
         if (aiResponse?.text?.trim()) {
+          // Successful generation!
           break;
         }
       } catch (err: any) {
-        lastProviderError = err;
-        const isCapacityError =
-          err?.status === 503 ||
-          (typeof err?.message === 'string' &&
-            (err.message.includes('high demand') || err.message.includes('UNAVAILABLE')));
+        lastRawError = err;
+        lastErrorClassification = classifyProviderError(err);
 
-        if (isCapacityError && model !== modelsToTry[modelsToTry.length - 1]) {
+        // Security logging: Never log raw API key, sensitive user prompt, or full DB context
+        console.warn(
+          `[CoachController] Model ${model} ${isFallbackAttempt ? '(fallback)' : '(primary)'} failed with ${lastErrorClassification.errorCode}: ${err?.message || err}`
+        );
+
+        // Check if bounded fallback should be attempted
+        const hasFallbackRemaining = i < modelsToTry.length - 1;
+        if (lastErrorClassification.isRetryable && hasFallbackRemaining) {
           console.warn(
-            `[CoachController] Model ${model} is experiencing temporary high demand (HTTP 503). Attempting high-availability fallback...`
+            `[CoachController] Attempting fallback model: ${modelsToTry[i + 1]}...`
           );
           continue;
         }
+
+        // Non-retryable error or no fallback models remaining: stop immediately
         break;
+      } finally {
+        if (timer) clearTimeout(timer);
       }
     }
 
-    // 8. Validate and sanitize model output
+    // 9. Validate and sanitize model output
     const responseText = aiResponse?.text?.trim();
     if (!responseText) {
-      // Security guard: Never log raw API key, sensitive user prompt, or full DB context
+      const errorDetails = lastErrorClassification || {
+        errorCode: 'PROVIDER_ERROR',
+        statusCode: 502,
+        userMessage:
+          'The AI Coach service encountered an unexpected provider error. Please try again shortly.',
+      };
+
       console.error(
-        `[CoachController] Gemini provider execution error: ${lastProviderError?.message || lastProviderError || 'Empty response'}`
+        `[CoachController] Provider execution aborted (${errorDetails.errorCode}): ${lastRawError?.message || lastRawError || 'Empty response'}`
       );
 
-      res.status(502).json({
-        message:
-          'The AI Coach service encountered an unexpected provider error. Please try again shortly.',
+      res.status(errorDetails.statusCode).json({
+        message: errorDetails.userMessage,
         dataSources,
-        error: 'PROVIDER_ERROR',
+        error: errorDetails.errorCode,
       });
       return;
     }
 
-    // 9. Return successful response
+    // 10. Return successful response
     res.status(200).json({
       message: responseText,
       dataSources,

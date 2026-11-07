@@ -11,18 +11,18 @@ import {
   Database,
   Info,
 } from 'lucide-react';
-import { useCoachStore, CoachMessage } from '../../store/coachStore';
+import { useCoachStore } from '../../store/coachStore';
 import { FormattedMarkdown } from './FormattedMarkdown';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
 export const SUGGESTED_QUESTIONS = [
-  'Am I getting stronger?',
-  'Why is my bench press not improving?',
-  'Which muscles am I undertraining?',
-  'Review my last 28 days.',
-  'What should I improve in my next workout?',
+  'Analyse my strength progress.',
+  'Why am I plateauing?',
+  'Which muscles need more attention?',
+  'What should I train next?',
   'Explain my latest progression recommendation.',
+  'Review my last 28 days of training.',
 ];
 
 export const AICoachDrawer: React.FC = () => {
@@ -115,14 +115,14 @@ export const AICoachDrawer: React.FC = () => {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h2 className="text-sm sm:text-base font-black tracking-tight text-white truncate">
-                    AI Training Coach
+                    Personal Training Coach
                   </h2>
                   <Badge variant="primary" size="sm" className="text-[10px] px-1.5 py-0 uppercase tracking-wider font-extrabold">
-                    Intelligence
+                    AI
                   </Badge>
                 </div>
                 <p className="text-[11px] text-[var(--text-secondary)] truncate">
-                  Grounded in your workout history & PRs
+                  Personalised training advice & progress insights
                 </p>
               </div>
             </div>
@@ -189,19 +189,24 @@ export const AICoachDrawer: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-2">
                   <div className="flex items-center gap-2 text-white font-bold text-sm">
                     <Sparkles className="w-4 h-4 text-red-400 shrink-0" />
-                    <span>Welcome to your Strength Intelligence Coach</span>
+                    <span>Welcome to your Personal Training Coach</span>
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                    I analyze your completed workout sets, estimated 1RM trajectories, muscle exposure balance, and progressive overload targets to answer training questions with complete precision.
+                    I analyse your logged workouts, strength trajectories, muscle stimulus balance, and progression recommendations to help you make smarter training decisions.
                   </p>
                 </div>
 
                 {/* Safety & Non-Medical Trust Notice */}
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-[var(--text-muted)] leading-relaxed">
                   <ShieldCheck className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-zinc-300">Safety & Transparency Notice:</span>{' '}
-                    Answers are derived strictly from your logged workout records. The AI Coach is not a medical professional. Suggested progression targets require manual application during your workout.
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-zinc-300">Safety & Transparency Notice:</span>
+                    <ul className="list-disc pl-3.5 space-y-0.5 mt-1 text-[10.5px] text-[var(--text-muted)]">
+                      <li>Recommendations are based on recorded GymTrackie training data.</li>
+                      <li>Some muscle stimulus and progression assessments are estimates.</li>
+                      <li>The coach is not a medical professional.</li>
+                      <li>It cannot diagnose injuries or replace professional medical advice.</li>
+                    </ul>
                   </div>
                 </div>
 

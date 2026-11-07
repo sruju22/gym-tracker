@@ -64,12 +64,12 @@ async function runAICoachUITestSuite() {
   assertEqual(SUGGESTED_QUESTIONS.length, 6, 'Exactly 6 starter prompts defined');
 
   const expectedQuestions = [
-    'Am I getting stronger?',
-    'Why is my bench press not improving?',
-    'Which muscles am I undertraining?',
-    'Review my last 28 days.',
-    'What should I improve in my next workout?',
+    'Analyse my strength progress.',
+    'Why am I plateauing?',
+    'Which muscles need more attention?',
+    'What should I train next?',
     'Explain my latest progression recommendation.',
+    'Review my last 28 days of training.',
   ];
 
   for (const q of expectedQuestions) {
