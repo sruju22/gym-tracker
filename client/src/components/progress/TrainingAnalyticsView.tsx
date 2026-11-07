@@ -45,6 +45,7 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
   targetDaysPerWeek = 4,
 }) => {
   const [timeRange, setTimeRange] = useState<AnalyticsTimeRange>('30d');
+  const [analyticsSubView, setAnalyticsSubView] = useState<'overview' | 'exercises' | 'muscles'>('overview');
   const [progressionMetric, setProgressionMetric] = useState<'1rm' | 'max_weight' | 'volume'>('1rm');
   const [showHistoryTable, setShowHistoryTable] = useState(false);
   const settings = useWorkoutStore((s) => s.settings);
@@ -195,8 +196,51 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Consistency & Frequency Card */}
-      <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
+      {/* 2. Sub-View Segmented Switcher (Option 1: Overview, Exercises, Muscles) */}
+      <div className="grid grid-cols-3 gap-1 bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--border-subtle)] select-none">
+        <button
+          type="button"
+          onClick={() => setAnalyticsSubView('overview')}
+          className={`flex items-center justify-center gap-1.5 py-2 px-2 text-center rounded-xl font-bold text-xs transition-all cursor-pointer select-none min-h-[40px] ${
+            analyticsSubView === 'overview'
+              ? 'bg-[var(--primary)] text-white shadow-sm'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <BarChart2 className="w-3.5 h-3.5 shrink-0" />
+          <span>Overview</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAnalyticsSubView('exercises')}
+          className={`flex items-center justify-center gap-1.5 py-2 px-2 text-center rounded-xl font-bold text-xs transition-all cursor-pointer select-none min-h-[40px] ${
+            analyticsSubView === 'exercises'
+              ? 'bg-[var(--primary)] text-white shadow-sm'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+          <span>Exercises</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAnalyticsSubView('muscles')}
+          className={`flex items-center justify-center gap-1.5 py-2 px-2 text-center rounded-xl font-bold text-xs transition-all cursor-pointer select-none min-h-[40px] ${
+            analyticsSubView === 'muscles'
+              ? 'bg-[var(--primary)] text-white shadow-sm'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5 shrink-0" />
+          <span>Muscles</span>
+        </button>
+      </div>
+
+      {/* SUB-VIEW 1 (Part 1): Consistency & Frequency Card (Shown in Overview) */}
+      {analyticsSubView === 'overview' && (
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4 animate-fade-in">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -317,9 +361,11 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
           </div>
         )}
       </Card>
+      )}
 
-      {/* 3. Exercise Progress & Strength */}
-      <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
+      {/* SUB-VIEW 2: Exercise Progress & Strength (Shown in Exercises) */}
+      {analyticsSubView === 'exercises' && (
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4 animate-fade-in">
         {/* Routine Plateau & Progression Health Summary */}
         <RoutinePlateauSummaryCard
           summary={routineProgressionSummary}
@@ -631,9 +677,11 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
           </div>
         )}
       </Card>
+      )}
 
-      {/* 4. Training Volume Analytics */}
-      <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
+      {/* SUB-VIEW 1 (Part 2): Training Volume Analytics (Shown in Overview) */}
+      {analyticsSubView === 'overview' && (
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4 animate-fade-in">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-purple-400 shrink-0" />
@@ -755,16 +803,20 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
           </div>
         )}
       </Card>
+      )}
 
-      {/* 5. Phase 9A Muscle Intelligence Engine */}
-      <MuscleIntelligenceCard
-        history={history}
-        exercises={exercises}
-        weeklyPlan={weeklyPlan}
-      />
+      {/* SUB-VIEW 3: Muscle Intelligence & Coverage (Shown in Muscles) */}
+      {analyticsSubView === 'muscles' && (
+        <div className="space-y-4 sm:space-y-5 animate-fade-in">
+          {/* Phase 9A Muscle Intelligence Engine */}
+          <MuscleIntelligenceCard
+            history={history}
+            exercises={exercises}
+            weeklyPlan={weeklyPlan}
+          />
 
-      {/* 6. Muscle-Group Coverage Breakdown */}
-      <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
+          {/* Muscle-Group Coverage Breakdown */}
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-rose-400 shrink-0" />
@@ -843,10 +895,12 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
           })}
         </div>
       </Card>
+        </div>
+      )}
 
-      {/* 6. Recent Milestones */}
-      {analytics.recentMilestones.length > 0 && (
-        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-3">
+      {/* SUB-VIEW 1 (Part 3): Recent Milestones (Shown in Overview) */}
+      {analyticsSubView === 'overview' && analytics.recentMilestones.length > 0 && (
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)] p-4 sm:p-5 rounded-2xl space-y-3 animate-fade-in">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             <h3 className="text-xs sm:text-sm font-bold text-[var(--text-main)] uppercase tracking-wide">

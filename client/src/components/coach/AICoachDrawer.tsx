@@ -8,7 +8,6 @@ import {
   RotateCcw,
   ShieldCheck,
   ChevronRight,
-  Info,
   TrendingUp,
   Flame,
   Target,
@@ -457,18 +456,14 @@ export const AICoachDrawer: React.FC = () => {
               </button>
             </div>
 
-            {/* Character counter & Hint */}
-            <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] px-1">
-              <span className="flex items-center gap-1">
-                <Info className="w-3 h-3 text-zinc-500 shrink-0" />
-                Press Enter to send, Shift+Enter for new line
-              </span>
-              {inputText.length > 800 && (
+            {/* Character counter (when nearing limit) */}
+            {inputText.length > 800 && (
+              <div className="flex justify-end text-[10px] text-[var(--text-muted)] px-1">
                 <span className={inputText.length >= 1000 ? 'text-red-400 font-bold' : ''}>
                   {inputText.length}/1000
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </aside>
       </div>
