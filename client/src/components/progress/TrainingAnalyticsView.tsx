@@ -61,38 +61,70 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
     );
   }, [history, exercises, weeklyPlan, targetDaysPerWeek, timeRange]);
 
-  // Collect all unique exercises that have completed sets in history
+  // Collect all unique exercises that have completed sets in history, tracking whether they were performed within the active time range
   const performedExerciseOptions = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; isCustom: boolean; lastDate: string }>();
+    const map = new Map<
+      string,
+      { id: string; name: string; isCustom: boolean; lastDate: string; inRange: boolean }
+    >();
+
+    let daysToSubtract = 30;
+    if (timeRange === '7d') daysToSubtract = 7;
+    else if (timeRange === '30d') daysToSubtract = 30;
+    else if (timeRange === '90d') daysToSubtract = 90;
+    else if (timeRange === '1y') daysToSubtract = 365;
+
+    const cutoffTime = timeRange === 'all' ? 0 : Date.now() - daysToSubtract * 24 * 60 * 60 * 1000;
 
     for (const session of history) {
       if (session.status !== 'completed' || !Array.isArray(session.exercises)) continue;
+      const sTime = new Date(session.completedAt || session.date).getTime();
+      const inRange = timeRange === 'all' || sTime >= cutoffTime;
+
       for (const exItem of session.exercises) {
         // Direct exercise
         const exId = exItem.exerciseId || (exItem.exercise && exItem.exercise.id);
         const exName = exItem.exercise?.name || (exItem as any).exerciseName || exId;
         const isCustom = exId?.startsWith('custom_') || Boolean(exItem.exercise?.isCustom);
 
-        if (exId && !map.has(exId)) {
-          map.set(exId, {
-            id: exId,
-            name: exName,
-            isCustom,
-            lastDate: session.completedAt || session.date,
-          });
+        if (exId) {
+          const existing = map.get(exId);
+          if (!existing) {
+            map.set(exId, {
+              id: exId,
+              name: exName,
+              isCustom,
+              lastDate: session.completedAt || session.date,
+              inRange,
+            });
+          } else {
+            if (inRange) existing.inRange = true;
+            if (new Date(session.completedAt || session.date).getTime() > new Date(existing.lastDate).getTime()) {
+              existing.lastDate = session.completedAt || session.date;
+            }
+          }
         }
 
         // Superset stages
         for (const set of exItem.sets || []) {
           if (Array.isArray(set.stages)) {
             for (const st of set.stages) {
-              if (st.exerciseId && !map.has(st.exerciseId)) {
-                map.set(st.exerciseId, {
-                  id: st.exerciseId,
-                  name: st.exerciseName || st.exerciseId,
-                  isCustom: st.exerciseId.startsWith('custom_'),
-                  lastDate: session.completedAt || session.date,
-                });
+              if (st.exerciseId) {
+                const existing = map.get(st.exerciseId);
+                if (!existing) {
+                  map.set(st.exerciseId, {
+                    id: st.exerciseId,
+                    name: st.exerciseName || st.exerciseId,
+                    isCustom: st.exerciseId.startsWith('custom_'),
+                    lastDate: session.completedAt || session.date,
+                    inRange,
+                  });
+                } else {
+                  if (inRange) existing.inRange = true;
+                  if (new Date(session.completedAt || session.date).getTime() > new Date(existing.lastDate).getTime()) {
+                    existing.lastDate = session.completedAt || session.date;
+                  }
+                }
               }
             }
           }
@@ -101,27 +133,40 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
     }
 
     return Array.from(map.values()).sort((a, b) => {
+      // Prioritize exercises active in the selected time range first
+      if (a.inRange && !b.inRange) return -1;
+      if (!a.inRange && b.inRange) return 1;
       const timeA = new Date(a.lastDate).getTime();
       const timeB = new Date(b.lastDate).getTime();
       return timeB - timeA;
     });
-  }, [history]);
+  }, [history, timeRange]);
 
-  // Selected exercise for strength progression
-  const [selectedExerciseId, setSelectedExerciseId] = useState<string>(() => {
-    return performedExerciseOptions[0]?.id || exercises[0]?.id || 'ex_bench_press';
-  });
+  // User-selected exercise ID
+  const [userSelectedExerciseId, setUserSelectedExerciseId] = useState<string>('');
 
-  // Calculate progression for currently selected exercise
+  // Effective selected exercise: uses user selection if in range or all-time, otherwise defaults to the first active exercise in range
+  const selectedExerciseId = useMemo(() => {
+    if (userSelectedExerciseId) {
+      const match = performedExerciseOptions.find((o) => o.id === userSelectedExerciseId);
+      if (match && (timeRange === 'all' || match.inRange)) {
+        return userSelectedExerciseId;
+      }
+    }
+    const firstInRange = performedExerciseOptions.find((o) => o.inRange);
+    return firstInRange?.id || userSelectedExerciseId || performedExerciseOptions[0]?.id || exercises[0]?.id || 'ex_bench_press';
+  }, [userSelectedExerciseId, performedExerciseOptions, timeRange, exercises]);
+
+  // Calculate progression for currently selected exercise within the active timeRange
   const currentProgression = useMemo<ExerciseProgressionAnalytics>(() => {
     const exFallback = exercises.find((e) => e.id === selectedExerciseId);
-    return getExerciseStrengthProgression(history, selectedExerciseId, exFallback?.name);
-  }, [history, selectedExerciseId, exercises]);
+    return getExerciseStrengthProgression(history, selectedExerciseId, exFallback?.name, timeRange);
+  }, [history, selectedExerciseId, exercises, timeRange]);
 
-  // Routine-wide progression & plateau summary
+  // Routine-wide progression & plateau summary scoped to active timeRange
   const routineProgressionSummary = useMemo(() => {
-    return analyzeRoutineProgression(history, exercises);
-  }, [history, exercises]);
+    return analyzeRoutineProgression(history, exercises, { timeRange });
+  }, [history, exercises, timeRange]);
 
   // Deep progression & plateau report for the currently selected exercise
   const currentProgressionReport = useMemo(() => {
@@ -370,7 +415,8 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
         <RoutinePlateauSummaryCard
           summary={routineProgressionSummary}
           selectedExerciseId={selectedExerciseId}
-          onSelectExercise={(id) => setSelectedExerciseId(id)}
+          onSelectExercise={(id) => setUserSelectedExerciseId(id)}
+          timeRange={timeRange}
         />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
@@ -379,17 +425,20 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
             <h3 className="text-xs sm:text-sm font-bold text-[var(--text-main)] uppercase tracking-wide">
               Exercise Progress & Strength
             </h3>
+            <span className="text-[10px] font-bold text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-subtle)]">
+              {timeRange === 'all' ? 'All Time' : `Last ${timeRange.replace('d', 'D')}`}
+            </span>
           </div>
 
           {/* Exercise Dropdown */}
           <select
             value={selectedExerciseId}
-            onChange={(e) => setSelectedExerciseId(e.target.value)}
+            onChange={(e) => setUserSelectedExerciseId(e.target.value)}
             className="w-full sm:w-auto bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-xl px-2.5 py-1.5 text-xs font-bold text-[var(--text-main)] focus:outline-none focus:border-[var(--primary)] max-w-full sm:max-w-[260px] truncate cursor-pointer shrink-0"
           >
             {performedExerciseOptions.map((opt) => (
               <option key={opt.id} value={opt.id} className="bg-[var(--bg-surface)] text-[var(--text-main)]">
-                {opt.name} {opt.isCustom ? '(Custom)' : ''}
+                {opt.name} {opt.isCustom ? '(Custom)' : ''} {!opt.inRange && timeRange !== 'all' ? '(Older)' : ''}
               </option>
             ))}
           </select>
@@ -486,13 +535,35 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
             {/* SVG Strength Timeline Graph */}
             <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-3 overflow-hidden">
               {currentProgression.timeline.length === 1 ? (
-                <div className="py-8 text-center space-y-1">
+                <div className="py-8 text-center space-y-1.5">
                   <p className="text-xs font-bold text-[var(--text-main)]">
-                    Single Session Recorded: {currentProgression.currentMaxWeight} kg ×{' '}
+                    Single Session {timeRange === '7d' ? 'in Last 7 Days' : timeRange === '30d' ? 'in Last 30 Days' : timeRange === '90d' ? 'in Last 90 Days' : 'Recorded'}: {currentProgression.currentMaxWeight} kg ×{' '}
                     {currentProgression.timeline[0].bestReps} reps
                   </p>
                   <p className="text-[11px] text-[var(--text-secondary)]">
-                    Complete this exercise in another workout to plot progression trends.
+                    {timeRange !== 'all' ? (
+                      <span>
+                        Switch to{' '}
+                        <button
+                          type="button"
+                          onClick={() => setTimeRange('30d')}
+                          className="font-bold text-[var(--primary)] hover:underline cursor-pointer"
+                        >
+                          30D
+                        </button>{' '}
+                        or{' '}
+                        <button
+                          type="button"
+                          onClick={() => setTimeRange('all')}
+                          className="font-bold text-[var(--primary)] hover:underline cursor-pointer"
+                        >
+                          All Time
+                        </button>{' '}
+                        to view full multi-week progression curve.
+                      </span>
+                    ) : (
+                      'Complete this exercise in another workout to plot progression trends.'
+                    )}
                   </p>
                 </div>
               ) : (
@@ -672,8 +743,45 @@ export const TrainingAnalyticsView: React.FC<TrainingAnalyticsViewProps> = ({
             <ExerciseProgressionInsightCard report={currentProgressionReport} />
           </div>
         ) : (
-          <div className="py-6 text-center text-xs text-[var(--text-secondary)]">
-            No completed working sets found for {currentProgression.exerciseName}.
+          <div className="py-8 text-center space-y-3 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4">
+            <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-[var(--text-main)]">
+                No workouts logged for {currentProgression.exerciseName} in {timeRange === '7d' ? 'the last 7 days' : timeRange === '30d' ? 'the last 30 days' : `the last ${timeRange.replace('d', ' days')}`}.
+              </p>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                This exercise has recorded sessions outside this window. Switch time range to view earlier history:
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-1">
+              {timeRange !== '30d' && (
+                <button
+                  type="button"
+                  onClick={() => setTimeRange('30d')}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[var(--bg-input)] hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-main)] transition-colors cursor-pointer"
+                >
+                  30D
+                </button>
+              )}
+              {timeRange !== '90d' && (
+                <button
+                  type="button"
+                  onClick={() => setTimeRange('90d')}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[var(--bg-input)] hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-main)] transition-colors cursor-pointer"
+                >
+                  90D
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setTimeRange('all')}
+                className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[var(--primary)] text-white hover:opacity-90 shadow-xs transition-colors cursor-pointer"
+              >
+                All Time
+              </button>
+            </div>
           </div>
         )}
       </Card>

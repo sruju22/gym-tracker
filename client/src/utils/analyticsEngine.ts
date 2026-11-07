@@ -375,14 +375,16 @@ export function extractExerciseWorkingSets(
 export function getExerciseStrengthProgression(
   history: WorkoutSession[],
   exerciseId: string,
-  exerciseNameFallback?: string
+  exerciseNameFallback?: string,
+  timeRange: AnalyticsTimeRange = 'all',
+  now: Date = new Date()
 ): ExerciseProgressionAnalytics {
   const completedSessions = filterCompletedSessions(history, 'asc');
 
   let resolvedName = exerciseNameFallback || exerciseId;
   let isCustom = exerciseId.startsWith('custom_');
 
-  const timeline: SessionExercisePerformance[] = [];
+  const allTimeline: SessionExercisePerformance[] = [];
 
   for (const session of completedSessions) {
     const workingSets = extractExerciseWorkingSets(session, exerciseId);
@@ -398,7 +400,7 @@ export function getExerciseStrengthProgression(
     const bestEstimated1RM = Math.max(...workingSets.map((s) => s.estimated1RM));
     const totalVolume = workingSets.reduce((sum, s) => sum + s.loadVolume, 0);
 
-    timeline.push({
+    allTimeline.push({
       date: session.completedAt || session.date,
       sessionId: session.id,
       workoutName: session.workoutName || 'Workout Session',
@@ -409,6 +411,23 @@ export function getExerciseStrengthProgression(
       completedSetsCount: workingSets.length,
       workingSets,
     });
+  }
+
+  // Filter timeline by active time range if requested
+  let timeline = allTimeline;
+  if (timeRange !== 'all') {
+    let daysToSubtract = 30;
+    if (timeRange === '7d') daysToSubtract = 7;
+    else if (timeRange === '30d') daysToSubtract = 30;
+    else if (timeRange === '90d') daysToSubtract = 90;
+    else if (timeRange === '1y') daysToSubtract = 365;
+
+    const cutoff = new Date(now);
+    cutoff.setDate(now.getDate() - daysToSubtract);
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffTime = cutoff.getTime();
+
+    timeline = allTimeline.filter((t) => parseLocalDate(t.date).getTime() >= cutoffTime);
   }
 
   const totalSessions = timeline.length;
@@ -428,7 +447,9 @@ export function getExerciseStrengthProgression(
       baselineMaxWeight: null,
       trend: 'unknown',
       trendDeltaPercent: null,
-      trendReason: 'No recorded completed sets for this exercise',
+      trendReason: timeRange === 'all'
+        ? 'No recorded completed sets for this exercise'
+        : `No recorded workouts for this exercise in the selected ${timeRange.replace('d', '-day')} window.`,
       isLimitedData: true,
       timeline: [],
     };
@@ -437,7 +458,58 @@ export function getExerciseStrengthProgression(
   const latest = timeline[timeline.length - 1];
   const baseline = timeline[0];
 
+  // If only 1 session in this time window, check if there was a previous session in allTimeline
   if (totalSessions === 1) {
+    const latestAllIndex = allTimeline.indexOf(latest);
+    const priorSession = latestAllIndex > 0 ? allTimeline[latestAllIndex - 1] : null;
+
+    if (priorSession) {
+      const prev1RM = priorSession.bestEstimated1RM;
+      const current1RM = latest.bestEstimated1RM;
+      const delta1RM = current1RM - prev1RM;
+      const trendDeltaPercent =
+        prev1RM > 0 ? Math.round(((current1RM - prev1RM) / prev1RM) * 1000) / 10 : 0;
+
+      let trend: ProgressionTrend = 'stable';
+      let trendReason = '';
+
+      if (trendDeltaPercent >= 2.5) {
+        trend = 'improving';
+        const sign = trendDeltaPercent > 0 ? '+' : '';
+        if (latest.maxWeight > priorSession.maxWeight) {
+          trendReason = `Working weight increased: ${priorSession.maxWeight} kg → ${latest.maxWeight} kg (${sign}${trendDeltaPercent}% estimated 1RM improvement over previous session).`;
+        } else if (latest.maxWeight === priorSession.maxWeight && latest.bestReps > priorSession.bestReps) {
+          trendReason = `Repetitions improved: ${priorSession.bestReps} → ${latest.bestReps} reps at ${latest.maxWeight} kg (${sign}${trendDeltaPercent}% estimated 1RM improvement over previous session).`;
+        } else {
+          trendReason = `Estimated 1RM improved: ${priorSession.bestEstimated1RM} kg → ${latest.bestEstimated1RM} kg (${sign}${trendDeltaPercent}% improvement over previous session).`;
+        }
+      } else if (trendDeltaPercent <= -2.5) {
+        trend = 'declining';
+        trendReason = `Recent working load was lower: ${latest.maxWeight} kg vs ${priorSession.maxWeight} kg (${trendDeltaPercent}% difference). Variations in performance across sessions are a normal part of training cycles.`;
+      } else {
+        trend = 'stable';
+        trendReason = `Consistent performance maintained at ${latest.maxWeight} kg × ${latest.bestReps} reps (Est. 1RM: ${latest.bestEstimated1RM} kg).`;
+      }
+
+      return {
+        exerciseId,
+        exerciseName: resolvedName,
+        isCustom,
+        totalSessions: 1,
+        totalWorkingSets,
+        currentEstimated1RM: latest.bestEstimated1RM,
+        baselineEstimated1RM: priorSession.bestEstimated1RM,
+        overallDelta1RM: delta1RM,
+        currentMaxWeight: latest.maxWeight,
+        baselineMaxWeight: priorSession.maxWeight,
+        trend,
+        trendDeltaPercent,
+        trendReason,
+        isLimitedData: true,
+        timeline,
+      };
+    }
+
     return {
       exerciseId,
       exerciseName: resolvedName,

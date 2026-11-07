@@ -143,6 +143,7 @@ export interface AnalyzeProgressionOptions {
   weeklyPlan?: WeeklySchedule;
   exercises?: Exercise[];
   precomputedMuscleIntelligence?: MuscleIntelligenceSummary;
+  timeRange?: '7d' | '30d' | '90d' | '1y' | 'all';
 }
 
 /**
@@ -745,14 +746,34 @@ export function analyzeRoutineProgression(
     if (ex && ex.id) libraryMap.set(ex.id, ex);
   }
 
-  // Find all unique exercises performed in history
+  // Find unique exercises performed (scoped to timeRange if specified)
   const uniqueExerciseIds = new Set<string>();
   const exerciseMetaMap = new Map<
     string,
     { name: string; equipment?: Equipment; primaryMuscle?: MuscleGroup; isCustom: boolean }
   >();
 
-  for (const session of completedSessions) {
+  const refDate = options.referenceDate ? new Date(options.referenceDate) : new Date();
+  let activeSessions = completedSessions;
+  if (options.timeRange && options.timeRange !== 'all') {
+    let daysToSubtract = 30;
+    if (options.timeRange === '7d') daysToSubtract = 7;
+    else if (options.timeRange === '30d') daysToSubtract = 30;
+    else if (options.timeRange === '90d') daysToSubtract = 90;
+    else if (options.timeRange === '1y') daysToSubtract = 365;
+
+    const cutoff = new Date(refDate);
+    cutoff.setDate(refDate.getDate() - daysToSubtract);
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffTime = cutoff.getTime();
+
+    activeSessions = completedSessions.filter((s) => {
+      const sTime = parseLocalDate(s.completedAt || s.date).getTime();
+      return sTime >= cutoffTime;
+    });
+  }
+
+  for (const session of activeSessions) {
     for (const exItem of session.exercises || []) {
       const exId = exItem.exerciseId || (exItem.exercise && exItem.exercise.id);
       if (exId) {

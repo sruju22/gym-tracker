@@ -11,15 +11,28 @@ interface RoutinePlateauSummaryCardProps {
   summary: RoutineProgressionSummary;
   selectedExerciseId?: string;
   onSelectExercise: (exerciseId: string) => void;
+  timeRange?: string;
 }
 
 export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps> = ({
   summary,
   selectedExerciseId,
   onSelectExercise,
+  timeRange,
 }) => {
   const { progressingCount, plateauCount, plateauedExercises, topProgressingExercises } =
     summary;
+
+  const rangeLabel =
+    timeRange === '7d'
+      ? '(Last 7 Days)'
+      : timeRange === '30d'
+      ? '(Last 30 Days)'
+      : timeRange === '90d'
+      ? '(Last 90 Days)'
+      : timeRange === 'all'
+      ? '(All Time)'
+      : '';
 
   if (summary.totalAnalyzedExercises === 0) {
     return null;
@@ -38,7 +51,7 @@ export const RoutinePlateauSummaryCard: React.FC<RoutinePlateauSummaryCardProps>
               Your Exercise Progress
             </h4>
             <div className="text-[10px] text-[var(--text-muted)] font-medium">
-              Progress tracking across {summary.totalAnalyzedExercises} active exercises
+              Progress tracking across {summary.totalAnalyzedExercises} active exercises {rangeLabel}
             </div>
           </div>
         </div>

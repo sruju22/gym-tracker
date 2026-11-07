@@ -982,7 +982,77 @@ async function runTrainingAnalyticsTests() {
     assert(JSON.stringify(run1) === JSON.stringify(run2), 'Analytics output is 100% deterministic and identical across repeated runs');
   }
 
-  console.log('\n🎉 ALL 12 TRAINING ANALYTICS TESTS PASSED SUCCESSFULLY!\n');
+  // =========================================================================
+  // TEST 13: Exercise progression respects explicit timeRange ('7d' vs '30d' vs 'all')
+  // =========================================================================
+  console.log('\n--- Test 13: Exercise progression respects explicit timeRange ---');
+  {
+    const refNow = new Date('2026-10-30T12:00:00Z');
+    const multiPeriodHistory: WorkoutSession[] = [
+      {
+        id: 'sess_older',
+        status: 'completed',
+        date: '2026-10-10T10:00:00Z', // 20 days ago (outside 7d, inside 30d)
+        workoutName: 'Older Push Day',
+        dayOfWeek: 'saturday',
+        muscleGroups: ['chest'],
+        totalVolume: 480,
+        totalSets: 1,
+        exercises: [
+          {
+            id: 'we_old',
+            exerciseId: benchPress.id,
+            exercise: benchPress,
+            order: 1,
+            notes: '',
+            sets: [{ id: 's_old', setNumber: 1, weight: 80, reps: 6, completed: true }],
+          },
+        ],
+      },
+      {
+        id: 'sess_recent',
+        status: 'completed',
+        date: '2026-10-28T10:00:00Z', // 2 days ago (inside 7d and 30d)
+        workoutName: 'Recent Push Day',
+        dayOfWeek: 'wednesday',
+        muscleGroups: ['chest'],
+        totalVolume: 540,
+        totalSets: 1,
+        exercises: [
+          {
+            id: 'we_rec',
+            exerciseId: benchPress.id,
+            exercise: benchPress,
+            order: 1,
+            notes: '',
+            sets: [{ id: 's_rec', setNumber: 1, weight: 90, reps: 6, completed: true }],
+          },
+        ],
+      },
+    ];
+
+    // In 7d window: only 1 session inside window, but compares to older baseline
+    const prog7d = getExerciseStrengthProgression(multiPeriodHistory, benchPress.id, benchPress.name, '7d', refNow);
+    assert(prog7d.totalSessions === 1, `7d window should only contain 1 session, got ${prog7d.totalSessions}`);
+    assert(prog7d.timeline.length === 1, `7d timeline length should be 1, got ${prog7d.timeline.length}`);
+    assert(prog7d.currentMaxWeight === 90, '7d current max weight should be 90 kg');
+    assert(prog7d.trend === 'improving', `7d trend should recognize improvement over prior baseline, got ${prog7d.trend}`);
+    assert(prog7d.trendReason.includes('80 kg → 90 kg'), '7d trendReason should reference previous workout working load');
+
+    // In 30d window: contains both sessions
+    const prog30d = getExerciseStrengthProgression(multiPeriodHistory, benchPress.id, benchPress.name, '30d', refNow);
+    assert(prog30d.totalSessions === 2, `30d window should contain 2 sessions, got ${prog30d.totalSessions}`);
+    assert(prog30d.timeline.length === 2, `30d timeline length should be 2, got ${prog30d.timeline.length}`);
+    assert(prog30d.baselineMaxWeight === 80, '30d baseline max weight should be 80 kg');
+    assert(prog30d.currentMaxWeight === 90, '30d current max weight should be 90 kg');
+
+    // For exercise with no workouts in 7d window
+    const squatProg7d = getExerciseStrengthProgression(multiPeriodHistory, squat.id, squat.name, '7d', refNow);
+    assert(squatProg7d.totalSessions === 0, `Squat in 7d window should have 0 sessions, got ${squatProg7d.totalSessions}`);
+    assert(squatProg7d.timeline.length === 0, 'Squat in 7d window timeline should be empty');
+  }
+
+  console.log('\n🎉 ALL 13 TRAINING ANALYTICS TESTS PASSED SUCCESSFULLY!\n');
 }
 
 runTrainingAnalyticsTests().catch((err) => {
