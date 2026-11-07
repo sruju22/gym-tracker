@@ -93,6 +93,57 @@ export const AICoachDrawer: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Dynamic visual viewport height & offset for mobile keyboards (iOS Safari / Android)
+  const [viewportHeight, setViewportHeight] = useState<number | null>(() => {
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      return Math.round(window.visualViewport.height);
+    }
+    return null;
+  });
+  const [viewportTop, setViewportTop] = useState<number>(0);
+
+  // Lock document scrolling and sync visualViewport height on mobile
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // 1. Lock document scrolling to prevent iOS background displacement
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    // 2. Track visualViewport for iOS Safari / Android virtual keyboards
+    const updateViewport = () => {
+      if (window.visualViewport) {
+        setViewportHeight(Math.round(window.visualViewport.height));
+        setViewportTop(Math.round(window.visualViewport.offsetTop));
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+          window.scrollTo(0, 0);
+        }
+      }
+    };
+
+    updateViewport();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewport);
+      window.visualViewport.addEventListener('scroll', updateViewport);
+    }
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.touchAction = originalTouchAction;
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateViewport);
+        window.visualViewport.removeEventListener('scroll', updateViewport);
+      }
+    };
+  }, [isOpen]);
+
   // Auto-scroll to bottom on new message or loading change
   useEffect(() => {
     if (isOpen) {
@@ -100,9 +151,9 @@ export const AICoachDrawer: React.FC = () => {
     }
   }, [messages, isLoading, isOpen]);
 
-  // Focus input when opened
+  // Focus input on desktop when opened (on mobile, let user browse starter prompts first without keyboard takeover)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && typeof window !== 'undefined' && window.innerWidth >= 768) {
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 150);
@@ -137,12 +188,35 @@ export const AICoachDrawer: React.FC = () => {
     }
   };
 
+  const handleInputFocus = () => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
   const handlePromptClick = (prompt: string) => {
     sendMessage(prompt);
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden select-none" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden select-none"
+      role="dialog"
+      aria-modal="true"
+      style={
+        viewportHeight !== null
+          ? {
+              height: `${viewportHeight}px`,
+              top: `${viewportTop}px`,
+              bottom: 'auto',
+            }
+          : undefined
+      }
+    >
       {/* Backdrop for Desktop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -151,11 +225,11 @@ export const AICoachDrawer: React.FC = () => {
       />
 
       {/* Drawer Container (Full-screen mobile, 480px slide-over desktop) */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 md:pl-10">
+      <div className="fixed inset-0 md:left-auto md:right-0 md:w-[480px] max-w-full flex h-full">
         <aside
           role="region"
           aria-label="AI Personal Training Coach"
-          className="w-screen max-w-full md:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)] shadow-2xl flex flex-col h-[100dvh] overflow-hidden animate-slide-left text-[var(--text-main)]"
+          className="w-full bg-[var(--bg-surface)] md:border-l border-[var(--border-subtle)] shadow-2xl flex flex-col h-full overflow-hidden animate-slide-left text-[var(--text-main)]"
         >
           {/* 1. Header */}
           <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-red-500/20 bg-[var(--bg-surface)]/95 backdrop-blur-md shadow-[0_4px_20px_rgba(220,38,38,0.08)] z-10 shrink-0">
@@ -232,7 +306,7 @@ export const AICoachDrawer: React.FC = () => {
           )}
 
           {/* 2. Chat Messages Viewport */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-4 select-text">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-4 space-y-4 select-text overscroll-contain">
             {/* Empty State / Welcome Screen */}
             {messages.length === 0 && (
               <div className="flex flex-col space-y-3.5 py-1 animate-fade-in">
@@ -409,7 +483,7 @@ export const AICoachDrawer: React.FC = () => {
           </div>
 
           {/* 3. Input Footer */}
-          <div className="border-t border-white/5 bg-[var(--bg-surface)]/95 backdrop-blur-md p-3 sm:p-4 shrink-0 space-y-2 shadow-[0_-4px_20px_rgba(0,0,0,0.4)]">
+          <div className="border-t border-white/5 bg-[var(--bg-surface)]/95 backdrop-blur-md p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] shrink-0 space-y-2 shadow-[0_-4px_20px_rgba(0,0,0,0.4)]">
             {/* Quick Starter Chips above input when messages exist */}
             {messages.length > 0 && (
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
@@ -433,11 +507,12 @@ export const AICoachDrawer: React.FC = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onFocus={handleInputFocus}
                 placeholder="Ask about workouts, plateaus, readiness..."
                 rows={1}
                 maxLength={1000}
                 disabled={isLoading}
-                className="flex-1 min-h-[44px] max-h-28 py-2.5 pl-3.5 pr-10 rounded-xl bg-zinc-900/90 border border-zinc-800 focus:border-red-500/80 focus:shadow-[0_0_15px_rgba(239,68,68,0.2)] focus:outline-hidden text-xs sm:text-sm text-white placeholder-zinc-500 resize-none transition-all"
+                className="flex-1 min-h-[44px] max-h-28 py-2.5 pl-3.5 pr-10 rounded-xl bg-zinc-900/90 border border-zinc-800 focus:border-red-500/80 focus:shadow-[0_0_15px_rgba(239,68,68,0.2)] focus:outline-hidden text-[16px] sm:text-sm text-white placeholder-zinc-500 resize-none transition-all"
               />
 
               <button
