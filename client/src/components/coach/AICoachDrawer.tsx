@@ -202,35 +202,34 @@ export const AICoachDrawer: React.FC = () => {
     sendMessage(prompt);
   };
 
+  const isKeyboardOpen =
+    viewportHeight !== null &&
+    typeof window !== 'undefined' &&
+    viewportHeight < window.innerHeight - 80;
+
   return (
     <div
-      className="fixed inset-0 z-50 overflow-hidden select-none"
+      className="fixed inset-x-0 z-50 overflow-hidden select-none flex justify-end"
       role="dialog"
       aria-modal="true"
-      style={
-        viewportHeight !== null
-          ? {
-              height: `${viewportHeight}px`,
-              top: `${viewportTop}px`,
-              bottom: 'auto',
-            }
-          : undefined
-      }
+      style={{
+        top: `${viewportTop}px`,
+        height: viewportHeight !== null ? `${viewportHeight}px` : '100dvh',
+      }}
     >
       {/* Backdrop for Desktop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
         onClick={closeCoach}
         aria-hidden="true"
       />
 
       {/* Drawer Container (Full-screen mobile, 480px slide-over desktop) */}
-      <div className="fixed inset-0 md:left-auto md:right-0 md:w-[480px] max-w-full flex h-full">
-        <aside
-          role="region"
-          aria-label="AI Personal Training Coach"
-          className="w-full bg-[var(--bg-surface)] md:border-l border-[var(--border-subtle)] shadow-2xl flex flex-col h-full overflow-hidden animate-slide-left text-[var(--text-main)]"
-        >
+      <aside
+        role="region"
+        aria-label="AI Personal Training Coach"
+        className="relative z-10 w-full md:w-[480px] bg-[var(--bg-surface)] md:border-l border-[var(--border-subtle)] shadow-2xl flex flex-col h-full overflow-hidden animate-slide-left text-[var(--text-main)]"
+      >
           {/* 1. Header */}
           <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-red-500/20 bg-[var(--bg-surface)]/95 backdrop-blur-md shadow-[0_4px_20px_rgba(220,38,38,0.08)] z-10 shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -483,7 +482,14 @@ export const AICoachDrawer: React.FC = () => {
           </div>
 
           {/* 3. Input Footer */}
-          <div className="border-t border-white/5 bg-[var(--bg-surface)]/95 backdrop-blur-md p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] shrink-0 space-y-2 shadow-[0_-4px_20px_rgba(0,0,0,0.4)]">
+          <div
+            className="border-t border-white/5 bg-[var(--bg-surface)]/95 backdrop-blur-md p-3 sm:p-4 shrink-0 space-y-2 shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
+            style={{
+              paddingBottom: isKeyboardOpen
+                ? '0.75rem'
+                : 'max(1rem, env(safe-area-inset-bottom, 16px))',
+            }}
+          >
             {/* Quick Starter Chips above input when messages exist */}
             {messages.length > 0 && (
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
@@ -508,11 +514,11 @@ export const AICoachDrawer: React.FC = () => {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={handleInputFocus}
-                placeholder="Ask about workouts, plateaus, readiness..."
+                placeholder="Ask your coach anything..."
                 rows={1}
                 maxLength={1000}
                 disabled={isLoading}
-                className="flex-1 min-h-[44px] max-h-28 py-2.5 pl-3.5 pr-10 rounded-xl bg-zinc-900/90 border border-zinc-800 focus:border-red-500/80 focus:shadow-[0_0_15px_rgba(239,68,68,0.2)] focus:outline-hidden text-[16px] sm:text-sm text-white placeholder-zinc-500 resize-none transition-all"
+                className="flex-1 min-h-[44px] max-h-28 py-2.5 pl-3.5 pr-10 rounded-xl bg-zinc-900/90 border border-zinc-800 focus:border-red-500/80 focus:shadow-[0_0_15px_rgba(239,68,68,0.2)] focus:outline-hidden text-[16px] sm:text-sm text-white placeholder-zinc-500 placeholder:truncate leading-normal resize-none transition-all"
               />
 
               <button
@@ -541,7 +547,6 @@ export const AICoachDrawer: React.FC = () => {
             )}
           </div>
         </aside>
-      </div>
     </div>
   );
 };
