@@ -13,6 +13,7 @@ import combinationRoutes from './routes/combinationRoutes';
 import cardioRoutes from './routes/cardioRoutes';
 import coachRoutes from './routes/coachRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import { isCloudinaryConfigured } from './services/cloudinaryService';
 
 dotenv.config();
 
@@ -84,6 +85,11 @@ app.use('/api/upload', uploadRoutes);
 if (process.env.NODE_ENV !== 'test') {
   app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`Server listening on http://0.0.0.0:${PORT}`);
+    if (isCloudinaryConfigured()) {
+      console.log('✅ Cloudinary media storage is configured and active.');
+    } else {
+      console.log('⚠️ Cloudinary media storage is not configured. Photo uploads will be disabled until CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are set.');
+    }
   });
 }
 

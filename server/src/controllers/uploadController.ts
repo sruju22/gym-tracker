@@ -5,6 +5,7 @@ import User from '../models/User';
 import {
   uploadBufferToCloudinary,
   deleteFromCloudinary,
+  isCloudinaryConfigured,
   UploadFolder,
 } from '../services/cloudinaryService';
 
@@ -48,6 +49,13 @@ export const uploadMiddleware = multer({
  */
 export async function uploadImage(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
+    if (!isCloudinaryConfigured()) {
+      res.status(503).json({
+        error: 'Cloud storage is not configured on this server. Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your environment variables.',
+      });
+      return;
+    }
+
     if (!req.file) {
       res.status(400).json({ error: 'No image file provided in the request' });
       return;
@@ -87,6 +95,13 @@ export async function uploadImage(req: AuthenticatedRequest, res: Response): Pro
  */
 export async function deleteImage(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
+    if (!isCloudinaryConfigured()) {
+      res.status(503).json({
+        error: 'Cloud storage is not configured on this server. Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your environment variables.',
+      });
+      return;
+    }
+
     const { publicId } = req.body;
 
     if (!publicId || typeof publicId !== 'string') {
