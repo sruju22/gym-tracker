@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Sun,
   Moon,
@@ -45,8 +45,22 @@ import {
   getRecommendedCardioGoals,
 } from '../utils/cardioGoals';
 
+export type SettingsTab = 'split' | 'cardio' | 'app' | 'all';
+
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTabParam = searchParams.get('tab') as SettingsTab | null;
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    initialTabParam && ['split', 'cardio', 'app', 'all'].includes(initialTabParam)
+      ? initialTabParam
+      : 'split'
+  );
+
+  const handleSelectTab = (tab: SettingsTab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
   const { currentUser, updateProfile, logout, openAccountModal } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
   const {
@@ -470,395 +484,396 @@ export const SettingsPage: React.FC = () => {
         )}
       </Card>
 
-      {/* 2. Theme & Appearance Settings */}
-      <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
-        <div>
-          <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight">
-            Appearance
-          </h3>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Choose how GymTrackie looks.
-          </p>
-        </div>
+      {/* Category Navigation Pills */}
+      <div className="flex items-center gap-1.5 p-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl">
+        {[
+          { id: 'split', label: 'Workout Split', icon: Sliders },
+          { id: 'cardio', label: 'Cardio Goals', icon: Flame },
+          { id: 'app', label: 'Preferences', icon: Sparkles },
+          { id: 'all', label: 'View All', icon: Activity },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleSelectTab(tab.id as SettingsTab)}
+              className={`flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? 'bg-[var(--primary)] text-white shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-          {themeOptions.map((opt) => {
-            const Icon = opt.icon;
-            const isSelected = theme === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setTheme(opt.id)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer select-none relative focus:outline-none focus:ring-2 focus:ring-[var(--primary)] ${
-                  isSelected
-                    ? 'bg-[var(--primary-subtle)] border-[var(--primary)] shadow-sm'
-                    : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2.5">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                      isSelected
-                        ? 'bg-[var(--primary)] text-white'
-                        : 'bg-[var(--bg-surface)] text-[var(--text-secondary)]'
+      {/* ================= 1. WORKOUT SPLIT SECTION ================= */}
+      {(activeTab === 'split' || activeTab === 'all') && (
+        <Card className="p-4 sm:p-5 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-3 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
+                CURRENT PROGRAMMING
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
+                Active Workout Split & Schedule
+              </h3>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsTemplatesModalOpen(true)}
+              className="gap-1.5 self-start sm:self-auto text-xs"
+            >
+              <Sliders className="w-3.5 h-3.5 text-[var(--primary)]" />
+              <span>Browse All 26 Splits</span>
+            </Button>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm sm:text-base font-extrabold text-[var(--text-main)]">
+                    {activeTemplate?.name || userData.templateName || 'Push / Pull / Legs (PPL) — 6-Day'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)]">
+                    {activeTemplate?.daysPerWeek || currentUser?.trainingDaysPerWeek || 4} Days / Week
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                  {activeTemplate?.shortDescription || 'Tailored weekly training schedule.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                <Sparkles className="w-4 h-4 text-[var(--primary)] shrink-0" />
+                <span>Goal: <strong className="text-[var(--text-main)]">{currentUser?.fitnessGoal || activeTemplate?.goal || 'Muscle Building & Hypertrophy'}</strong></span>
+              </div>
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="truncate">Progression: <strong className="text-[var(--text-main)] truncate">{activeTemplate?.progressionMethodology || userData.progressionRule || 'Double Progression'}</strong></span>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* ================= 2. CARDIO & CONDITIONING SECTION ================= */}
+      {(activeTab === 'cardio' || activeTab === 'all') && (
+        <Card className="p-4 sm:p-5 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-3.5 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-orange-400" />
+                <span>CARDIO & CONDITIONING</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
+                Cardio Preferences & Goal Targets
+              </h3>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {/* Preferred Activities Multi-Select */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider block">
+                Preferred Activities
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {[
+                  { id: 'walking', label: 'Walking', icon: Footprints },
+                  { id: 'running', label: 'Running', icon: Flame },
+                  { id: 'cycling', label: 'Cycling', icon: Bike },
+                  { id: 'treadmill', label: 'Treadmill', icon: Timer },
+                  { id: 'elliptical', label: 'Elliptical', icon: Activity },
+                  { id: 'rowing', label: 'Rowing', icon: Zap },
+                  { id: 'stair_climber', label: 'Stair Climber', icon: Award },
+                  { id: 'other', label: 'Other', icon: Heart },
+                ].map((act) => {
+                  const isSelected = (userCardioPrefs.preferredActivities || []).includes(
+                    act.id as CardioActivityType
+                  );
+                  const Icon = act.icon;
+                  return (
+                    <button
+                      key={act.id}
+                      type="button"
+                      onClick={() => handleToggleCardioActivity(act.id as CardioActivityType)}
+                      className={`py-2 px-2.5 rounded-xl border text-left flex items-center justify-between gap-1.5 transition-all cursor-pointer select-none ${
+                        isSelected
+                          ? 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--text-main)] shadow-xs font-bold'
+                          : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Icon
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            isSelected ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'
+                          }`}
+                        />
+                        <span className="text-xs truncate">{act.label}</span>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-3 h-3 text-[var(--primary)] shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Days Per Week & Duration */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Days Per Week */}
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--text-main)]">Cardio Days / Week</span>
+                  <span className="text-xs font-black text-[var(--primary)]">
+                    {userCardioPrefs.availableDaysPerWeek || 3} Days
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => handleUpdateCardioDays(d)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                        (userCardioPrefs.availableDaysPerWeek || 3) === d
+                          ? 'bg-[var(--primary)] text-white shadow-xs'
+                          : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Session Duration */}
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--text-main)]">Target Session Duration</span>
+                  <span className="text-xs font-black text-[var(--primary)]">
+                    {userCardioPrefs.preferredDurationMinutes || 30} Mins
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  {[20, 30, 45, 60].map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => handleUpdateCardioDuration(dur)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                        (userCardioPrefs.preferredDurationMinutes || 30) === dur
+                          ? 'bg-[var(--primary)] text-white shadow-xs'
+                          : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
+                      }`}
+                    >
+                      {dur}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Preferred Intensity - Compact Row */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 space-y-1.5">
+              <span className="text-xs font-bold text-[var(--text-main)] block">Conditioning Intensity</span>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'low', label: 'Low', zone: 'Zone 1–2 (Recovery)' },
+                  { id: 'moderate', label: 'Moderate', zone: 'Zone 2–3 (Aerobic)' },
+                  { id: 'high', label: 'High', zone: 'Zone 4+ (Intervals)' },
+                ].map((inte) => (
+                  <button
+                    key={inte.id}
+                    type="button"
+                    onClick={() => handleUpdateCardioIntensity(inte.id as CardioIntensity)}
+                    className={`py-2 px-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      (userCardioPrefs.preferredIntensity || 'moderate') === inte.id
+                        ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-main)]'
                     }`}
                   >
-                    <Icon className="w-4 h-4 stroke-[2.5]" />
-                  </div>
-                  {isSelected && (
-                    <span className="w-5 h-5 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-[10px] font-black">
-                      ✓
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm font-extrabold text-[var(--text-main)]">{opt.label}</div>
-                <div className="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-snug">
-                  {opt.desc}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* 2.5 Active Workout Split Card */}
-      <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)]">
-              CURRENT PROGRAMMING
-            </div>
-            <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
-              Active Workout Split & Schedule
-            </h3>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsTemplatesModalOpen(true)}
-            className="gap-1.5 self-start sm:self-auto"
-          >
-            <Sliders className="w-3.5 h-3.5 text-[var(--primary)]" />
-            <span>Browse All 26 Splits</span>
-          </Button>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-base font-extrabold text-[var(--text-main)]">
-                  {activeTemplate?.name || userData.templateName || 'Push / Pull / Legs (PPL) — 6-Day'}
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary-border)]">
-                  {activeTemplate?.daysPerWeek || currentUser?.trainingDaysPerWeek || 4} Days / Week
-                </span>
+                    <div className="text-xs font-extrabold">{inte.label}</div>
+                    <div className="text-[10px] opacity-80 mt-0.5 truncate">{inte.zone}</div>
+                  </button>
+                ))}
               </div>
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                {activeTemplate?.shortDescription || 'Tailored weekly training schedule.'}
+            </div>
+
+            {/* Active Weekly Target Summary */}
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black text-[var(--text-main)]">
+                      Weekly Target
+                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                      {userData.cardioWeeklyGoals?.isCustomized ? 'Custom' : 'Goal-Rec'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[var(--text-secondary)] truncate">
+                    {userData.cardioWeeklyGoals?.durationMinutes?.target || 150} mins &middot; {userData.cardioWeeklyGoals?.sessions?.target || 3} sessions / wk
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/progress')}
+                className="text-[11px] font-bold px-2.5 py-1 shrink-0 cursor-pointer"
+              >
+                <span>View Progress</span>
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* ================= 3. PREFERENCES & ACCOUNT SECTION ================= */}
+      {(activeTab === 'app' || activeTab === 'all') && (
+        <div className="space-y-4 animate-fade-in">
+          {/* Theme & Appearance (Compact 3-Way Segmented Row) */}
+          <Card className="p-4 sm:p-5 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-3">
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-[var(--text-main)] tracking-tight">
+                Theme & Appearance
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                Choose how GymTrackie looks.
               </p>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs">
-            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-              <Sparkles className="w-4 h-4 text-[var(--primary)] shrink-0" />
-              <span>Goal: <strong className="text-[var(--text-main)]">{currentUser?.fitnessGoal || activeTemplate?.goal || 'Muscle Building & Hypertrophy'}</strong></span>
-            </div>
-            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-              <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="truncate">Progression: <strong className="text-[var(--text-main)] truncate">{activeTemplate?.progressionMethodology || userData.progressionRule || 'Double Progression'}</strong></span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* 3. Units & Training Preferences */}
-      <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)]">
-            TRAINING PREFERENCES
-          </div>
-          <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
-            Units & Defaults
-          </h3>
-        </div>
-
-        <div className="space-y-3 pt-1">
-          {/* Weight Unit */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-            <div>
-              <div className="text-xs font-bold text-[var(--text-main)]">Weight Unit</div>
-              <div className="text-[11px] text-[var(--text-secondary)]">
-                Used for set logs, plates, and volume charts
-              </div>
-            </div>
-
-            <div className="flex gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-subtle)]">
-              <button
-                type="button"
-                onClick={() => handleUnitToggle('kg')}
-                className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  settings.weightUnit === 'kg'
-                    ? 'bg-[var(--primary)] text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
-                }`}
-              >
-                KG
-              </button>
-              <button
-                type="button"
-                onClick={() => handleUnitToggle('lbs')}
-                className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  settings.weightUnit === 'lbs'
-                    ? 'bg-[var(--primary)] text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
-                }`}
-              >
-                LBS
-              </button>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* 3.5 Cardio & Conditioning Preferences */}
-      <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-orange-400" />
-            <span>CARDIO & CONDITIONING</span>
-          </div>
-          <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
-            Cardio Preferences & Goal Targets
-          </h3>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Configure preferred activities, session length, and frequency to tailor weekly coaching.
-          </p>
-        </div>
-
-        <div className="space-y-4 pt-1">
-          {/* Preferred Activities Multi-Select */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider block">
-              Preferred Activities
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: 'walking', label: 'Walking', icon: Footprints },
-                { id: 'running', label: 'Running', icon: Flame },
-                { id: 'cycling', label: 'Cycling', icon: Bike },
-                { id: 'treadmill', label: 'Treadmill', icon: Timer },
-                { id: 'elliptical', label: 'Elliptical', icon: Activity },
-                { id: 'rowing', label: 'Rowing', icon: Zap },
-                { id: 'stair_climber', label: 'Stair Climber', icon: Award },
-                { id: 'other', label: 'Other', icon: Heart },
-              ].map((act) => {
-                const isSelected = (userCardioPrefs.preferredActivities || []).includes(
-                  act.id as CardioActivityType
-                );
-                const Icon = act.icon;
+            <div className="grid grid-cols-3 gap-2">
+              {themeOptions.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = theme === opt.id;
                 return (
                   <button
-                    key={act.id}
+                    key={opt.id}
                     type="button"
-                    onClick={() => handleToggleCardioActivity(act.id as CardioActivityType)}
-                    className={`p-3 rounded-xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer select-none ${
+                    onClick={() => setTheme(opt.id)}
+                    className={`py-2.5 px-2 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--text-main)] shadow-xs'
-                        : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
+                        ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold'
+                        : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:border-[var(--border-strong)]'
                     }`}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${
-                          isSelected ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'
-                        }`}
-                      />
-                      <span className="text-xs font-bold truncate">{act.label}</span>
-                    </div>
-                    {isSelected && (
-                      <Check className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
-                    )}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="text-xs font-bold truncate">{opt.label}</span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </Card>
 
-          {/* Days Per Week & Duration */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Days Per Week */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[var(--text-main)]">Cardio Days Per Week</span>
-                <span className="text-xs font-black text-[var(--primary)]">
-                  {userCardioPrefs.availableDaysPerWeek || 3} Days
-                </span>
+          {/* Units & Training Preferences */}
+          <Card className="p-4 sm:p-5 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-[var(--text-main)]">Weight Unit</div>
+                <div className="text-[11px] text-[var(--text-secondary)]">
+                  Used for set logs, plates, and volume charts
+                </div>
               </div>
-              <div className="flex gap-1.5">
-                {[1, 2, 3, 4, 5].map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => handleUpdateCardioDays(d)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                      (userCardioPrefs.availableDaysPerWeek || 3) === d
-                        ? 'bg-[var(--primary)] text-white shadow-xs'
-                        : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            {/* Session Duration */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[var(--text-main)]">Target Session Duration</span>
-                <span className="text-xs font-black text-[var(--primary)]">
-                  {userCardioPrefs.preferredDurationMinutes || 30} Mins
-                </span>
-              </div>
-              <div className="flex gap-1.5">
-                {[20, 30, 45, 60].map((dur) => (
-                  <button
-                    key={dur}
-                    type="button"
-                    onClick={() => handleUpdateCardioDuration(dur)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                      (userCardioPrefs.preferredDurationMinutes || 30) === dur
-                        ? 'bg-[var(--primary)] text-white shadow-xs'
-                        : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
-                    }`}
-                  >
-                    {dur}m
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Preferred Intensity */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3.5 space-y-2">
-            <span className="text-xs font-bold text-[var(--text-main)] block">Conditioning Intensity</span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {[
-                { id: 'low', label: 'Low', desc: 'Zone 1–2 (Conversational recovery)' },
-                { id: 'moderate', label: 'Moderate', desc: 'Zone 2–3 (Steady aerobic endurance)' },
-                { id: 'high', label: 'High', desc: 'Zone 4+ (Intervals & Sprints)' },
-              ].map((inte) => (
+              <div className="flex gap-1 bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-subtle)]">
                 <button
-                  key={inte.id}
                   type="button"
-                  onClick={() => handleUpdateCardioIntensity(inte.id as CardioIntensity)}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    (userCardioPrefs.preferredIntensity || 'moderate') === inte.id
-                      ? 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--text-main)] shadow-xs'
-                      : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
+                  onClick={() => handleUnitToggle('kg')}
+                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    settings.weightUnit === 'kg'
+                      ? 'bg-[var(--primary)] text-white shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
                   }`}
                 >
-                  <div className="text-xs font-black">{inte.label}</div>
-                  <div className="text-[10px] text-[var(--text-secondary)] mt-0.5 leading-tight">
-                    {inte.desc}
-                  </div>
+                  KG
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Weekly Target Summary */}
-          <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
-                <Clock className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-[var(--text-main)]">
-                    Weekly Cardio Target
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
-                    {userData.cardioWeeklyGoals?.isCustomized
-                      ? 'Custom Target'
-                      : 'Goal-Recommended'}
-                  </span>
-                </div>
-                <div className="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                  {userData.cardioWeeklyGoals?.durationMinutes?.target || 150} mins &middot;{' '}
-                  {userData.cardioWeeklyGoals?.sessions?.target || 3} sessions / week
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUnitToggle('lbs')}
+                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    settings.weightUnit === 'lbs'
+                      ? 'bg-[var(--primary)] text-white shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+                  }`}
+                >
+                  LBS
+                </button>
               </div>
             </div>
+          </Card>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/progress')}
-              className="text-xs font-bold gap-1 self-start sm:self-auto cursor-pointer"
-            >
-              <span>View in Progress</span>
-            </Button>
-          </div>
-        </div>
-      </Card>
+          {/* Account Actions */}
+          <Card className="p-4 sm:p-5 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-3">
+            <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+              Account Actions
+            </h3>
 
-      {/* 4. Account Actions */}
-      <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-3">
-        <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">
-          Account Actions
-        </h3>
+            <div className="space-y-2">
+              {currentUser ? (
+                <>
+                  <Button
+                    variant="outline"
+                    fullWidth
+                    onClick={() => openAccountModal()}
+                    className="justify-start gap-3"
+                  >
+                    <LogIn className="w-4 h-4 text-[var(--primary)]" />
+                    <span>Switch Account</span>
+                  </Button>
 
-        <div className="space-y-2">
-          {currentUser ? (
-            <>
-              <Button
-                variant="outline"
-                fullWidth
-                onClick={() => openAccountModal()}
-                className="justify-start gap-3"
-              >
-                <LogIn className="w-4 h-4 text-[var(--primary)]" />
-                <span>Switch Account</span>
-              </Button>
-
-              <Button
-                variant="danger"
-                fullWidth
-                onClick={logout}
-                className="justify-start gap-3"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out of Account</span>
-              </Button>
-            </>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                fullWidth
-                onClick={() => navigate('/login?mode=signin')}
-                className="gap-2"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Sign In</span>
-              </Button>
-              <Button
-                variant="primary"
-                fullWidth
-                onClick={() => navigate('/login?mode=signup')}
-                className="gap-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>Create Account</span>
-              </Button>
+                  <Button
+                    variant="danger"
+                    fullWidth
+                    onClick={logout}
+                    className="justify-start gap-3"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out of Account</span>
+                  </Button>
+                </>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => navigate('/login?mode=signin')}
+                    className="gap-2"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    <span>Sign In</span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    onClick={() => navigate('/login?mode=signup')}
+                    className="gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Create Account</span>
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
+          </Card>
         </div>
-      </Card>
+      )}
 
       {/* Edit Profile Modal */}
       <Modal

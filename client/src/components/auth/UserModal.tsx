@@ -13,6 +13,8 @@ import {
   ChevronRight,
   Camera,
   Loader2,
+  Sliders,
+  Flame,
 } from 'lucide-react';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { GoogleSignInButton } from './GoogleSignInButton';
@@ -86,9 +88,9 @@ export const UserModal: React.FC<UserModalProps> = ({
     navigate(target);
   };
 
-  const goToSettings = () => {
+  const goToSettings = (tab?: 'split' | 'cardio' | 'app') => {
     closeAccountModal();
-    navigate('/settings');
+    navigate(typeof tab === 'string' ? `/settings?tab=${tab}` : '/settings');
   };
 
   if (!isOpen) return null;
@@ -229,22 +231,56 @@ export const UserModal: React.FC<UserModalProps> = ({
               </div>
             )}
 
-            {/* Preferences, Goals & Themes Row */}
-            <button
-              type="button"
-              onClick={goToSettings}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] active:bg-[var(--bg-card-subtle)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[44px]"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
-                  <Settings className="w-3.5 h-3.5" />
+            {/* Categorized Preferences Shortcuts */}
+            <div className="space-y-1.5 pt-1">
+              <button
+                type="button"
+                onClick={() => goToSettings('split')}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-6 h-6 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
+                    <Sliders className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                    Workout Split & Schedule
+                  </span>
                 </div>
-                <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                  Preferences, Goals & Themes
-                </span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
-            </button>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => goToSettings('cardio')}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0 text-orange-400">
+                    <Flame className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                    Cardio & Conditioning Goals
+                  </span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => goToSettings('app')}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-6 h-6 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center shrink-0 text-[var(--text-secondary)]">
+                    <Settings className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                    Theme, Units & Preferences
+                  </span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </button>
+            </div>
 
             {/* Prominent Sign Out Button */}
             <Button
@@ -313,7 +349,7 @@ export const UserModal: React.FC<UserModalProps> = ({
             {/* Preferences, Goals & Themes Row */}
             <button
               type="button"
-              onClick={goToSettings}
+              onClick={() => goToSettings()}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)]/70 hover:bg-[var(--bg-card)] active:bg-[var(--bg-card-subtle)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[44px]"
             >
               <div className="flex items-center gap-2.5 min-w-0">
