@@ -612,25 +612,71 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
 
   // 9. Actionable Next Steps (Max 3 Prioritized Recommendations)
   const candidateSteps: ActionableCoachingStep[] = [];
+  const isRestDay = Boolean(todayAudit && todayAudit.isRest);
+
+  // Check 0: Scheduled Rest & Recovery Day Guidance (Priority on rest days)
+  if (isRestDay && todayAudit) {
+    const isSunday = todayAudit.day === 'sunday';
+    const title = isSunday
+      ? 'Scheduled Recovery: Sunday Reset'
+      : 'Scheduled Recovery Day';
+
+    const volumeStr =
+      curStrengthVolume >= 1000
+        ? `${(curStrengthVolume / 1000).toFixed(1)}k kg`
+        : `${Math.round(curStrengthVolume)} kg`;
+
+    const rationale =
+      completedStrengthDays >= 3
+        ? `You've logged ${completedStrengthDays} strength sessions and ${volumeStr} of volume this week. Today is designated for physiological recovery. Prioritize nutrition, hydration, and restorative rest so muscles adapt and grow.`
+        : `Today is designated as a rest day in your active split. Prioritize hydration, nutrition, and restorative movement to recharge for your upcoming training sessions.`;
+
+    candidateSteps.push({
+      id: `step_scheduled_rest_${todayAudit.day}`,
+      category: 'recovery',
+      priority: 'high',
+      title,
+      rationale,
+      actionLabel: 'View Plan',
+      actionRoute: '/workout',
+      actionType: 'view_plan',
+    });
+  }
 
   // Check 1: Missed Workout in Current Week
   const missedDays = scheduleAudit.filter((d) => d.status === 'missed');
   if (missedDays.length > 0) {
     const firstMissed = missedDays[0];
     const musclesStr = firstMissed.scheduledMuscleGroups.map(formatMuscleName).join(', ');
-    candidateSteps.push({
-      id: `step_missed_${firstMissed.day}`,
-      category: 'schedule_adherence',
-      priority: 'high',
-      title: `Catch Up: Missed ${firstMissed.scheduledWorkoutName || firstMissed.dayName}`,
-      rationale: `${firstMissed.dayName}'s scheduled workout (${musclesStr || 'strength session'}) was missed. Prioritize completing this session or incorporating key compound exercises next.`,
-      actionLabel: 'Start Workout',
-      actionRoute: '/workout',
-      actionType: 'start_workout',
-    });
+
+    if (isRestDay) {
+      // On a scheduled rest day, NEVER pressure the user with high-priority "Start Workout".
+      // Offer an encouraging, optional choice instead so planned recovery is respected.
+      candidateSteps.push({
+        id: `step_missed_${firstMissed.day}`,
+        category: 'schedule_adherence',
+        priority: 'low',
+        title: `Missed ${firstMissed.dayName}: ${firstMissed.scheduledWorkoutName || 'Workout'} (Optional)`,
+        rationale: `${firstMissed.dayName}'s scheduled workout (${musclesStr || 'strength session'}) was missed. Since today is your planned rest day, you can either take full rest to recharge for Monday, or complete an optional makeup session if you feel completely refreshed.`,
+        actionLabel: 'Review Split',
+        actionRoute: '/workout',
+        actionType: 'view_plan',
+      });
+    } else {
+      candidateSteps.push({
+        id: `step_missed_${firstMissed.day}`,
+        category: 'schedule_adherence',
+        priority: 'high',
+        title: `Catch Up: Missed ${firstMissed.scheduledWorkoutName || firstMissed.dayName}`,
+        rationale: `${firstMissed.dayName}'s scheduled workout (${musclesStr || 'strength session'}) was missed. Prioritize completing this session or incorporating key compound exercises next.`,
+        actionLabel: 'Start Workout',
+        actionRoute: '/workout',
+        actionType: 'start_workout',
+      });
+    }
   }
 
-  // Check 2: Today's Scheduled Session (if not done yet)
+  // Check 2: Today's Scheduled Session (if not done yet and not rest)
   if (todayAudit && !todayAudit.isRest && todayAudit.status === 'today') {
     const musclesStr = todayAudit.scheduledMuscleGroups.map(formatMuscleName).join(', ');
     candidateSteps.push({
@@ -783,12 +829,22 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     const finalRationale = isAdaptiveActionable ? adaptiveDecision.primaryRationale : progressionDecision.reason;
     const finalAction = isAdaptiveActionable ? adaptiveDecision.primaryAction : progressionDecision.action;
 
+    const exName = curWeekPR.exerciseName || matchedEx?.name || 'Exercise';
+    const displayTitle = finalTitle.toLowerCase().includes(exName.toLowerCase())
+      ? finalTitle
+      : `${finalTitle}: ${exName}`;
+
+    let displayRationale = finalRationale;
+    if (!displayRationale.toLowerCase().includes(exName.toLowerCase())) {
+      displayRationale = `On ${exName}, ${displayRationale.charAt(0).toLowerCase()}${displayRationale.slice(1)}`;
+    }
+
     candidateSteps.push({
       id: `step_pr_momentum_${curWeekPR.exerciseId}`,
       category: 'progressive_overload',
       priority: 'medium',
-      title: finalTitle,
-      rationale: finalRationale,
+      title: displayTitle,
+      rationale: displayRationale,
       actionLabel:
         finalAction === 'increase_weight'
           ? 'Review Weight Jump'
@@ -831,7 +887,6 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
 
   // Rank candidate steps dynamically based on active fitness goal and priority
   const isCardioTargetMet = Boolean(cardioDurItem && cardioDurItem.isCompleted);
-  const isRestDay = Boolean(todayAudit && todayAudit.isRest);
 
   const getStepRankScore = (step: ActionableCoachingStep): number => {
     let score = 0;
@@ -843,20 +898,25 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
       if (step.category === 'cardio_goal' && !isCardioTargetMet) {
         // In fat loss, on a rest day, cardio is #1; on training days it ranks alongside strength
         score += isRestDay ? 25 : 15;
+      } else if (step.category === 'recovery' && isRestDay) {
+        score += 20;
       } else if (step.category === 'schedule_adherence') {
         score += 10;
       }
     } else if (canonicalGoal === 'hypertrophy') {
+      if (step.category === 'recovery' && isRestDay) score += 30;
       if (step.category === 'schedule_adherence') score += 25;
       if (step.category === 'progressive_overload') score += 15;
       if (step.category === 'cardio_goal') score += 5;
     } else if (canonicalGoal === 'strength') {
+      if (step.category === 'recovery' && isRestDay) score += 30;
       if (step.category === 'schedule_adherence') score += 25;
       if (step.category === 'progressive_overload') score += 20;
       if (step.category === 'recovery') score += 15;
       if (step.category === 'cardio_goal') score += 5;
     } else {
       // longevity: balanced 50/50
+      if (step.category === 'recovery' && isRestDay) score += 25;
       if (step.category === 'schedule_adherence') score += 15;
       if (step.category === 'cardio_goal' && !isCardioTargetMet) score += 15;
     }

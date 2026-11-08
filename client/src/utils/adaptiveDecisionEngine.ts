@@ -451,9 +451,9 @@ export function evaluateAdaptiveDecision(
     if (isBodyweight) {
       primaryAction = 'increase_reps';
       primaryReasonCode = 'BODYWEIGHT_REPS_OVERLOAD';
-      title = 'Repetition Target Achieved';
-      actionHeadline = `Aim for ${targetRepRange.max + 2} clean reps next workout`;
-      primaryRationale = `You completed ${targetRepRange.max}+ reps across all ${completedSetsCount} sets. Aim for ${targetRepRange.max + 2} reps next workout or introduce a controlled 2-second pause at the bottom.`;
+      title = `Repetition Target Achieved: ${resolvedName}`;
+      actionHeadline = `Aim for ${targetRepRange.max + 2} clean reps next workout on ${resolvedName}`;
+      primaryRationale = `Target repetitions achieved across all ${completedSetsCount} sets (${currentReps} reps) for ${resolvedName}. Aim for ${targetRepRange.max + 2} reps next workout or introduce a controlled 2-second pause at the bottom.`;
       targets = {
         recommendedWeight: 0,
         recommendedReps: targetRepRange.max + 2,
@@ -466,9 +466,11 @@ export function evaluateAdaptiveDecision(
       // Equipment increment guardrail (>15% jump) -> Scenario J
       primaryAction = 'increase_reps';
       primaryReasonCode = 'OVERLOAD_REPS_CONSOLIDATE_HIGH_INCREMENT';
-      title = 'Consolidate Reps Before Weight Jump';
-      actionHeadline = `Maintain ${currentWorkingWeight} kg and aim for ${targetRepRange.max + 2} reps`;
-      primaryRationale = unifiedDecision.reason;
+      title = `Consolidate Reps Before Weight Jump: ${resolvedName}`;
+      actionHeadline = `Maintain ${currentWorkingWeight} kg on ${resolvedName} and aim for ${targetRepRange.max + 2} reps`;
+      primaryRationale = unifiedDecision.reason.toLowerCase().includes(resolvedName.toLowerCase())
+        ? unifiedDecision.reason
+        : `On ${resolvedName}, ${unifiedDecision.reason.charAt(0).toLowerCase()}${unifiedDecision.reason.slice(1)}`;
       targets = {
         recommendedWeight: currentWorkingWeight,
         recommendedReps: targetRepRange.max + 2,
@@ -481,9 +483,11 @@ export function evaluateAdaptiveDecision(
       // Standard safe weight increase -> Scenario A
       primaryAction = 'increase_weight';
       primaryReasonCode = 'OVERLOAD_WEIGHT_INCREMENT';
-      title = 'Ready to Increase Weight';
-      actionHeadline = `Increase to ${nextWeight} kg for ${targetRepRange.min} reps next workout`;
-      primaryRationale = unifiedDecision.reason;
+      title = `Ready to Increase Weight: ${resolvedName}`;
+      actionHeadline = `Increase to ${nextWeight} kg for ${targetRepRange.min} reps next workout on ${resolvedName}`;
+      primaryRationale = unifiedDecision.reason.toLowerCase().includes(resolvedName.toLowerCase())
+        ? unifiedDecision.reason
+        : `On ${resolvedName}, ${unifiedDecision.reason.charAt(0).toLowerCase()}${unifiedDecision.reason.slice(1)}`;
       targets = {
         recommendedWeight: nextWeight,
         recommendedReps: targetRepRange.min,
@@ -497,9 +501,9 @@ export function evaluateAdaptiveDecision(
     // Top set hit max, but later sets fell short (e.g. 10, 8, 7)
     primaryAction = 'increase_reps';
     primaryReasonCode = 'OVERLOAD_REPS_ALL_SETS_UNFINISHED';
-    title = 'Build Consistent Volume';
-    actionHeadline = `Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'weight'} and aim for ${targetRepRange.max} reps across all sets`;
-    primaryRationale = `You reached ${currentReps} reps on your top set, but all working sets must complete ${targetRepRange.max} reps before stepping up in weight. Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'current load'} and bring subsequent sets to the rep ceiling.`;
+    title = `Build Consistent Volume: ${resolvedName}`;
+    actionHeadline = `Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'weight'} on ${resolvedName} and aim for ${targetRepRange.max} reps across all sets`;
+    primaryRationale = `On ${resolvedName}, you reached ${currentReps} reps on your top set, but all working sets must complete ${targetRepRange.max} reps before stepping up in weight. Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'current load'} and bring subsequent sets to the rep ceiling.`;
     targets = {
       recommendedWeight: currentWorkingWeight > 0 ? currentWorkingWeight : null,
       recommendedReps: targetRepRange.max,
@@ -512,9 +516,9 @@ export function evaluateAdaptiveDecision(
     // Stagnation / Plateau detected by unified progression (>= 3 exposures) -> Scenario D
     primaryAction = 'maintain_progression';
     primaryReasonCode = 'PLATEAU_STAGNANT_PERFORMANCE_REVIEW';
-    title = 'Progress May Have Slowed';
-    actionHeadline = `Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'load'} and focus on controlled tempo`;
-    primaryRationale = `Performance has held steady at ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg × ` : ''}${currentReps} reps across 3 consecutive workouts. Maintain this working load and slow the eccentric tempo to 3 seconds, or micro-load with smaller plates (+1 kg) to stimulate new neuromuscular adaptation.`;
+    title = `Progress May Have Slowed: ${resolvedName}`;
+    actionHeadline = `Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'load'} on ${resolvedName} and focus on controlled tempo`;
+    primaryRationale = `Performance on ${resolvedName} has held steady at ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg × ` : ''}${currentReps} reps across 3 consecutive workouts. Maintain this working load and slow the eccentric tempo to 3 seconds, or micro-load with smaller plates (+1 kg) to stimulate new neuromuscular adaptation.`;
     targets = {
       recommendedWeight: currentWorkingWeight > 0 ? currentWorkingWeight : null,
       recommendedReps: currentReps,
@@ -528,7 +532,7 @@ export function evaluateAdaptiveDecision(
       type: 'performance_review',
       title: 'Plateau Breaking Protocol',
       actionText: 'Implement 3-second eccentric tempo or micro-loading',
-      rationale: `Performance has held steady across 3 consecutive sessions at ${currentWorkingWeight} kg × ${currentReps} reps. Introducing tempo pauses or micro-loading helps overcome neurological plateaus without excessive fatigue.`,
+      rationale: `Performance on ${resolvedName} has held steady across 3 consecutive sessions at ${currentWorkingWeight} kg × ${currentReps} reps. Introducing tempo pauses or micro-loading helps overcome neurological plateaus without excessive fatigue.`,
       reasonCode: 'PLATEAU_STAGNANT_VOLUME_ADJUST',
     });
   } else {
@@ -536,9 +540,9 @@ export function evaluateAdaptiveDecision(
     const targetNextReps = Math.min(targetRepRange.max, currentReps + 1);
     primaryAction = 'increase_reps';
     primaryReasonCode = 'OVERLOAD_REPS_BUILDING';
-    title = 'Maintain Weight & Build Reps';
-    actionHeadline = `Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'weight'} and aim for ${targetNextReps} reps`;
-    primaryRationale = `Working load is stable at ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'current weight'} (${currentReps} reps). Aim for ${targetNextReps} clean repetitions next workout before stepping up the weight.`;
+    title = `Maintain Weight & Build Reps: ${resolvedName}`;
+    actionHeadline = `Maintain ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'weight'} on ${resolvedName} and aim for ${targetNextReps} reps`;
+    primaryRationale = `Working load on ${resolvedName} is stable at ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'current weight'} (${currentReps} reps). Aim for ${targetNextReps} clean repetitions next workout before stepping up the weight.`;
     targets = {
       recommendedWeight: currentWorkingWeight > 0 ? currentWorkingWeight : null,
       recommendedReps: targetNextReps,
