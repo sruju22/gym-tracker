@@ -166,7 +166,29 @@ export const UserModal: React.FC<UserModalProps> = ({
                 <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
                   {currentUser.email}
                 </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-[var(--text-muted)]">
+
+                <div className="mt-1.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isUploadingAvatar}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]/30 text-[11px] font-bold transition-all cursor-pointer"
+                  >
+                    {isUploadingAvatar ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-3 h-3" />
+                        <span>{currentUser.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1 mt-1.5 text-[10px] text-[var(--text-muted)]">
                   <ShieldCheck className="w-3 h-3 text-[var(--success)]" />
                   <span>MongoDB Atlas Cloud Sync Active</span>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sun,
@@ -21,6 +21,8 @@ import {
   Heart,
   Clock,
   Award,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -32,6 +34,7 @@ import { useThemeStore, ThemeMode } from '../store/themeStore';
 import { useWorkoutStore } from '../store/workoutStore';
 import { WorkoutTemplatesModal } from '../components/plan/WorkoutTemplatesModal';
 import { getRecommendedTemplate } from '../data/workoutTemplates';
+import { uploadImageApi } from '../api/uploadApi';
 import {
   WorkoutTemplate,
   CardioActivityType,
@@ -84,6 +87,39 @@ export const SettingsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please select a valid image file (PNG, JPG, WebP, GIF, HEIC).');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarError('Image must be under 10MB.');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setAvatarError(null);
+
+    try {
+      const uploadRes = await uploadImageApi(file, 'avatars');
+      await updateProfile({ avatarUrl: uploadRes.url });
+    } catch (err: any) {
+      console.error('Failed to upload avatar to Cloudinary:', err);
+      setAvatarError(err?.message || 'Failed to upload photo to Cloudinary');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const handleOpenEditProfile = () => {
     setNameInput(currentUser?.name || '');
@@ -278,11 +314,52 @@ export const SettingsPage: React.FC = () => {
 
       {/* 1. Profile Overview Card */}
       <Card className="p-5 sm:p-6 border border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-2xl space-y-4">
-        <div className="flex items-center justify-between">
+        {/* Hidden file input for avatar upload */}
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/heic"
+          className="hidden"
+          onChange={handleAvatarFileSelect}
+        />
+
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-16 h-16 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-2xl font-black shadow-md shadow-red-500/25 shrink-0 border border-red-400">
-              {currentUser ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+            {/* Avatar with Cloudinary upload */}
+            <div
+              className={`relative group shrink-0 ${currentUser ? 'cursor-pointer' : ''}`}
+              onClick={() => currentUser && !isUploadingAvatar && avatarInputRef.current?.click()}
+              title={currentUser ? 'Click to change profile photo (Cloudinary)' : undefined}
+            >
+              {currentUser?.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-[var(--primary)] shadow-md shrink-0 transition-opacity group-hover:opacity-85"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-2xl font-black shadow-md shadow-red-500/25 shrink-0 border border-red-400">
+                  {currentUser ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+                </div>
+              )}
+
+              {currentUser && (
+                <>
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Camera className="w-5 h-5 text-white drop-shadow-md" />
+                  </div>
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 text-white animate-spin" />
+                    </div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--primary)] border-2 border-[var(--bg-surface)] text-white flex items-center justify-center shadow-sm">
+                    <Camera className="w-3 h-3" />
+                  </div>
+                </>
+              )}
             </div>
+
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-black text-[var(--text-main)] truncate">
@@ -295,6 +372,36 @@ export const SettingsPage: React.FC = () => {
               <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
                 {currentUser?.email || 'Local session · Cloud sync disabled'}
               </p>
+
+              {currentUser && (
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isUploadingAvatar}
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]/30 text-[11px] font-bold transition-all cursor-pointer"
+                  >
+                    {isUploadingAvatar ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-3 h-3" />
+                        <span>{currentUser.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {avatarError && (
+                <div className="text-[10px] text-rose-400 font-semibold mt-1">
+                  {avatarError}
+                </div>
+              )}
+
               <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-[var(--text-muted)]">
                 <ShieldCheck className="w-3.5 h-3.5 text-[var(--success)]" />
                 <span>
@@ -772,6 +879,44 @@ export const SettingsPage: React.FC = () => {
               {profileError}
             </div>
           )}
+
+          {/* Profile Photo Quick Upload */}
+          <div className="flex items-center gap-3.5 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+            <div
+              className="relative cursor-pointer shrink-0"
+              onClick={() => !isUploadingAvatar && avatarInputRef.current?.click()}
+            >
+              {currentUser?.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.name}
+                  className="w-14 h-14 rounded-full object-cover border border-[var(--primary)]/50"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-lg font-black">
+                  {currentUser ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+                </div>
+              )}
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-bold text-[var(--text-main)]">Profile Photo</div>
+              <div className="text-[10px] text-[var(--text-secondary)]">Hosted securely on Cloudinary</div>
+              <button
+                type="button"
+                disabled={isUploadingAvatar}
+                onClick={() => avatarInputRef.current?.click()}
+                className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30 text-[11px] font-bold hover:bg-[var(--primary)]/25 transition-all cursor-pointer"
+              >
+                <Camera className="w-3 h-3" />
+                <span>{currentUser?.avatarUrl ? 'Choose New Photo' : 'Upload Photo'}</span>
+              </button>
+            </div>
+          </div>
 
           <Input
             label="Full Name"
