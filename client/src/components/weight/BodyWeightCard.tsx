@@ -229,9 +229,25 @@ export const BodyWeightCard: React.FC = () => {
                         className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-all group"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-lg bg-[var(--bg-input)] flex items-center justify-center text-[var(--text-muted)] shrink-0">
-                            <Calendar className="w-3.5 h-3.5" />
-                          </div>
+                          {log.photoUrl ? (
+                            <a
+                              href={log.photoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-8 h-8 rounded-lg overflow-hidden border border-[var(--primary)]/40 shrink-0 hover:scale-105 transition-transform cursor-pointer shadow-xs"
+                              title="View Cloudinary physique photo"
+                            >
+                              <img
+                                src={log.photoUrl}
+                                alt="Physique check-in"
+                                className="w-full h-full object-cover"
+                              />
+                            </a>
+                          ) : (
+                            <div className="w-7 h-7 rounded-lg bg-[var(--bg-input)] flex items-center justify-center text-[var(--text-muted)] shrink-0">
+                              <Calendar className="w-3.5 h-3.5" />
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold text-[var(--text-main)]">

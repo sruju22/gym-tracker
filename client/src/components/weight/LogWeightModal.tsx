@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Scale, Calendar, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Scale, Calendar, FileText, AlertCircle, Loader2, Camera, Check, X } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { WeightLog } from '../../types';
+import { uploadImageApi } from '../../api/uploadApi';
 
 interface LogWeightModalProps {
   isOpen: boolean;
@@ -32,8 +33,32 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
   const [unit, setUnit] = useState<'kg' | 'lbs'>(defaultUnit);
   const [date, setDate] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const photoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingPhoto(true);
+      setPhotoError(null);
+      const uploaded = await uploadImageApi(file, 'progress_photos');
+      setPhotoUrl(uploaded.url);
+    } catch (err: any) {
+      console.error('Progress photo upload failed:', err);
+      setPhotoError(err.message || 'Failed to upload photo');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoFileInputRef.current) {
+        photoFileInputRef.current.value = '';
+      }
+    }
+  };
 
   // Initialize form when opening
   useEffect(() => {
@@ -50,6 +75,9 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
         setWeight('');
       }
       setNotes('');
+      setPhotoUrl('');
+      setPhotoError(null);
+      setIsUploadingPhoto(false);
       setError(null);
       setLoading(false);
     }
@@ -101,6 +129,7 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
         unit,
         date,
         notes: notes.trim(),
+        photoUrl: photoUrl.trim() || undefined,
       });
 
       // Synchronize with user profile
@@ -232,6 +261,71 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
             />
             <FileText className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
           </div>
+        </div>
+
+        {/* Progress Physique Photo (Cloudinary) */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">
+            Progress Photo <span className="font-normal text-[var(--text-muted)] lowercase">(optional)</span>
+          </label>
+          <input
+            ref={photoFileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/heic"
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
+
+          {photoUrl ? (
+            <div className="relative rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-card)] p-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <img
+                  src={photoUrl}
+                  alt="Progress check-in"
+                  className="w-12 h-12 rounded-lg object-cover border border-[var(--border-subtle)] shrink-0"
+                />
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5" />
+                    Physique Photo Attached
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)] block truncate">
+                    Saved to Cloudinary secure cloud
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPhotoUrl('')}
+                className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
+                title="Remove photo"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => !isUploadingPhoto && photoFileInputRef.current?.click()}
+              disabled={isUploadingPhoto || loading}
+              className="w-full py-2.5 px-3 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] bg-[var(--bg-card)]/50 hover:bg-[var(--bg-card)] flex items-center justify-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-all cursor-pointer"
+            >
+              {isUploadingPhoto ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[var(--primary)]" />
+                  <span>Uploading to Cloudinary...</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4 text-[var(--text-muted)]" />
+                  <span>Attach Physique Check-in Photo</span>
+                </>
+              )}
+            </button>
+          )}
+          {photoError && (
+            <p className="text-[10px] text-rose-400 font-semibold">{photoError}</p>
+          )}
         </div>
 
         {/* Action Buttons */}

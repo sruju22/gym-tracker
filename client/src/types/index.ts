@@ -358,6 +358,7 @@ export interface WeightLog {
   unit: 'kg' | 'lbs';
   date: string;
   notes?: string;
+  photoUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

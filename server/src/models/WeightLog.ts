@@ -6,6 +6,7 @@ export interface IWeightLog {
   unit: 'kg' | 'lbs';
   date: Date;
   notes?: string;
+  photoUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -42,6 +43,11 @@ const weightLogSchema = new Schema<IWeightLogDocument>(
       default: '',
       trim: true,
       maxlength: [200, 'Notes cannot exceed 200 characters'],
+    },
+    photoUrl: {
+      type: String,
+      default: '',
+      trim: true,
     },
   },
   {

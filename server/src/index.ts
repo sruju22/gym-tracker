@@ -12,6 +12,7 @@ import progressRoutes from './routes/progressRoutes';
 import combinationRoutes from './routes/combinationRoutes';
 import cardioRoutes from './routes/cardioRoutes';
 import coachRoutes from './routes/coachRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 
 dotenv.config();
 
@@ -78,6 +79,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/combinations', combinationRoutes);
 app.use('/api/cardio', cardioRoutes);
 app.use('/api/coach', coachRoutes);
+app.use('/api/upload', uploadRoutes);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(Number(PORT), '0.0.0.0', () => {

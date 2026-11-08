@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Dumbbell, BookOpen, Sparkles, Plus, Check, Info } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Dumbbell, BookOpen, Sparkles, Plus, Check, Info, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { SearchBar } from '../ui/SearchBar';
 import { FilterChip } from '../ui/FilterChip';
@@ -12,6 +12,7 @@ import { matchExerciseSearch, scoreExerciseSearch } from '../../utils/search';
 import { getRecommendedExercises, ScoredRecommendation } from '../../utils/recommendationEngine';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
+import { uploadImageApi } from '../../api/uploadApi';
 
 interface AddExerciseSheetProps {
   isOpen: boolean;
@@ -102,6 +103,30 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
   const [customEquipment, setCustomEquipment] = useState<Equipment>('dumbbell');
   const [customType, setCustomType] = useState<ExerciseType>('isolation');
   const [customArea, setCustomArea] = useState<MuscleArea>('mid_chest');
+  const [customImageUrl, setCustomImageUrl] = useState<string>('');
+  const [isUploadingExerciseImage, setIsUploadingExerciseImage] = useState(false);
+  const [customImageError, setCustomImageError] = useState<string | null>(null);
+  const exerciseFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCustomImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingExerciseImage(true);
+      setCustomImageError(null);
+      const uploaded = await uploadImageApi(file, 'exercises');
+      setCustomImageUrl(uploaded.url);
+    } catch (err: any) {
+      console.error('Custom exercise image upload failed:', err);
+      setCustomImageError(err.message || 'Failed to upload exercise photo');
+    } finally {
+      setIsUploadingExerciseImage(false);
+      if (exerciseFileInputRef.current) {
+        exerciseFileInputRef.current.value = '';
+      }
+    }
+  };
 
   const targetLegKey = isLegSubArea(targetSubAreas, targetSectionName);
   const trimmedSearch = search.trim();
@@ -192,11 +217,13 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
       muscleAreaEmphasis: [customArea],
       equipment: customEquipment,
       exerciseType: customType,
+      imageUrl: customImageUrl || undefined,
     });
 
     onSelectExercise(newEx);
     setShowCreateCustom(false);
     setCustomName('');
+    setCustomImageUrl('');
     setCustomSecondaryMuscles([]);
     onClose();
   };
@@ -743,6 +770,63 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
                 <option value="cable">Cable</option>
               </select>
             </div>
+          </div>
+
+          {/* Custom Exercise Photo (Cloudinary) */}
+          <div>
+            <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
+              Exercise Demonstration Photo (Optional)
+            </label>
+            <input
+              ref={exerciseFileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/heic"
+              className="hidden"
+              onChange={handleCustomImageUpload}
+            />
+
+            {customImageUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-card)] p-1.5 flex items-center justify-between gap-2">
+                <img
+                  src={customImageUrl}
+                  alt="Custom exercise preview"
+                  className="w-12 h-12 rounded-lg object-cover border border-[var(--border-subtle)]"
+                />
+                <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" />
+                  Cloud Photo Uploaded
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCustomImageUrl('')}
+                  className="px-2 py-1 text-[10px] font-bold text-rose-400 hover:text-rose-300 rounded border border-rose-500/20 cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => !isUploadingExerciseImage && exerciseFileInputRef.current?.click()}
+                disabled={isUploadingExerciseImage}
+                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] bg-[var(--bg-card)]/50 hover:bg-[var(--bg-card)] flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-all cursor-pointer"
+              >
+                {isUploadingExerciseImage ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-[var(--primary)]" />
+                    <span>Uploading to Cloudinary...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 text-[var(--text-muted)]" />
+                    <span>Upload Machine or Form Photo</span>
+                  </>
+                )}
+              </button>
+            )}
+            {customImageError && (
+              <p className="text-[10px] text-rose-400 mt-1 font-semibold">{customImageError}</p>
+            )}
           </div>
 
           <Button type="submit" variant="primary" fullWidth size="md">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { Modal } from '../ui/Modal';
@@ -11,9 +11,12 @@ import {
   Settings,
   CheckCircle2,
   ChevronRight,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { uploadImageApi } from '../../api/uploadApi';
 
 interface UserModalProps {
   isOpen?: boolean;
@@ -28,8 +31,33 @@ export const UserModal: React.FC<UserModalProps> = ({
   const [searchParams, setSearchParams] = useSearchParams();
   const currentUser = useAuthStore((state) => state.currentUser);
   const logout = useAuthStore((state) => state.logout);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
   const isAccountModalOpen = useAuthStore((state) => state.isAccountModalOpen);
   const closeAccountModal = useAuthStore((state) => state.closeAccountModal);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      setAvatarError(null);
+      const uploaded = await uploadImageApi(file, 'avatars');
+      await updateProfile({ avatarUrl: uploaded.url });
+    } catch (err: any) {
+      console.error('Avatar upload failed:', err);
+      setAvatarError(err.message || 'Failed to upload photo');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const isQueryOpen = searchParams.get('account') === 'open';
   const isOpen = propIsOpen !== undefined ? propIsOpen : (isAccountModalOpen || isQueryOpen);
@@ -82,17 +110,49 @@ export const UserModal: React.FC<UserModalProps> = ({
           <>
             {/* User Identity Card */}
             <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border-subtle)]">
-              {currentUser.avatarUrl ? (
-                <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  className="w-12 h-12 rounded-full object-cover border border-[var(--border-subtle)] shrink-0 shadow-sm"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-lg font-black shadow-sm shrink-0 border border-red-400">
-                  {currentUser.name.charAt(0).toUpperCase()}
+              {/* Hidden file input for Cloudinary upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/heic"
+                className="hidden"
+                onChange={handleAvatarFileSelect}
+              />
+
+              {/* Avatar with Cloudinary upload button overlay */}
+              <div
+                className="relative group cursor-pointer shrink-0"
+                onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
+                title="Click to change profile photo (Cloudinary)"
+              >
+                {currentUser.avatarUrl ? (
+                  <img
+                    src={currentUser.avatarUrl}
+                    alt={currentUser.name}
+                    className="w-13 h-13 rounded-full object-cover border-2 border-[var(--primary)]/40 shrink-0 shadow-sm transition-opacity group-hover:opacity-80"
+                  />
+                ) : (
+                  <div className="w-13 h-13 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-lg font-black shadow-sm shrink-0 border border-red-400">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                {/* Upload Indicator / Camera Overlay */}
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <Camera className="w-4 h-4 text-white drop-shadow-md" />
                 </div>
-              )}
+
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  </div>
+                )}
+
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[var(--primary)] border border-white/20 text-white flex items-center justify-center shadow-xs">
+                  <Camera className="w-2.5 h-2.5" />
+                </div>
+              </div>
+
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <h3 className="text-sm font-black text-[var(--text-main)] truncate">
@@ -110,6 +170,11 @@ export const UserModal: React.FC<UserModalProps> = ({
                   <ShieldCheck className="w-3 h-3 text-[var(--success)]" />
                   <span>MongoDB Atlas Cloud Sync Active</span>
                 </div>
+                {avatarError && (
+                  <div className="text-[10px] text-rose-400 font-semibold mt-1">
+                    {avatarError}
+                  </div>
+                )}
               </div>
             </div>
 

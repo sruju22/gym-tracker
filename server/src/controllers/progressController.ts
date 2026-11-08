@@ -843,7 +843,7 @@ export const logWeight = async (req: AuthenticatedRequest, res: Response): Promi
       return;
     }
     const userId = req.user._id;
-    const { weight, unit = 'kg', date, notes = '' } = req.body;
+    const { weight, unit = 'kg', date, notes = '', photoUrl = '' } = req.body;
 
     const numWeight = Number(weight);
     if (isNaN(numWeight) || numWeight < 20 || numWeight > 500) {
@@ -873,6 +873,9 @@ export const logWeight = async (req: AuthenticatedRequest, res: Response): Promi
       log.weight = roundedWeight;
       log.unit = unit === 'lbs' ? 'lbs' : 'kg';
       log.notes = notes ? String(notes).trim() : log.notes;
+      if (photoUrl) {
+        log.photoUrl = String(photoUrl).trim();
+      }
       log.date = entryDate;
       await log.save();
     } else {
@@ -882,6 +885,7 @@ export const logWeight = async (req: AuthenticatedRequest, res: Response): Promi
         unit: unit === 'lbs' ? 'lbs' : 'kg',
         date: entryDate,
         notes: notes ? String(notes).trim() : '',
+        photoUrl: photoUrl ? String(photoUrl).trim() : '',
       });
     }
 

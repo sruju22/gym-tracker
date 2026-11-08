@@ -306,7 +306,7 @@ interface WorkoutStore {
   fetchWeightLogs: (userId: string) => Promise<WeightLog[]>;
   logWeight: (
     userId: string,
-    payload: { weight: number; unit?: 'kg' | 'lbs'; date?: string; notes?: string }
+    payload: { weight: number; unit?: 'kg' | 'lbs'; date?: string; notes?: string; photoUrl?: string }
   ) => Promise<WeightLog>;
   deleteWeightLog: (userId: string, logId: string) => Promise<void>;
   updateCurrentWeight: (userId: string, newWeight: number) => void;
@@ -3292,6 +3292,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           unit: payload.unit || 'kg',
           date: dateStr,
           notes: payload.notes || '',
+          photoUrl: payload.photoUrl || '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -3304,6 +3305,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             weight: payload.weight,
             unit: payload.unit || updatedLogs[existingIdx].unit,
             notes: payload.notes !== undefined ? payload.notes : updatedLogs[existingIdx].notes,
+            photoUrl: payload.photoUrl !== undefined ? payload.photoUrl : updatedLogs[existingIdx].photoUrl,
             updatedAt: new Date().toISOString(),
           };
         } else {

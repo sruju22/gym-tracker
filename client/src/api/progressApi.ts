@@ -248,6 +248,7 @@ export async function logWeightApi(payload: {
   unit?: 'kg' | 'lbs';
   date?: string;
   notes?: string;
+  photoUrl?: string;
 }): Promise<{ message: string; log: WeightLog; currentWeight: number; unit: 'kg' | 'lbs' }> {
   const token = getStoredToken();
   if (!token) throw new Error('Not authenticated');
