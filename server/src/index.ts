@@ -1,6 +1,8 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import connectDB from './config/db';
 
@@ -14,8 +16,6 @@ import cardioRoutes from './routes/cardioRoutes';
 import coachRoutes from './routes/coachRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import { isCloudinaryConfigured } from './services/cloudinaryService';
-
-dotenv.config();
 
 // Enforce required authentication configuration at startup
 if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {

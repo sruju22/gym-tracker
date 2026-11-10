@@ -1,13 +1,6 @@
-import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
+import type { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
 import { Readable } from 'stream';
-
-// Configure Cloudinary from environment variables
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
 
 export type UploadFolder = 'avatars' | 'exercises' | 'progress_photos';
 
@@ -21,14 +14,74 @@ export interface CloudinaryUploadResult {
 }
 
 /**
+ * Strips surrounding quotes, whitespace, carriage returns, and newlines
+ * often inadvertently introduced when pasting into hosting dashboards (like Render).
+ */
+function cleanValue(val?: string | null): string {
+  if (!val) return '';
+  return String(val)
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim();
+}
+
+/**
+ * Extracts and sanitizes Cloudinary configuration from either individual variables
+ * or standard CLOUDINARY_URL connection string.
+ */
+export function getSanitizedCloudinaryConfig(): {
+  cloud_name: string;
+  api_key: string;
+  api_secret: string;
+} {
+  let cloud_name = cleanValue(process.env.CLOUDINARY_CLOUD_NAME);
+  let api_key = cleanValue(process.env.CLOUDINARY_API_KEY);
+  let api_secret = cleanValue(process.env.CLOUDINARY_API_SECRET);
+
+  // If individual vars are incomplete, attempt extraction from CLOUDINARY_URL
+  const cloudinaryUrl = cleanValue(process.env.CLOUDINARY_URL);
+  if (cloudinaryUrl && (!cloud_name || !api_key || !api_secret)) {
+    try {
+      const parsed = new URL(cloudinaryUrl);
+      api_key = api_key || decodeURIComponent(parsed.username);
+      api_secret = api_secret || decodeURIComponent(parsed.password);
+      cloud_name = cloud_name || parsed.hostname;
+    } catch {
+      // ignore URL parsing error
+    }
+  }
+
+  return { cloud_name, api_key, api_secret };
+}
+
+/**
+ * Applies the clean, sanitized configuration to the Cloudinary SDK instance.
+ */
+export function ensureCloudinaryConfigured(): boolean {
+  const { cloud_name, api_key, api_secret } = getSanitizedCloudinaryConfig();
+  if (!cloud_name || !api_key || !api_secret) {
+    return false;
+  }
+
+  cloudinary.config({
+    cloud_name,
+    api_key,
+    api_secret,
+    secure: true,
+  });
+
+  return true;
+}
+
+// Initial configuration attempt at module load
+ensureCloudinaryConfigured();
+
+/**
  * Checks whether Cloudinary credentials are fully configured in the environment
  */
 export function isCloudinaryConfigured(): boolean {
-  return Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
-  );
+  const { cloud_name, api_key, api_secret } = getSanitizedCloudinaryConfig();
+  return Boolean(cloud_name && api_key && api_secret);
 }
 
 /**
@@ -39,9 +92,11 @@ export async function uploadBufferToCloudinary(
   folderType: UploadFolder = 'avatars',
   customIdentifier?: string
 ): Promise<CloudinaryUploadResult> {
-  if (!isCloudinaryConfigured()) {
-    throw new Error('Cloudinary credentials are not configured on the server. Please check .env');
+  if (!ensureCloudinaryConfigured()) {
+    throw new Error('Cloudinary credentials are not configured on the server. Please check .env or hosting environment variables.');
   }
+
+  const { cloud_name, api_key } = getSanitizedCloudinaryConfig();
 
   // Define upload parameters per folder use-case
   let folder = 'gymtrackie/general';
@@ -77,6 +132,10 @@ export async function uploadBufferToCloudinary(
       },
       (error?: UploadApiErrorResponse, result?: UploadApiResponse) => {
         if (error || !result) {
+          console.error(
+            `[Cloudinary] Upload failed for cloud_name "${cloud_name}" (API Key ending in ...${api_key.slice(-4)}):`,
+            error?.message || error
+          );
           return reject(error || new Error('Upload stream failed without a result'));
         }
 
@@ -99,7 +158,7 @@ export async function uploadBufferToCloudinary(
  * Deletes a file from Cloudinary given its public_id
  */
 export async function deleteFromCloudinary(publicId: string): Promise<boolean> {
-  if (!isCloudinaryConfigured() || !publicId) return false;
+  if (!ensureCloudinaryConfigured() || !publicId) return false;
 
   try {
     const res = await cloudinary.uploader.destroy(publicId);
@@ -112,6 +171,8 @@ export async function deleteFromCloudinary(publicId: string): Promise<boolean> {
 
 export default {
   isCloudinaryConfigured,
+  ensureCloudinaryConfigured,
+  getSanitizedCloudinaryConfig,
   uploadBufferToCloudinary,
   deleteFromCloudinary,
 };
