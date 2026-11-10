@@ -196,7 +196,10 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
             {formatVolume(overview.totalStrengthVolumeKg)} <span className="text-[10px] text-[var(--text-secondary)] font-normal">kg</span>
           </div>
           <div className="text-[10px] font-semibold text-[var(--text-secondary)] truncate">
-            {overview.weekOverWeek.hasBaseline && overview.weekOverWeek.volumeDeltaPercent !== null ? (
+            {overview.weekOverWeek.hasBaseline &&
+            overview.weekOverWeek.volumeDeltaPercent !== null &&
+            (overview.completedStrengthDays >= overview.plannedStrengthDays ||
+              overview.weekOverWeek.volumeDeltaPercent >= 0) ? (
               <span
                 className={
                   overview.weekOverWeek.volumeDeltaPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -206,7 +209,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
                 {overview.weekOverWeek.volumeDeltaPercent}% vs last wk
               </span>
             ) : (
-              `${overview.totalStrengthSets} sets`
+              `${overview.totalStrengthSets} sets logged`
             )}
           </div>
         </div>

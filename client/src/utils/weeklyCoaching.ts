@@ -662,6 +662,19 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
         actionRoute: '/workout',
         actionType: 'view_plan',
       });
+    } else if (trainedToday) {
+      // If the user already completed a workout today, NEVER urge them to "Start Workout" again today!
+      // Acknowledge today's completed session and defer catching up to the next scheduled day.
+      candidateSteps.push({
+        id: `step_missed_${firstMissed.day}`,
+        category: 'schedule_adherence',
+        priority: 'low',
+        title: `Next Session: Pick Up Missed ${firstMissed.scheduledWorkoutName || firstMissed.dayName}`,
+        rationale: `You've already completed today's training session! Rest up for the remainder of today. On your next scheduled training day, you can pick up ${firstMissed.dayName}'s missed session (${musclesStr || 'strength session'}).`,
+        actionLabel: 'Review Split',
+        actionRoute: '/workout',
+        actionType: 'view_plan',
+      });
     } else {
       candidateSteps.push({
         id: `step_missed_${firstMissed.day}`,
@@ -839,18 +852,36 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
       displayRationale = `On ${exName}, ${displayRationale.charAt(0).toLowerCase()}${displayRationale.slice(1)}`;
     }
 
+    let titleToUse = displayTitle;
+    let rationaleToUse = displayRationale;
+    let actionLabelToUse =
+      finalAction === 'increase_weight'
+        ? 'Review Weight Jump'
+        : finalAction === 'recovery_aware_recommendation'
+        ? 'Review Recovery'
+        : 'View Progress';
+
+    // If the muscle is currently in active recovery / high acute fatigue, frame Weekly Coaching forward-looking
+    // for the user's next scheduled training session rather than warning them to hold load right this minute.
+    if (finalAction === 'recovery_aware_recommendation') {
+      const primaryMuscleName = matchedEx?.primaryMuscle ? formatMuscleName(matchedEx.primaryMuscle) : 'target muscle';
+      titleToUse = `Next Session Target: ${exName}`;
+      if (progressionDecision.action === 'increase_weight' && progressionDecision.recommendedWeight) {
+        rationaleToUse = `PR achieved with ${curWeekPR.weight} kg! Your ${primaryMuscleName} is in its active recovery window. For your next scheduled session, you've earned a progression to ${progressionDecision.recommendedWeight} kg.`;
+        actionLabelToUse = 'View Progression';
+      } else {
+        rationaleToUse = `Solid work hitting ${curWeekPR.weight} kg! Your ${primaryMuscleName} is in its active recovery window. For your next scheduled session, maintain ${curWeekPR.weight} kg and build toward ${progressionDecision.targetRepRange?.max || progressionDecision.recommendedReps || 'target'} reps before increasing load.`;
+        actionLabelToUse = 'View Progression';
+      }
+    }
+
     candidateSteps.push({
       id: `step_pr_momentum_${curWeekPR.exerciseId}`,
       category: 'progressive_overload',
       priority: 'medium',
-      title: displayTitle,
-      rationale: displayRationale,
-      actionLabel:
-        finalAction === 'increase_weight'
-          ? 'Review Weight Jump'
-          : finalAction === 'recovery_aware_recommendation'
-          ? 'Review Recovery'
-          : 'View Progress',
+      title: titleToUse,
+      rationale: rationaleToUse,
+      actionLabel: actionLabelToUse,
       actionRoute: '/progress',
       actionType: 'view_progress',
     });

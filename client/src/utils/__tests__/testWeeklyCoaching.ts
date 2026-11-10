@@ -429,6 +429,139 @@ async function runTests() {
     assertEqual(JSON.stringify(run1), JSON.stringify(run2), 'Coaching engine output is 100% deterministic');
   }
 
+  // ==========================================
+  // Test 9: Trained Today Suppresses Urgent "Start Workout" for Missed Sessions
+  // ==========================================
+  console.log('--- Test 9: Trained Today Suppresses Urgent "Start Workout" ---');
+  {
+    // Monday missed. User logged Wednesday workout today (Oct 21).
+    const wedSession: WorkoutSession = {
+      id: 's_wed',
+      date: '2026-10-21T10:00:00Z',
+      completedAt: '2026-10-21T11:00:00Z',
+      dayOfWeek: 'wednesday',
+      status: 'completed',
+      workoutName: 'Lower Body A',
+      muscleGroups: ['legs'],
+      totalVolume: 5000,
+      totalSets: 12,
+      exercises: [],
+    };
+
+    const result = deriveWeeklyCoaching({
+      userId: 'test_trained_today',
+      history: [wedSession],
+      weeklyPlan: testWeeklyPlan,
+      referenceDate: refDate, // Wednesday
+    });
+
+    const missedStep = result.actionableSteps.find((s) => s.id.includes('missed_monday'));
+    assert(Boolean(missedStep), 'Action step produced for missed Monday');
+    assertEqual(missedStep?.priority, 'low', 'When trained today, missed session carries low priority (not high)');
+    assertEqual(missedStep?.actionLabel, 'Review Split', 'Action label is Review Split (not Start Workout)');
+    assert(Boolean(missedStep?.title.includes('Next Session: Pick Up Missed')), 'Title frames catch-up for next session');
+  }
+
+  // ==========================================
+  // Test 10: Forward-Looking Target for PR Under Active Recovery
+  // ==========================================
+  console.log('--- Test 10: Forward-Looking Target for PR Under Active Recovery ---');
+  {
+    // User completed Lat Pulldown 3 hours ago with a PR
+    const latPulldownEx = {
+      id: 'ex_lat_pulldown',
+      name: 'Wide-Grip Lat Pulldown',
+      equipment: 'cable',
+      primaryMuscle: 'back',
+      primarySubArea: 'lats',
+    };
+
+    const sessionPrior: WorkoutSession = {
+      id: 's_lat_prior',
+      date: '2026-10-14T09:00:00Z',
+      completedAt: '2026-10-14T10:00:00Z',
+      dayOfWeek: 'wednesday',
+      status: 'completed',
+      workoutName: 'Back & Biceps',
+      muscleGroups: ['back', 'biceps'],
+      totalVolume: 3500,
+      totalSets: 10,
+      exercises: [
+        {
+          id: 'wex_0',
+          exerciseId: 'ex_lat_pulldown',
+          exercise: latPulldownEx as any,
+          order: 0,
+          notes: '',
+          sets: [
+            { id: 'set_0_1', setNumber: 1, weight: 45, reps: 10, completed: true },
+            { id: 'set_0_2', setNumber: 2, weight: 45, reps: 10, completed: true },
+            { id: 'set_0_3', setNumber: 3, weight: 45, reps: 10, completed: true },
+          ],
+        },
+      ],
+    };
+
+    const sessionToday: WorkoutSession = {
+      id: 's_lat_pr',
+      date: '2026-10-21T09:00:00Z',
+      completedAt: '2026-10-21T10:00:00Z',
+      dayOfWeek: 'wednesday',
+      status: 'completed',
+      workoutName: 'Back & Biceps',
+      muscleGroups: ['back', 'biceps'],
+      totalVolume: 4000,
+      totalSets: 10,
+      exercises: [
+        {
+          id: 'wex_1',
+          exerciseId: 'ex_lat_pulldown',
+          exercise: latPulldownEx as any,
+          order: 0,
+          notes: '',
+          sets: [
+            { id: 'set_1', setNumber: 1, weight: 50, reps: 10, completed: true },
+            { id: 'set_2', setNumber: 2, weight: 50, reps: 10, completed: true },
+            { id: 'set_3', setNumber: 3, weight: 50, reps: 10, completed: true },
+          ],
+        },
+      ],
+    };
+
+    const prRecord: PersonalRecord = {
+      id: 'pr_lat',
+      exerciseId: 'ex_lat_pulldown',
+      exerciseName: 'Wide-Grip Lat Pulldown',
+      type: 'max_reps',
+      prCategory: 'max_reps',
+      value: 10,
+      weight: 50,
+      reps: 10,
+      estimated1RM: 66.7,
+      date: '2026-10-21T10:00:00Z',
+    };
+
+    const result = deriveWeeklyCoaching({
+      userId: 'test_pr_recovery',
+      history: [sessionPrior, sessionToday],
+      weeklyPlan: testWeeklyPlan,
+      personalRecords: [prRecord],
+      exercises: [latPulldownEx as any],
+      referenceDate: new Date('2026-10-21T13:00:00Z'), // 3h after workout
+    });
+
+    const prStep = result.actionableSteps.find((s) => s.category === 'progressive_overload');
+    assert(Boolean(prStep), 'Progressive overload step generated');
+    assert(Boolean(prStep?.title.startsWith('Next Session Target:')), 'Title frames target for next session');
+    assert(
+      !prStep?.title.includes('Recovery Window: Hold Working Load'),
+      'Does not show intimidating recovery window hold warning on Home'
+    );
+    assert(Boolean(prStep?.rationale.includes('active recovery window')), 'Mentions active recovery context');
+    assert(Boolean(prStep?.rationale.includes('next scheduled session')), 'Prescribes targets for next session');
+    assertEqual(prStep?.actionLabel, 'View Progression', 'Action label is View Progression');
+  }
+
   console.log('\n=== ALL PHASE 6 WEEKLY COACHING TESTS PASSED SUCCESSFULLY ===\n');
 }
 
