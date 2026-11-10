@@ -1,0 +1,27 @@
+{
+  "name": "Leverage Iso Row (Horizontal Grip - Upper Back)",
+  "force": "pull",
+  "level": "beginner",
+  "mechanic": "compound",
+  "equipment": "machine",
+  "primaryMuscles": [
+    "middle back"
+  ],
+  "secondaryMuscles": [
+    "biceps",
+    "shoulders"
+  ],
+  "instructions": [
+    "Adjust the seat height so the chest pad supports your sternum and the horizontal handles align across mid-chest level.",
+    "Grasp the horizontal handles using an overhand (pronated) grip with palms facing down.",
+    "Keep your chest pinned firmly against the pad and drive your elbows outward and backward at a 60°–80° angle relative to your torso.",
+    "Retract and squeeze your shoulder blades together hard at the peak contraction to maximally recruit the rhomboids, middle/lower trapezius, and rear deltoids.",
+    "Slowly extend your arms back to the starting position until your shoulder blades protract and upper back muscles are fully stretched."
+  ],
+  "category": "strength",
+  "images": [
+    "Leverage_Iso_Row_Horizontal_Grip/0.jpg",
+    "Leverage_Iso_Row_Horizontal_Grip/1.jpg"
+  ],
+  "id": "Leverage_Iso_Row_Horizontal_Grip"
+}
