@@ -20,6 +20,7 @@ import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { uploadImageApi } from '../../api/uploadApi';
 import { ProgressPhotosModal } from '../progress/ProgressPhotosModal';
+import { PhotoPrivacyTrustModal } from '../progress/PhotoPrivacyTrustModal';
 
 interface UserModalProps {
   isOpen?: boolean;
@@ -42,6 +43,22 @@ export const UserModal: React.FC<UserModalProps> = ({
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+
+  const handleOpenPhotos = () => {
+    const hasAcknowledged = localStorage.getItem('gymtrackie_photo_privacy_acknowledged');
+    if (!hasAcknowledged) {
+      setIsPrivacyModalOpen(true);
+    } else {
+      setIsPhotosModalOpen(true);
+    }
+  };
+
+  const handleConfirmPrivacy = () => {
+    localStorage.setItem('gymtrackie_photo_privacy_acknowledged', 'true');
+    setIsPrivacyModalOpen(false);
+    setIsPhotosModalOpen(true);
+  };
 
   const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,11 +125,11 @@ export const UserModal: React.FC<UserModalProps> = ({
         <GymTrackieLogo variant="compact" height={26} />
       </div>
 
-      <div className="space-y-3 min-h-[460px] sm:min-h-[500px] flex flex-col justify-between">
+      <div className="space-y-3.5 sm:space-y-4">
         {currentUser ? (
           /* ================= AUTHENTICATED ACCOUNT PANEL ================= */
-          <div className="space-y-3 flex-1 flex flex-col justify-between">
-            <div className="space-y-3">
+          <div className="space-y-3.5 sm:space-y-4">
+            <div className="space-y-3 sm:space-y-3.5">
               {/* User Identity Card */}
               <div className="flex items-center gap-3.5 bg-[var(--bg-card)] p-3.5 rounded-2xl border border-[var(--border-subtle)]">
                 {/* Hidden file input for Cloudinary upload */}
@@ -226,80 +243,98 @@ export const UserModal: React.FC<UserModalProps> = ({
               )}
 
               {/* Categorized Preferences & Progress Photos Shortcuts */}
-              <div className="space-y-1.5 pt-1">
+              <div className="space-y-2.5 sm:space-y-3 pt-1.5">
                 {/* Physique & Progress Photos Direct Access */}
                 <button
                   type="button"
-                  onClick={() => setIsPhotosModalOpen(true)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500/10 via-[var(--bg-card)] to-[var(--bg-card)] hover:from-rose-500/15 border border-rose-500/25 hover:border-rose-500/40 transition-all cursor-pointer group text-left min-h-[44px]"
+                  onClick={handleOpenPhotos}
+                  className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-[var(--bg-card)] to-[var(--bg-card)] hover:from-rose-500/15 border border-rose-500/25 hover:border-rose-500/40 transition-all cursor-pointer group text-left min-h-[60px]"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0 text-rose-400">
-                      <Camera className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0 text-rose-400 group-hover:scale-105 transition-transform">
+                      <Camera className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm font-bold text-[var(--text-main)] truncate">
                           Physique Progress Photos
                         </span>
-                        <span className="text-[9px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 px-1.5 py-0.2 rounded border border-rose-500/20">
+                        <span className="text-[9px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 px-1.5 py-0.5 rounded-full border border-rose-500/20">
                           Photos
                         </span>
                       </div>
-                      <span className="text-[10px] text-[var(--text-secondary)] block truncate">
+                      <span className="text-[11px] text-[var(--text-secondary)] block truncate mt-0.5">
                         Upload & view Front, Side & Back check-ins
                       </span>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                 </button>
 
+                {/* Workout Split & Schedule */}
                 <button
                   type="button"
                   onClick={() => goToSettings('split')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+                  className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-all cursor-pointer group text-left min-h-[60px]"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
-                      <Sliders className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0 text-blue-400 group-hover:scale-105 transition-transform">
+                      <Sliders className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                      Workout Split & Schedule
-                    </span>
+                    <div className="min-w-0">
+                      <span className="text-xs sm:text-sm font-bold text-[var(--text-main)] block truncate">
+                        Workout Split & Schedule
+                      </span>
+                      <span className="text-[11px] text-[var(--text-secondary)] block truncate mt-0.5">
+                        Customize training days, splits & exercises
+                      </span>
+                    </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                 </button>
 
+                {/* Cardio & Conditioning Goals */}
                 <button
                   type="button"
                   onClick={() => goToSettings('cardio')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+                  className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-all cursor-pointer group text-left min-h-[60px]"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0 text-orange-400">
-                      <Flame className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center shrink-0 text-orange-400 group-hover:scale-105 transition-transform">
+                      <Flame className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                      Cardio & Conditioning Goals
-                    </span>
+                    <div className="min-w-0">
+                      <span className="text-xs sm:text-sm font-bold text-[var(--text-main)] block truncate">
+                        Cardio & Conditioning Goals
+                      </span>
+                      <span className="text-[11px] text-[var(--text-secondary)] block truncate mt-0.5">
+                        Weekly cardio targets & activity tracking
+                      </span>
+                    </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                 </button>
 
+                {/* Theme, Units & Preferences */}
                 <button
                   type="button"
                   onClick={() => goToSettings('app')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+                  className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-all cursor-pointer group text-left min-h-[60px]"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center shrink-0 text-[var(--text-secondary)]">
-                      <Settings className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center shrink-0 text-purple-400 group-hover:scale-105 transition-transform">
+                      <Settings className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                      Theme, Units & Preferences
-                    </span>
+                    <div className="min-w-0">
+                      <span className="text-xs sm:text-sm font-bold text-[var(--text-main)] block truncate">
+                        Theme, Units & Preferences
+                      </span>
+                      <span className="text-[11px] text-[var(--text-secondary)] block truncate mt-0.5">
+                        Dark mode, kg/lbs, timers & app audio
+                      </span>
+                    </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                 </button>
               </div>
             </div>
@@ -312,7 +347,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                 logout();
                 handleClose();
               }}
-              className="justify-center gap-2 h-11 min-h-[44px] text-xs font-bold mt-3"
+              className="justify-center gap-2 h-12 min-h-[48px] rounded-2xl text-xs sm:text-sm font-bold mt-4 shadow-sm"
             >
               <LogOut className="w-4 h-4" />
               <span>Sign Out of Account</span>
@@ -392,6 +427,13 @@ export const UserModal: React.FC<UserModalProps> = ({
       <ProgressPhotosModal
         isOpen={isPhotosModalOpen}
         onClose={() => setIsPhotosModalOpen(false)}
+      />
+
+      {/* First-time Privacy & Security Trust Modal */}
+      <PhotoPrivacyTrustModal
+        isOpen={isPrivacyModalOpen}
+        onConfirm={handleConfirmPrivacy}
+        onClose={() => setIsPrivacyModalOpen(false)}
       />
     </Modal>
   );

@@ -15,12 +15,15 @@ import {
   Info,
   CheckCircle2,
   Image as ImageIcon,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { uploadImageApi } from '../../api/uploadApi';
 import { ProgressPhotoEntry, PhotoAngle } from '../../types';
 import { formatDateLabel } from '../../utils/formatters';
+import { PhotoPrivacyTrustModal } from './PhotoPrivacyTrustModal';
 
 interface ProgressPhotosViewProps {
   onClose?: () => void;
@@ -106,6 +109,32 @@ export const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({
     weight?: number;
     unit?: string;
   } | null>(null);
+
+  // Privacy Trust Modal State
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const pendingAngleUploadRef = useRef<PhotoAngle | null>(null);
+
+  const triggerAngleUpload = (angle: PhotoAngle) => {
+    const hasAcknowledged = localStorage.getItem('gymtrackie_photo_privacy_acknowledged');
+    if (!hasAcknowledged) {
+      pendingAngleUploadRef.current = angle;
+      setIsPrivacyModalOpen(true);
+      return;
+    }
+    fileInputRefs[angle].current?.click();
+  };
+
+  const handleConfirmPrivacy = () => {
+    localStorage.setItem('gymtrackie_photo_privacy_acknowledged', 'true');
+    setIsPrivacyModalOpen(false);
+    if (pendingAngleUploadRef.current) {
+      const targetAngle = pendingAngleUploadRef.current;
+      pendingAngleUploadRef.current = null;
+      setTimeout(() => {
+        fileInputRefs[targetAngle].current?.click();
+      }, 150);
+    }
+  };
 
   // Hidden File Inputs per angle
   const fileInputRefs = {
@@ -208,6 +237,35 @@ export const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({
           <Plus className="w-4 h-4" />
           <span>New Check-in</span>
         </button>
+      </div>
+
+      {/* 2. Privacy & Trust Guarantee Banner */}
+      <div
+        onClick={() => setIsPrivacyModalOpen(true)}
+        className="bg-gradient-to-r from-emerald-500/10 via-[var(--bg-card)] to-[var(--bg-card)] border border-emerald-500/25 hover:border-emerald-500/40 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all group shadow-xs"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
+            <Lock className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-emerald-400">
+                100% Private & Encrypted Vault
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 px-1.5 py-0.5 rounded-full border border-emerald-500/25">
+                Strictly Confidential
+              </span>
+            </div>
+            <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
+              Your physique photos are completely private to your account and never visible to anyone else.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 shrink-0 group-hover:translate-x-0.5 transition-transform">
+          <span>Trust Details</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </div>
       </div>
 
       {/* 2. Check-in Editor (Upload Grid for 4 Angles) */}
@@ -350,7 +408,7 @@ export const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({
                               <button
                                 type="button"
                                 disabled={isUploadingThis}
-                                onClick={() => fileInputRefs[angle].current?.click()}
+                                onClick={() => triggerAngleUpload(angle)}
                                 title="Change Photo"
                                 className="p-1.5 rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] cursor-pointer"
                               >
@@ -373,7 +431,7 @@ export const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({
                         <button
                           type="button"
                           disabled={isUploadingThis}
-                          onClick={() => fileInputRefs[angle].current?.click()}
+                          onClick={() => triggerAngleUpload(angle)}
                           className="w-full h-full flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-[var(--bg-input)]/70 transition-colors"
                         >
                           <div className="w-9 h-9 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--primary)] mb-2 transition-colors shadow-xs">
@@ -619,6 +677,13 @@ export const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* 5. Privacy & Security Trust Modal */}
+      <PhotoPrivacyTrustModal
+        isOpen={isPrivacyModalOpen}
+        onConfirm={handleConfirmPrivacy}
+        onClose={() => setIsPrivacyModalOpen(false)}
+      />
     </div>
   );
 };
