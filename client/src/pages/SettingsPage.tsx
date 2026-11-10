@@ -387,28 +387,12 @@ export const SettingsPage: React.FC = () => {
                 {currentUser?.email || 'Local session · Cloud sync disabled'}
               </p>
 
-              {currentUser && (
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isUploadingAvatar}
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]/30 text-[11px] font-bold transition-all cursor-pointer"
-                  >
-                    {isUploadingAvatar ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="w-3 h-3" />
-                        <span>{currentUser.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
-                      </>
-                    )}
-                  </button>
+              {isUploadingAvatar ? (
+                <div className="flex items-center gap-1.5 mt-1.5 text-[11px] font-bold text-[var(--primary)] animate-pulse">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Uploading profile photo...</span>
                 </div>
-              )}
+              ) : null}
 
               {avatarError && (
                 <div className="text-[10px] text-rose-400 font-semibold mt-1">

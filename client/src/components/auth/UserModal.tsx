@@ -19,6 +19,7 @@ import {
 import { GymTrackieLogo } from '../ui/GymTrackieLogo';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { uploadImageApi } from '../../api/uploadApi';
+import { ProgressPhotosModal } from '../progress/ProgressPhotosModal';
 
 interface UserModalProps {
   isOpen?: boolean;
@@ -40,6 +41,7 @@ export const UserModal: React.FC<UserModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
 
   const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,180 +108,200 @@ export const UserModal: React.FC<UserModalProps> = ({
         <GymTrackieLogo variant="compact" height={26} />
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 min-h-[460px] sm:min-h-[500px] flex flex-col justify-between">
         {currentUser ? (
           /* ================= AUTHENTICATED ACCOUNT PANEL ================= */
-          <>
-            {/* User Identity Card */}
-            <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border-subtle)]">
-              {/* Hidden file input for Cloudinary upload */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,image/heic"
-                className="hidden"
-                onChange={handleAvatarFileSelect}
-              />
+          <div className="space-y-3 flex-1 flex flex-col justify-between">
+            <div className="space-y-3">
+              {/* User Identity Card */}
+              <div className="flex items-center gap-3.5 bg-[var(--bg-card)] p-3.5 rounded-2xl border border-[var(--border-subtle)]">
+                {/* Hidden file input for Cloudinary upload */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/heic"
+                  className="hidden"
+                  onChange={handleAvatarFileSelect}
+                />
 
-              {/* Avatar with Cloudinary upload button overlay */}
-              <div
-                className="relative group cursor-pointer shrink-0"
-                onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
-                title="Click to change profile photo (Cloudinary)"
-              >
-                {currentUser.avatarUrl ? (
-                  <img
-                    src={currentUser.avatarUrl}
-                    alt={currentUser.name}
-                    className="w-13 h-13 rounded-full object-cover border-2 border-[var(--primary)]/40 shrink-0 shadow-sm transition-opacity group-hover:opacity-80"
-                  />
-                ) : (
-                  <div className="w-13 h-13 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-lg font-black shadow-sm shrink-0 border border-red-400">
-                    {currentUser.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                {/* Avatar with Cloudinary upload button overlay */}
+                <div
+                  className="relative group cursor-pointer shrink-0"
+                  onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
+                  title="Click camera icon or avatar to change profile photo"
+                >
+                  {currentUser.avatarUrl ? (
+                    <img
+                      src={currentUser.avatarUrl}
+                      alt={currentUser.name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-[var(--primary)]/50 shrink-0 shadow-sm transition-all group-hover:brightness-90 group-hover:scale-102"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-xl font-black shadow-sm shrink-0 border border-red-400 transition-all group-hover:scale-102">
+                      {currentUser.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
 
-                {/* Upload Indicator / Camera Overlay */}
-                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <Camera className="w-4 h-4 text-white drop-shadow-md" />
-                </div>
+                  {/* Upload Spinner Overlay */}
+                  {isUploadingAvatar ? (
+                    <div className="absolute inset-0 rounded-full bg-black/70 flex items-center justify-center backdrop-blur-xs">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Camera className="w-4 h-4 text-white drop-shadow-md" />
+                    </div>
+                  )}
 
-                {isUploadingAvatar && (
-                  <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  </div>
-                )}
-
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[var(--primary)] border border-white/20 text-white flex items-center justify-center shadow-xs">
-                  <Camera className="w-2.5 h-2.5" />
-                </div>
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm font-black text-[var(--text-main)] truncate">
-                    {currentUser.name}
-                  </h3>
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Signed In
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
-                  {currentUser.email}
-                </p>
-
-                <div className="mt-1.5 flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isUploadingAvatar}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]/30 text-[11px] font-bold transition-all cursor-pointer"
+                  {/* Sole Camera Badge on Profile */}
+                  <div
+                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--primary)] border-2 border-[var(--bg-card)] text-white flex items-center justify-center shadow-md group-hover:scale-110 active:scale-95 transition-transform"
+                    title="Change profile photo"
                   >
-                    {isUploadingAvatar ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="w-3 h-3" />
-                        <span>{currentUser.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1 mt-1.5 text-[10px] text-[var(--text-muted)]">
-                  <ShieldCheck className="w-3 h-3 text-[var(--success)]" />
-                  <span>MongoDB Atlas Cloud Sync Active</span>
-                </div>
-                {avatarError && (
-                  <div className="text-[10px] text-rose-400 font-semibold mt-1">
-                    {avatarError}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Linked Accounts Status */}
-            {currentUser.googleLinked ? (
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs">
-                <div className="flex items-center gap-2 text-emerald-400 font-semibold text-[11px]">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Google Account Connected</span>
-                </div>
-                <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/15 px-1.5 py-0.5 rounded">
-                  1-Tap Ready
-                </span>
-              </div>
-            ) : (
-              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-2">
-                <div>
-                  <div className="text-xs font-bold text-[var(--text-main)]">Link Google Account</div>
-                  <div className="text-[10px] text-[var(--text-secondary)]">
-                    Connect Google for 1-tap sign-in next time
+                    <Camera className="w-3 h-3" />
                   </div>
                 </div>
-                <div className="pt-0.5">
-                  <GoogleSignInButton
-                    mode="link"
-                    text="continue_with"
-                    onSuccess={() => {}}
-                  />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm sm:text-base font-black text-[var(--text-main)] truncate">
+                      {currentUser.name}
+                    </h3>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Signed In
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
+                    {currentUser.email}
+                  </p>
+
+                  {isUploadingAvatar ? (
+                    <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-[var(--primary)] animate-pulse">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Uploading new photo...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 mt-1 text-[10px] text-[var(--text-muted)]">
+                      <ShieldCheck className="w-3 h-3 text-[var(--success)]" />
+                      <span>MongoDB Atlas Cloud Sync Active</span>
+                    </div>
+                  )}
+
+                  {avatarError && (
+                    <div className="text-[10px] text-rose-400 font-semibold mt-1">
+                      {avatarError}
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* Categorized Preferences Shortcuts */}
-            <div className="space-y-1.5 pt-1">
-              <button
-                type="button"
-                onClick={() => goToSettings('split')}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-6 h-6 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
-                    <Sliders className="w-3.5 h-3.5" />
+              {/* Linked Accounts Status */}
+              {currentUser.googleLinked ? (
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs">
+                  <div className="flex items-center gap-2 text-emerald-400 font-semibold text-[11px]">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Google Account Connected</span>
                   </div>
-                  <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                    Workout Split & Schedule
+                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/15 px-1.5 py-0.5 rounded">
+                    1-Tap Ready
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => goToSettings('cardio')}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0 text-orange-400">
-                    <Flame className="w-3.5 h-3.5" />
+              ) : (
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-2">
+                  <div>
+                    <div className="text-xs font-bold text-[var(--text-main)]">Link Google Account</div>
+                    <div className="text-[10px] text-[var(--text-secondary)]">
+                      Connect Google for 1-tap sign-in next time
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                    Cardio & Conditioning Goals
-                  </span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => goToSettings('app')}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-6 h-6 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center shrink-0 text-[var(--text-secondary)]">
-                    <Settings className="w-3.5 h-3.5" />
+                  <div className="pt-0.5">
+                    <GoogleSignInButton
+                      mode="link"
+                      text="continue_with"
+                      onSuccess={() => {}}
+                    />
                   </div>
-                  <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                    Theme, Units & Preferences
-                  </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
-              </button>
+              )}
+
+              {/* Categorized Preferences & Progress Photos Shortcuts */}
+              <div className="space-y-1.5 pt-1">
+                {/* Physique & Progress Photos Direct Access */}
+                <button
+                  type="button"
+                  onClick={() => setIsPhotosModalOpen(true)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500/10 via-[var(--bg-card)] to-[var(--bg-card)] hover:from-rose-500/15 border border-rose-500/25 hover:border-rose-500/40 transition-all cursor-pointer group text-left min-h-[44px]"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded-lg bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0 text-rose-400">
+                      <Camera className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                          Physique Progress Photos
+                        </span>
+                        <span className="text-[9px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 px-1.5 py-0.2 rounded border border-rose-500/20">
+                          Photos
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[var(--text-secondary)] block truncate">
+                        Upload & view Front, Side & Back check-ins
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => goToSettings('split')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center shrink-0 text-[var(--primary)]">
+                      <Sliders className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                      Workout Split & Schedule
+                    </span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => goToSettings('cardio')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0 text-orange-400">
+                      <Flame className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                      Cardio & Conditioning Goals
+                    </span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => goToSettings('app')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer group text-left min-h-[40px]"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center shrink-0 text-[var(--text-secondary)]">
+                      <Settings className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                      Theme, Units & Preferences
+                    </span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-main)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                </button>
+              </div>
             </div>
 
             {/* Prominent Sign Out Button */}
@@ -290,12 +312,12 @@ export const UserModal: React.FC<UserModalProps> = ({
                 logout();
                 handleClose();
               }}
-              className="justify-center gap-2 h-11 min-h-[44px] text-xs font-bold mt-2"
+              className="justify-center gap-2 h-11 min-h-[44px] text-xs font-bold mt-3"
             >
               <LogOut className="w-4 h-4" />
               <span>Sign Out of Account</span>
             </Button>
-          </>
+          </div>
         ) : (
           /* ================= GUEST ACCOUNT CHOOSER PANEL ================= */
           <>
@@ -365,6 +387,12 @@ export const UserModal: React.FC<UserModalProps> = ({
           </>
         )}
       </div>
+
+      {/* Dedicated Physique Progress Photos Modal */}
+      <ProgressPhotosModal
+        isOpen={isPhotosModalOpen}
+        onClose={() => setIsPhotosModalOpen(false)}
+      />
     </Modal>
   );
 };

@@ -8,6 +8,7 @@ import {
   Info,
   Dumbbell,
   Flame,
+  Camera,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -22,10 +23,11 @@ import { PersonalRecordsWall } from '../components/progress/PersonalRecordsWall'
 import { TrainingAnalyticsView } from '../components/progress/TrainingAnalyticsView';
 import { CardioAnalyticsView } from '../components/progress/CardioAnalyticsView';
 import { LogCardioModal } from '../components/cardio/LogCardioModal';
+import { ProgressPhotosView } from '../components/progress/ProgressPhotosView';
 import { getVolumeAnalytics, derivePersonalRecords } from '../utils/analyticsEngine';
 import { PersonalRecord } from '../types';
 
-type ProgressTab = 'analytics' | 'prs' | 'goals';
+type ProgressTab = 'analytics' | 'prs' | 'goals' | 'photos';
 type AnalyticsCategory = 'strength' | 'cardio';
 
 export const ProgressPage: React.FC = () => {
@@ -36,7 +38,7 @@ export const ProgressPage: React.FC = () => {
   const [prsCategory, setPrsCategory] = useState<'strength' | 'cardio'>('strength');
   const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
 
-  const { getUserData, getHistory, getPersonalRecords, getExercises, getCardioSessions } = useWorkoutStore();
+  const { getUserData, getHistory, getPersonalRecords, getExercises, getCardioSessions, getProgressPhotos } = useWorkoutStore();
 
   const userId = currentUser?.id || 'guest';
   const userData = getUserData(userId);
@@ -44,6 +46,7 @@ export const ProgressPage: React.FC = () => {
   const storedPRs = getPersonalRecords(userId);
   const exercises = getExercises(userId);
   const cardioSessions = getCardioSessions(userId);
+  const progressPhotoEntries = getProgressPhotos(userId);
 
   // Derive real client-side analytics directly from verified history
   const volumeAnalytics = useMemo(() => {
@@ -145,7 +148,7 @@ export const ProgressPage: React.FC = () => {
       </div>
 
       {/* Segmented Primary Tab Navigation */}
-      <div className="grid grid-cols-3 gap-1 bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--border-subtle)]">
+      <div className="grid grid-cols-4 gap-1 bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--border-subtle)]">
         <button
           type="button"
           onClick={() => setActiveTab('analytics')}
@@ -191,6 +194,24 @@ export const ProgressPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center leading-tight">
             <span className="text-[11px] sm:text-xs">Goals</span>
             <span className="text-[10px] sm:text-xs sm:ml-1 font-medium sm:font-bold opacity-90">& Weight</span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('photos')}
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
+            activeTab === 'photos'
+              ? 'bg-[var(--primary)] text-white shadow-sm'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <div className="flex flex-col sm:flex-row items-center leading-tight">
+            <span className="text-[11px] sm:text-xs">Photos</span>
+            <span className="text-[10px] sm:text-xs sm:ml-1 text-rose-300 font-bold">
+              ({progressPhotoEntries.length})
+            </span>
           </div>
         </button>
       </div>
@@ -265,6 +286,13 @@ export const ProgressPage: React.FC = () => {
           <BodyWeightCard />
           <CardioWeeklyGoalsCard />
           <GoalsList />
+        </div>
+      )}
+
+      {/* TAB 4: Physique & Progress Photos */}
+      {activeTab === 'photos' && (
+        <div className="space-y-4">
+          <ProgressPhotosView />
         </div>
       )}
 

@@ -17,6 +17,8 @@ import {
   Goal,
   GoalStatus,
   WeightLog,
+  ProgressPhotoEntry,
+  PhotoAngle,
   MuscleGroupConfig,
   SavedCombination,
   CombinationType,
@@ -133,6 +135,7 @@ export interface UserWorkoutData {
   editingOriginalSession?: WorkoutSession | null;
   goals: Goal[];
   weightLogs: WeightLog[];
+  progressPhotos?: ProgressPhotoEntry[];
   cardioSessions: CardioSession[];
   pendingDeletedCardioIds?: string[];
   cardioWeeklyGoals?: CardioWeeklyGoalSettings;
@@ -311,6 +314,23 @@ interface WorkoutStore {
   deleteWeightLog: (userId: string, logId: string) => Promise<void>;
   updateCurrentWeight: (userId: string, newWeight: number) => void;
 
+  // Actions - Physique & Progress Photos
+  getProgressPhotos: (userId: string) => ProgressPhotoEntry[];
+  saveProgressPhoto: (
+    userId: string,
+    payload: {
+      id?: string;
+      date: string;
+      weight?: number;
+      unit?: 'kg' | 'lbs';
+      notes?: string;
+      angle: PhotoAngle;
+      url: string;
+    }
+  ) => Promise<ProgressPhotoEntry>;
+  deleteProgressPhotoAngle: (userId: string, entryId: string, angle: PhotoAngle) => Promise<void>;
+  deleteProgressPhotoEntry: (userId: string, entryId: string) => Promise<void>;
+
   // Actions - Cardio & Conditioning Tracking
   getCardioSessions: (userId: string) => CardioSession[];
   logCardioSession: (
@@ -382,6 +402,7 @@ const createDefaultUserData = (): UserWorkoutData => {
     currentWeight: 70,
     goals: [],
     weightLogs: [],
+    progressPhotos: [],
     cardioSessions: [],
     pendingDeletedCardioIds: [],
     cardioPreferences: DEFAULT_CARDIO_PREFERENCES,
@@ -3381,6 +3402,156 @@ export const useWorkoutStore = create<WorkoutStore>()(
               ...state.getUserData(userId),
               currentWeight: newWeight,
               goals: updatedGoals,
+            },
+          },
+        }));
+      },
+
+      // Actions - Physique & Progress Photos
+      getProgressPhotos: (userId: string) => {
+        const userData = get().getUserData(userId);
+        const storedPhotos = userData.progressPhotos || [];
+
+        // Check if there are any weightLogs with photoUrl not yet in progressPhotos
+        const weightLogsWithPhotos = (userData.weightLogs || []).filter(
+          (w) => w.photoUrl && w.photoUrl.trim()
+        );
+        if (weightLogsWithPhotos.length === 0) {
+          return storedPhotos;
+        }
+
+        // Merge any weight log photos as 'front' photos if that date isn't already captured
+        const existingDates = new Set(storedPhotos.map((p) => p.date));
+        const synthesized: ProgressPhotoEntry[] = [];
+        for (const w of weightLogsWithPhotos) {
+          const dateStr = w.date.slice(0, 10);
+          if (!existingDates.has(dateStr)) {
+            synthesized.push({
+              id: `photo_wl_${w.id || w.date}`,
+              userId,
+              date: dateStr,
+              weight: w.weight,
+              unit: w.unit,
+              notes: w.notes,
+              photos: {
+                front: w.photoUrl,
+              },
+              createdAt: w.createdAt || new Date().toISOString(),
+              updatedAt: w.updatedAt || new Date().toISOString(),
+            });
+            existingDates.add(dateStr);
+          }
+        }
+
+        const merged = [...storedPhotos, ...synthesized].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        return merged;
+      },
+
+      saveProgressPhoto: async (userId, payload) => {
+        const currentList = get().getProgressPhotos(userId);
+        const dateStr = payload.date || new Date().toISOString().slice(0, 10);
+
+        const existingIdx = currentList.findIndex(
+          (p) => (payload.id && p.id === payload.id) || p.date === dateStr
+        );
+
+        let savedEntry: ProgressPhotoEntry;
+        let updatedList: ProgressPhotoEntry[];
+
+        if (existingIdx >= 0) {
+          const existing = currentList[existingIdx];
+          savedEntry = {
+            ...existing,
+            date: dateStr,
+            weight: payload.weight !== undefined ? payload.weight : existing.weight,
+            unit: payload.unit || existing.unit || 'kg',
+            notes: payload.notes !== undefined ? payload.notes : existing.notes,
+            photos: {
+              ...existing.photos,
+              [payload.angle]: payload.url,
+            },
+            updatedAt: new Date().toISOString(),
+          };
+          updatedList = [...currentList];
+          updatedList[existingIdx] = savedEntry;
+        } else {
+          savedEntry = {
+            id: payload.id || `photo_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            userId,
+            date: dateStr,
+            weight: payload.weight,
+            unit: payload.unit || 'kg',
+            notes: payload.notes,
+            photos: {
+              [payload.angle]: payload.url,
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          updatedList = [savedEntry, ...currentList];
+        }
+
+        updatedList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              progressPhotos: updatedList,
+            },
+          },
+        }));
+
+        return savedEntry;
+      },
+
+      deleteProgressPhotoAngle: async (userId, entryId, angle) => {
+        const currentList = get().getProgressPhotos(userId);
+        const targetIdx = currentList.findIndex((p) => p.id === entryId);
+        if (targetIdx < 0) return;
+
+        const target = currentList[targetIdx];
+        const updatedPhotos = { ...target.photos };
+        delete updatedPhotos[angle];
+
+        const hasRemainingPhotos = Object.values(updatedPhotos).some((url) => Boolean(url));
+        let updatedList: ProgressPhotoEntry[];
+
+        if (!hasRemainingPhotos && !target.notes) {
+          updatedList = currentList.filter((p) => p.id !== entryId);
+        } else {
+          updatedList = [...currentList];
+          updatedList[targetIdx] = {
+            ...target,
+            photos: updatedPhotos,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              progressPhotos: updatedList,
+            },
+          },
+        }));
+      },
+
+      deleteProgressPhotoEntry: async (userId, entryId) => {
+        const currentList = get().getProgressPhotos(userId);
+        const updatedList = currentList.filter((p) => p.id !== entryId);
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              progressPhotos: updatedList,
             },
           },
         }));

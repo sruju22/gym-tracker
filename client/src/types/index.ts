@@ -363,6 +363,26 @@ export interface WeightLog {
   updatedAt: string;
 }
 
+// ===== Physique & Progress Photos =====
+export type PhotoAngle = 'front' | 'side_left' | 'side_right' | 'back';
+
+export interface ProgressPhotoEntry {
+  id: string;
+  userId?: string;
+  date: string;
+  weight?: number;
+  unit?: 'kg' | 'lbs';
+  notes?: string;
+  photos: {
+    front?: string;
+    side_left?: string;
+    side_right?: string;
+    back?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ===== User & Auth Types =====
 export interface User {
   id: string;
