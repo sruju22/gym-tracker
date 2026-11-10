@@ -1,0 +1,25 @@
+{
+  "name": "Standing Machine Wrist Curl",
+  "force": "pull",
+  "level": "beginner",
+  "mechanic": "isolation",
+  "equipment": "machine",
+  "primaryMuscles": [
+    "forearms"
+  ],
+  "secondaryMuscles": [],
+  "instructions": [
+    "Stand upright facing the standing wrist curl machine with feet shoulder-width apart.",
+    "Rest the backs of your forearms flat against the horizontal padded table, allowing wrists and hands to extend just beyond the front edge.",
+    "Grasp the knurled rotating roller bar using an underhand (supinated) grip with palms facing up.",
+    "Lower your wrists downward under control into full extension to achieve a deep stretch across the forearm flexors.",
+    "Curl your wrists upward as high as possible against the resistance of the weight stack, squeezing the forearm flexors hard at peak contraction.",
+    "Pause briefly at the top, then slowly lower the weight back to the starting stretched position."
+  ],
+  "category": "strength",
+  "images": [
+    "Standing_Machine_Wrist_Curl/0.jpg",
+    "Standing_Machine_Wrist_Curl/1.jpg"
+  ],
+  "id": "Standing_Machine_Wrist_Curl"
+}
