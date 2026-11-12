@@ -159,6 +159,40 @@ export const HistoryPage: React.FC = () => {
     );
   }, [rawCardio]);
 
+  // Mini Consistency Activity Calendar (Last 14 days)
+  const consistencyDays = useMemo(() => {
+    const days = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayName = d.toLocaleDateString(undefined, { weekday: 'narrow' });
+      const dayNum = d.getDate();
+
+      const hasStrength = history.some((h) => {
+        const hDate = new Date(h.completedAt || h.date).toISOString().split('T')[0];
+        return hDate === dateStr;
+      });
+      const hasCardio = cardioSessions.some((c) => {
+        const cDate = new Date(c.date).toISOString().split('T')[0];
+        return cDate === dateStr;
+      });
+
+      days.push({
+        date: dateStr,
+        dayName,
+        dayNum,
+        isToday: i === 0,
+        hasStrength,
+        hasCardio,
+      });
+    }
+    return days;
+  }, [history, cardioSessions]);
+
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     setVisibleCount(PAGE_SIZE);
@@ -533,6 +567,55 @@ export const HistoryPage: React.FC = () => {
           <Flame className="w-3.5 h-3.5" />
           <span>Cardio ({cardioSessions.length})</span>
         </button>
+      </div>
+
+      {/* Visual Training Consistency Activity Strip */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3 shadow-2xs">
+        <div className="flex items-center justify-between text-xs mb-2">
+          <div className="flex items-center gap-1.5 font-black text-[var(--text-main)]">
+            <Calendar className="w-3.5 h-3.5 text-red-500" />
+            <span>14-Day Activity Consistency</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)]">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500" /> Strength
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-orange-400" /> Cardio
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 sm:grid-cols-14 gap-1 sm:gap-1.5 text-center">
+          {consistencyDays.map((d) => (
+            <div
+              key={d.date}
+              className={`p-1.5 rounded-xl border flex flex-col items-center justify-center transition-all ${
+                d.isToday
+                  ? 'border-red-500/60 bg-red-500/10'
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-surface)]'
+              }`}
+            >
+              <span className="text-[9px] font-semibold text-[var(--text-muted)] uppercase">
+                {d.dayName}
+              </span>
+              <span
+                className={`text-xs font-black my-0.5 ${
+                  d.isToday ? 'text-red-500' : 'text-[var(--text-main)]'
+                }`}
+              >
+                {d.dayNum}
+              </span>
+              <div className="flex items-center gap-0.5 h-2">
+                {d.hasStrength && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-xs" />}
+                {d.hasCardio && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-xs" />}
+                {!d.hasStrength && !d.hasCardio && (
+                  <span className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Top Summary Row based on Active Tab */}

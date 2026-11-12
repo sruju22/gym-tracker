@@ -23,6 +23,7 @@ import { useAuthStore } from '../../store/authStore';
 import { deriveWeeklyCoaching, ActionableCoachingStep } from '../../utils/weeklyCoaching';
 import { formatVolume } from '../../utils/formatters';
 import { LogCardioModal } from '../cardio/LogCardioModal';
+import { triggerHaptic } from '../../utils/haptics';
 
 interface WeeklyCoachingCardProps {
   onOpenEditPlan?: () => void;
@@ -51,6 +52,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
   } = useWorkoutStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAllSteps, setShowAllSteps] = useState(false);
   const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
 
   const history = getHistory(userId);
@@ -245,7 +247,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
         </div>
 
         <div className="space-y-2">
-          {actionableSteps.map((step) => {
+          {(showAllSteps ? actionableSteps : actionableSteps.slice(0, 1)).map((step) => {
             const isHigh = step.priority === 'high';
             const isMed = step.priority === 'medium';
 
@@ -258,7 +260,7 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
             return (
               <div
                 key={step.id}
-                className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3 flex flex-col justify-between gap-2.5 hover:border-[var(--primary)]/40 transition-colors"
+                className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3 flex flex-col justify-between gap-2.5 hover:border-[var(--primary)]/40 transition-colors animate-fade-in"
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
@@ -291,6 +293,20 @@ export const WeeklyCoachingCard: React.FC<WeeklyCoachingCardProps> = ({
               </div>
             );
           })}
+
+          {actionableSteps.length > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                setShowAllSteps(!showAllSteps);
+              }}
+              className="w-full py-1 text-center text-[11px] font-black text-[var(--primary)] hover:underline cursor-pointer flex items-center justify-center gap-1 transition-colors"
+            >
+              <span>{showAllSteps ? 'Show Top Priority Only' : `View All ${actionableSteps.length} Recommendations`}</span>
+              {showAllSteps ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          )}
         </div>
       </div>
 

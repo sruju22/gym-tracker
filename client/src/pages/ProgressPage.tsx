@@ -26,6 +26,7 @@ import { LogCardioModal } from '../components/cardio/LogCardioModal';
 import { ProgressPhotosView } from '../components/progress/ProgressPhotosView';
 import { getVolumeAnalytics, derivePersonalRecords } from '../utils/analyticsEngine';
 import { PersonalRecord } from '../types';
+import { triggerHaptic } from '../utils/haptics';
 
 type ProgressTab = 'analytics' | 'prs' | 'goals' | 'photos';
 type AnalyticsCategory = 'strength' | 'cardio';
@@ -151,7 +152,10 @@ export const ProgressPage: React.FC = () => {
       <div className="grid grid-cols-4 gap-1 bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--border-subtle)]">
         <button
           type="button"
-          onClick={() => setActiveTab('analytics')}
+          onClick={() => {
+            triggerHaptic('light');
+            setActiveTab('analytics');
+          }}
           className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
             activeTab === 'analytics'
               ? 'bg-[var(--primary)] text-white shadow-sm'
@@ -167,7 +171,10 @@ export const ProgressPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveTab('prs')}
+          onClick={() => {
+            triggerHaptic('light');
+            setActiveTab('prs');
+          }}
           className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
             activeTab === 'prs'
               ? 'bg-[var(--primary)] text-white shadow-sm'
@@ -183,7 +190,10 @@ export const ProgressPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveTab('goals')}
+          onClick={() => {
+            triggerHaptic('light');
+            setActiveTab('goals');
+          }}
           className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
             activeTab === 'goals'
               ? 'bg-[var(--primary)] text-white shadow-sm'
@@ -199,7 +209,10 @@ export const ProgressPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveTab('photos')}
+          onClick={() => {
+            triggerHaptic('light');
+            setActiveTab('photos');
+          }}
           className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:py-2 text-center rounded-xl font-bold transition-all cursor-pointer select-none min-h-[52px] sm:min-h-[44px] ${
             activeTab === 'photos'
               ? 'bg-[var(--primary)] text-white shadow-sm'
