@@ -227,6 +227,48 @@ export const WorkoutPage: React.FC = () => {
     toggleExerciseExpanded(userId, id);
   };
 
+  // Derive sections list from currentSession.sections or currentSession.muscleGroups
+  const sectionsList: MuscleGroupConfig[] = useMemo(() => {
+    if (!currentSession) return [];
+    return currentSession.sections && currentSession.sections.length > 0
+      ? currentSession.sections
+      : (currentSession.muscleGroups || []).map((mg) => ({
+          name: mg,
+          displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
+        }));
+  }, [currentSession]);
+
+  // Check if ALL exercises across all sections are actually done (Top-level hook to preserve Rules of Hooks)
+  const isAllWorkoutCompleted = useMemo(() => {
+    if (isEditing || !currentSession) return false;
+    const exercises = currentSession.exercises;
+    if (!exercises || exercises.length === 0) return false;
+
+    // 1. Every existing exercise in the session must be completed
+    if (!exercises.every((ex) => ex.completed)) return false;
+
+    // 2. If the workout has scheduled muscle sections (e.g. Chest, Shoulders, Triceps in Push B),
+    // every section must contain at least 1 exercise before declaring the workout completed.
+    if (sectionsList && sectionsList.length > 0) {
+      const allSectionsCovered = sectionsList.every((sec) => {
+        const legKey = isLegSubArea(sec.subAreas, sec.displayName);
+        const secExercises = exercises.filter((ex) => {
+          if (legKey) {
+            return getLegSection(ex.exercise) === legKey;
+          }
+          if (sec.subAreas && sec.subAreas.length > 0) {
+            return ex.exercise.muscleAreaEmphasis.some((area) => sec.subAreas!.includes(area));
+          }
+          return ex.exercise.primaryMuscle === sec.name;
+        });
+        return secExercises.length > 0;
+      });
+      if (!allSectionsCovered) return false;
+    }
+
+    return true;
+  }, [isEditing, currentSession, sectionsList]);
+
   // Track meaningful unsaved changes
   const hasUnsavedChanges = useMemo(() => {
     if (isEditing && editingSession) {
@@ -764,15 +806,6 @@ export const WorkoutPage: React.FC = () => {
     );
   }
 
-  // Derive sections list from currentSession.sections or currentSession.muscleGroups
-  const sectionsList: MuscleGroupConfig[] =
-    currentSession.sections && currentSession.sections.length > 0
-      ? currentSession.sections
-      : currentSession.muscleGroups.map((mg) => ({
-          name: mg,
-          displayName: MUSCLE_GROUPS[mg]?.name.toUpperCase() || mg.toUpperCase(),
-        }));
-
   const handleOpenAdd = (section?: MuscleGroupConfig) => {
     setTargetSectionForAdd(section);
     setIsAddSheetOpen(true);
@@ -793,37 +826,6 @@ export const WorkoutPage: React.FC = () => {
     currentSession.sections && currentSession.sections.length > 0
       ? currentSession.sections.map((s) => s.displayName).join(' · ')
       : '';
-
-  // Check if ALL exercises across all sections are actually done
-  const isAllWorkoutCompleted = useMemo(() => {
-    if (isEditing) return false;
-    const exercises = currentSession.exercises;
-    if (!exercises || exercises.length === 0) return false;
-
-    // 1. Every existing exercise in the session must be completed
-    if (!exercises.every((ex) => ex.completed)) return false;
-
-    // 2. If the workout has scheduled muscle sections (e.g. Chest, Shoulders, Triceps in Push B),
-    // every section must contain at least 1 exercise before declaring the workout completed.
-    if (sectionsList && sectionsList.length > 0) {
-      const allSectionsCovered = sectionsList.every((sec) => {
-        const legKey = isLegSubArea(sec.subAreas, sec.displayName);
-        const secExercises = exercises.filter((ex) => {
-          if (legKey) {
-            return getLegSection(ex.exercise) === legKey;
-          }
-          if (sec.subAreas && sec.subAreas.length > 0) {
-            return ex.exercise.muscleAreaEmphasis.some((area) => sec.subAreas!.includes(area));
-          }
-          return ex.exercise.primaryMuscle === sec.name;
-        });
-        return secExercises.length > 0;
-      });
-      if (!allSectionsCovered) return false;
-    }
-
-    return true;
-  }, [isEditing, currentSession.exercises, sectionsList]);
 
   return (
     <div className="space-y-6 pb-36 md:pb-24 max-w-full">

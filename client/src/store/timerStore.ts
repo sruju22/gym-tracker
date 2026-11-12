@@ -139,14 +139,6 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       return;
     }
 
-    // Play subtle countdown beep on last 3 seconds
-    if (remaining <= 3 && remaining > 0) {
-      if (isSoundEnabled) {
-        playChime('beep');
-      }
-      triggerHaptic('light');
-    }
-
     set({
       restSecondsRemaining: remaining,
     });
