@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
-import { Play, Plus, Check, AlertTriangle, Edit3, BookOpen, Coffee, Layers, Trophy, Flame } from 'lucide-react';
+import { Play, Plus, Check, AlertTriangle, Edit3, BookOpen, Coffee, Layers, Trophy, Flame, Zap, Clock, Sparkles, RotateCcw } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useAuthStore } from '../store/authStore';
 import { ExerciseCard } from '../components/workout/ExerciseCard';
@@ -11,6 +11,8 @@ import { AddExerciseSheet } from '../components/workout/AddExerciseSheet';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { WorkoutCompletionScreen } from '../components/workout/WorkoutCompletionScreen';
 import { LogCardioModal } from '../components/cardio/LogCardioModal';
+import { RestTimerBar } from '../components/workout/RestTimerBar';
+import { triggerHaptic } from '../utils/haptics';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/layout/Header';
@@ -77,6 +79,73 @@ export const WorkoutPage: React.FC = () => {
     MuscleGroupConfig | undefined
   >(undefined);
   const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
+
+  // Live Elapsed Workout Stopwatch
+  const sessionStartedAt = currentSession?.startedAt;
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(() => {
+    if (!sessionStartedAt) return 0;
+    const diff = Math.floor((Date.now() - new Date(sessionStartedAt).getTime()) / 1000);
+    return Math.max(0, diff);
+  });
+
+  useEffect(() => {
+    if (!sessionStartedAt) return;
+    const updateElapsed = () => {
+      const diff = Math.floor((Date.now() - new Date(sessionStartedAt).getTime()) / 1000);
+      setElapsedSeconds(Math.max(0, diff));
+    };
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 1000);
+    return () => clearInterval(interval);
+  }, [sessionStartedAt]);
+
+  const formatStopwatch = (totalSec: number) => {
+    const hrs = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    if (hrs > 0) {
+      return `${hrs}:${pad(mins)}:${pad(secs)}`;
+    }
+    return `${pad(mins)}:${pad(secs)}`;
+  };
+
+  // Find last matching completed session for "Load Last [Routine]" button
+  const workoutHistory = useWorkoutStore((state) => state.getHistory(userId));
+  const lastMatchingCompletedSession = useMemo(() => {
+    if (!currentSession) return null;
+    return workoutHistory.find(
+      (h) =>
+        h.status === 'completed' &&
+        h.exercises &&
+        h.exercises.length > 0 &&
+        (h.workoutName?.toLowerCase() === currentSession.workoutName?.toLowerCase() ||
+          h.muscleGroups?.some((mg) => currentSession.muscleGroups?.includes(mg)))
+    );
+  }, [workoutHistory, currentSession]);
+
+  const handleLoadLastMatchingRoutine = () => {
+    if (!lastMatchingCompletedSession || !currentSession) return;
+    triggerHaptic('success');
+
+    let addedCount = 0;
+    lastMatchingCompletedSession.exercises.forEach((pastEx) => {
+      const alreadyPresent = currentSession.exercises.some(
+        (cur) => cur.exerciseId === pastEx.exerciseId || cur.exercise.id === pastEx.exercise.id
+      );
+      if (!alreadyPresent) {
+        addExerciseToWorkout(userId, pastEx.exercise);
+        addedCount++;
+      }
+    });
+
+    setSaveSuccessMsg(
+      `Loaded ${addedCount || lastMatchingCompletedSession.exercises.length} exercises from last ${
+        lastMatchingCompletedSession.workoutName || currentSession.workoutName
+      }!`
+    );
+    setTimeout(() => setSaveSuccessMsg(null), 3500);
+  };
 
   // Track per-exercise expansion / collapse state:
   // - If explicitly collapsed or expanded in active session state, respect workEx.isCollapsed
@@ -698,16 +767,23 @@ export const WorkoutPage: React.FC = () => {
       )}
 
       {/* Workout Sticky Header */}
-      <div className="flex items-center justify-between py-2 border-b border-[var(--border-subtle)] sticky top-0 bg-[var(--bg-main)]/95 backdrop-blur-md z-20">
-        <div className="min-w-0 mr-2">
-          <span
-            className={`text-[10px] font-extrabold uppercase tracking-widest ${
-              isEditing ? 'text-amber-500' : 'text-[var(--primary)]'
-            }`}
-          >
-            {isEditing ? 'EDITING SAVED WORKOUT' : 'IN PROGRESS'}
-          </span>
-          <h1 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight truncate">
+      <div className="flex items-center justify-between py-2.5 px-1 border-b border-[var(--border-subtle)] sticky top-0 bg-[var(--bg-main)]/95 backdrop-blur-md z-20">
+        <div className="min-w-0 mr-2 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-[10px] font-extrabold uppercase tracking-widest ${
+                isEditing ? 'text-amber-500' : 'text-[var(--primary)]'
+              }`}
+            >
+              {isEditing ? 'EDITING' : 'IN PROGRESS'}
+            </span>
+            {/* Live Stopwatch Badge */}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-main)] font-mono shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{formatStopwatch(elapsedSeconds)}</span>
+            </span>
+          </div>
+          <h1 className="text-base sm:text-lg font-black text-[var(--text-main)] uppercase tracking-tight truncate mt-0.5">
             {activeTitle}
           </h1>
           {activeSubtitle && (
@@ -717,10 +793,13 @@ export const WorkoutPage: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Discreet safe cancel action */}
           <button
+            type="button"
             onClick={handleHeaderCancel}
-            className="text-xs font-bold text-[var(--danger)] hover:opacity-80 px-2 py-1 cursor-pointer"
+            className="text-[11px] font-bold text-[var(--text-muted)] hover:text-rose-400 p-2 rounded-xl transition-colors cursor-pointer"
+            title="Discard or exit workout"
           >
             Cancel
           </button>
@@ -731,16 +810,17 @@ export const WorkoutPage: React.FC = () => {
               size="sm"
               onClick={handleSaveEdits}
               disabled={isFinishing}
-              className="font-extrabold"
+              className="font-extrabold h-9 px-3.5 shadow-sm active:scale-95"
             >
               <Check className="w-4 h-4 mr-1 stroke-[3]" />
-              <span>{isFinishing ? 'Saving...' : 'Save Changes'}</span>
+              <span>{isFinishing ? 'Saving...' : 'Save'}</span>
             </Button>
           ) : (
             <Button
               variant="primary"
               size="sm"
               onClick={() => setIsSummaryOpen(true)}
+              className="font-extrabold h-9 px-3.5 shadow-sm active:scale-95"
             >
               <Check className="w-4 h-4 mr-1 stroke-[3]" />
               <span>Finish</span>
@@ -748,6 +828,39 @@ export const WorkoutPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* ⚡ Quick Routine Loader: "Load Last [Workout Name]" */}
+      {!isEditing && lastMatchingCompletedSession && (
+        <div className="bg-gradient-to-r from-red-600/10 via-[var(--bg-card)] to-[var(--bg-card)] border border-[var(--primary)]/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[var(--primary-subtle)] border border-[var(--primary)]/30 text-[var(--primary)] flex items-center justify-center shrink-0 shadow-xs">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-black text-[var(--text-main)] truncate">
+                  Load Last {lastMatchingCompletedSession.workoutName || activeTitle}
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider bg-[var(--primary-subtle)] text-[var(--primary)] px-1.5 py-0.5 rounded-full border border-[var(--primary-border)]">
+                  {lastMatchingCompletedSession.exercises.length} Exercises
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
+                Autofill all {lastMatchingCompletedSession.exercises.length} exercises from {formatDateShort(lastMatchingCompletedSession.date)} with your latest weights & reps
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLoadLastMatchingRoutine}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white text-xs font-black shadow-xs cursor-pointer shrink-0 transition-all select-none touch-manipulation"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Load Last {activeTitle.split(' ')[0] || 'Routine'}</span>
+          </button>
+        </div>
+      )}
 
       {/* Render sections per targeted workout area */}
       <div className="space-y-6">
@@ -1115,6 +1228,9 @@ export const WorkoutPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Floating Sticky In-Workout Rest Timer */}
+      <RestTimerBar />
     </div>
   );
 };

@@ -31,6 +31,7 @@ import { LogCardioModal } from '../components/cardio/LogCardioModal';
 import { CardioSessionCard } from '../components/cardio/CardioSessionCard';
 import { CardioSessionDetailModal } from '../components/cardio/CardioSessionDetailModal';
 import { CARDIO_ACTIVITIES, formatDuration, getActivityLabel } from '../utils/cardioMetrics';
+import { triggerHaptic } from '../utils/haptics';
 
 type DateRangeFilter = 'all' | 'week' | 'month' | '3months';
 type HistoryTab = 'all' | 'strength' | 'cardio';
@@ -87,7 +88,27 @@ export const HistoryPage: React.FC = () => {
   }, [location.search, location.state]);
   const { currentUser } = useAuthStore();
 
-  const { startEditingWorkout, deleteWorkout, deleteCardioSession } = useWorkoutStore();
+  const {
+    startEditingWorkout,
+    deleteWorkout,
+    deleteCardioSession,
+    startCustomWorkout,
+    addExerciseToWorkout,
+  } = useWorkoutStore();
+
+  const handleRepeatWorkout = (sessionToRepeat: WorkoutSession) => {
+    triggerHaptic('success');
+    startCustomWorkout(userId, sessionToRepeat.muscleGroups || ['chest']);
+    if (sessionToRepeat.exercises && sessionToRepeat.exercises.length > 0) {
+      sessionToRepeat.exercises.forEach((ex) => {
+        if (ex.exercise) {
+          addExerciseToWorkout(userId, ex.exercise);
+        }
+      });
+    }
+    setSelectedSession(null);
+    navigate('/workout');
+  };
 
   // Active Category Tab
   const [activeTab, setActiveTab] = useState<HistoryTab>('all');
@@ -1112,10 +1133,21 @@ export const HistoryPage: React.FC = () => {
               })}
             </div>
 
-            {/* Actions: Edit Workout & Delete Workout */}
+            {/* Actions: Repeat Workout, Edit Workout & Delete Workout */}
             <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
               <Button
                 variant="primary"
+                size="md"
+                fullWidth
+                onClick={() => handleRepeatWorkout(selectedSession)}
+                className="font-black flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm active:scale-95"
+              >
+                <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+                <span>Repeat This Workout Today</span>
+              </Button>
+
+              <Button
+                variant="secondary"
                 size="md"
                 fullWidth
                 onClick={() => {
@@ -1126,7 +1158,7 @@ export const HistoryPage: React.FC = () => {
                 className="font-bold flex items-center justify-center gap-1.5 min-h-[44px]"
               >
                 <Edit3 className="w-4 h-4" />
-                <span>Edit Workout</span>
+                <span>Edit Saved Workout</span>
               </Button>
 
               <button

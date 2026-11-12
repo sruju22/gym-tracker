@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Check, Trash2, AlertCircle } from 'lucide-react';
 import { WorkoutSet } from '../../types';
+import { triggerHaptic } from '../../utils/haptics';
+import { useTimerStore } from '../../store/timerStore';
 
 interface SetRowProps {
   set: WorkoutSet;
@@ -36,6 +38,7 @@ export const SetRow: React.FC<SetRowProps> = ({
   };
 
   const adjustWeight = (delta: number) => {
+    triggerHaptic('light');
     const base = set.weight !== null && set.weight > 0
       ? set.weight
       : (prevSet && prevSet.weight > 0 ? prevSet.weight : 0);
@@ -46,6 +49,7 @@ export const SetRow: React.FC<SetRowProps> = ({
   };
 
   const adjustReps = (delta: number) => {
+    triggerHaptic('light');
     const base = set.reps !== null && set.reps > 0
       ? set.reps
       : (prevSet && prevSet.reps > 0 ? prevSet.reps : 10);
@@ -66,24 +70,29 @@ export const SetRow: React.FC<SetRowProps> = ({
   const handleToggle = () => {
     // 1. If already completed, toggle off
     if (set.completed) {
+      triggerHaptic('light');
       onToggleComplete();
+      useTimerStore.getState().stopRestTimer();
       setFeedbackMsg(null);
       return;
     }
 
     // 2. If valid manual inputs exist, validate and complete
     if (isValid) {
+      triggerHaptic('success');
       if (onCompleteWithAutoFill) {
         onCompleteWithAutoFill(set.weight, set.reps);
       } else {
         onToggleComplete();
       }
+      useTimerStore.getState().startRestTimer(90);
       setFeedbackMsg(null);
       return;
     }
 
     // 3. One-tap autofill from previous workout performance
     if (prevSet && prevSet.weight > 0 && prevSet.reps > 0) {
+      triggerHaptic('success');
       const finalWeight = (set.weight !== null && set.weight > 0) ? set.weight : prevSet.weight;
       const finalReps = (set.reps !== null && set.reps > 0) ? set.reps : prevSet.reps;
 
@@ -93,11 +102,14 @@ export const SetRow: React.FC<SetRowProps> = ({
         onUpdate(finalWeight, finalReps);
         onToggleComplete();
       }
+      useTimerStore.getState().startRestTimer(90);
       setFeedbackMsg(null);
       return;
     }
 
     // 4. Never silently ignore checkmark: provide clear feedback
+    triggerHaptic('warning');
+    setFeedbackMsg('Enter weight & reps');
     setFeedbackMsg('Enter weight & reps');
     setTimeout(() => {
       setFeedbackMsg(null);
