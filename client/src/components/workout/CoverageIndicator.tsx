@@ -1,7 +1,6 @@
 import React from 'react';
 import { Check, Sparkles, Plus } from 'lucide-react';
 import { MuscleGroup, MuscleArea } from '../../types';
-import { Card } from '../ui/Card';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { calculateMuscleCoverage } from '../../utils/coverage';
@@ -33,26 +32,38 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
   const displayTitle = sectionTitle || muscleGroup;
 
   return (
-    <Card className="mb-3 border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
-          {displayTitle} Target Areas
-        </span>
-        <div className="flex items-center gap-2 text-xs font-semibold">
-          <span className="text-[var(--success)] font-bold">
-            {coverage.directCount} Direct
+    <div className="mb-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)]/50 px-3 py-2 sm:px-3.5 sm:py-2.5 shadow-2xs">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
+          <span className="uppercase tracking-wider">Target Heads</span>
+          <span className="text-[10px] text-[var(--text-muted)] font-normal">
+            ({coverage.totalAreas} sub-areas)
           </span>
-          {coverage.supportedCount > 0 && (
+        </div>
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          {coverage.coveredAreas > 0 ? (
             <>
-              <span className="text-[var(--text-muted)]">·</span>
-              <span className="text-sky-400 font-bold">
-                {coverage.supportedCount} Supported
+              <span className="text-[var(--success)] font-extrabold flex items-center gap-1">
+                <Check className="w-3 h-3 stroke-[3]" />
+                {coverage.directCount} Direct
+              </span>
+              {coverage.supportedCount > 0 && (
+                <>
+                  <span className="text-[var(--text-muted)]">·</span>
+                  <span className="text-sky-400 font-bold">
+                    {coverage.supportedCount} Supported
+                  </span>
+                </>
+              )}
+              <span className="text-[var(--text-secondary)] font-bold text-[11px] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
+                {coverage.coveredAreas}/{coverage.totalAreas} Covered
               </span>
             </>
+          ) : (
+            <span className="text-[var(--text-muted)] font-medium text-[11px]">
+              0/{coverage.totalAreas} Covered
+            </span>
           )}
-          <span className="text-[var(--text-muted)] font-normal text-[11px]">
-            ({coverage.coveredAreas}/{coverage.totalAreas} Covered)
-          </span>
         </div>
       </div>
 
@@ -71,24 +82,24 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
             <div
               key={item.area}
               title={`${item.displayName}: ${contributing}`}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${
                 isDirect
-                  ? 'bg-[var(--success-subtle)] text-[var(--success)] border-[var(--success-border)] font-extrabold shadow-2xs'
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-black shadow-2xs'
                   : isSupported
-                  ? 'bg-sky-500/10 text-sky-400 border-sky-500/30 font-bold'
-                  : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
+                  ? 'bg-sky-500/10 text-sky-400 border-sky-500/25 font-bold'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
               }`}
             >
               {isDirect ? (
-                <Check className="w-3.5 h-3.5 text-[var(--success)] stroke-[3]" />
+                <Check className="w-3 h-3 text-emerald-400 stroke-[3]" />
               ) : isSupported ? (
-                <Sparkles className="w-3 h-3 text-sky-400" />
+                <Sparkles className="w-2.5 h-2.5 text-sky-400" />
               ) : (
-                <Plus className="w-3 h-3 text-[var(--text-muted)] opacity-60" />
+                <Plus className="w-2.5 h-2.5 text-[var(--text-muted)] opacity-70" />
               )}
               <span>{item.displayName}</span>
               {isSupported && (
-                <span className="text-[9px] uppercase tracking-wider opacity-80 font-black">
+                <span className="text-[8px] uppercase tracking-wider opacity-85 font-black">
                   Supported
                 </span>
               )}
@@ -96,6 +107,6 @@ export const CoverageIndicator: React.FC<CoverageIndicatorProps> = ({
           );
         })}
       </div>
-    </Card>
+    </div>
   );
 };

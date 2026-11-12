@@ -1816,7 +1816,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
               ) {
                 // One-tap autofill from previous performance
                 const finalWeight = hasWeight ? currentSet.weight : fallbackWeight;
-                const finalReps = hasReps ? currentSet.reps : fallbackReps;
+                const finalReps = (hasWeight && hasReps) ? currentSet.reps : fallbackReps;
                 updatedSets[setIndex] = {
                   ...currentSet,
                   weight: finalWeight,
@@ -1858,12 +1858,14 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
           const lastSet = ex.sets[ex.sets.length - 1];
           const newSetNumber = ex.sets.length + 1;
+          const prevPerf = get().getPreviousPerformance(userId, ex.exerciseId || ex.id);
+          const prevSet = prevPerf?.sets?.[newSetNumber - 1] || prevPerf?.sets?.[prevPerf.sets.length - 1];
 
           const newSet: WorkoutSet = {
             id: `set_${Date.now()}_${newSetNumber}`,
             setNumber: newSetNumber,
-            weight: lastSet ? lastSet.weight : null,
-            reps: lastSet ? lastSet.reps : null,
+            weight: lastSet?.weight ?? (prevSet ? prevSet.weight : null),
+            reps: lastSet?.reps ?? (prevSet ? prevSet.reps : 10),
             completed: false,
           };
 
@@ -1928,8 +1930,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
         const defaultSetsCount = get().settings?.defaultSetsPerExercise || 3;
         const appliedTarget = userData.appliedProgressionTargets?.[exercise.id];
-        const initialWeight = appliedTarget?.targetWeight !== undefined ? appliedTarget.targetWeight : null;
-        const initialReps = appliedTarget?.targetReps !== undefined ? appliedTarget.targetReps : null;
+        const prevPerf = get().getPreviousPerformance(userId, exercise.id);
 
         const newWorkoutExercise: WorkoutExercise = {
           id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -1939,13 +1940,28 @@ export const useWorkoutStore = create<WorkoutStore>()(
           notes: '',
           completed: false,
           isCollapsed: false,
-          sets: Array.from({ length: defaultSetsCount }, (_, i) => ({
-            id: `set_${Date.now()}_${i + 1}`,
-            setNumber: i + 1,
-            weight: initialWeight,
-            reps: initialReps,
-            completed: false,
-          })),
+          sets: Array.from({ length: defaultSetsCount }, (_, i) => {
+            const prevSet = prevPerf?.sets?.[i] || prevPerf?.sets?.[prevPerf.sets.length - 1];
+
+            // 1. If user has an applied progression target from the coach, prioritize it
+            // 2. Otherwise, if previous performance exists, pre-fill from last session
+            // 3. Otherwise, for first time, predefine standard 10 reps so user doesn't have to manually type
+            const weightVal = appliedTarget?.targetWeight !== undefined
+              ? appliedTarget.targetWeight
+              : (prevSet ? prevSet.weight : null);
+
+            const repsVal = appliedTarget?.targetReps !== undefined
+              ? appliedTarget.targetReps
+              : (prevSet ? prevSet.reps : 10);
+
+            return {
+              id: `set_${Date.now()}_${i + 1}`,
+              setNumber: i + 1,
+              weight: weightVal,
+              reps: repsVal,
+              completed: false,
+            };
+          }),
         };
 
         const currentSections: MuscleGroupConfig[] = targetSession.sections && targetSession.sections.length > 0
@@ -4307,9 +4323,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
                 ...exItem,
                 sets: exItem.sets.map((s) => {
                   if (s.completed) return s;
-                  // Preserve sets that have manually entered values
-                  const hasUserEnteredValues =
-                    (s.weight !== null && s.weight > 0) || (s.reps !== null && s.reps > 0);
+                  // Preserve sets that have manually entered weight values
+                  const hasUserEnteredValues = s.weight !== null && s.weight > 0;
                   if (hasUserEnteredValues) return s;
                   return {
                     ...s,

@@ -775,21 +775,21 @@ export const WorkoutPage: React.FC = () => {
                   </span>
                 </h2>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handleOpenCombination(sec)}
-                    className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--primary)] flex items-center gap-1 transition-colors cursor-pointer"
+                    className="px-2 py-1 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs font-bold flex items-center gap-1 transition-all cursor-pointer active:scale-95 shadow-2xs"
                     title="Create a custom training combination (superset, drop set, etc.)"
                   >
                     <Layers className="w-3.5 h-3.5 text-[var(--primary)]" />
-                    <span>+ Combination</span>
+                    <span>+ Combo</span>
                   </button>
 
                   <button
                     onClick={() => handleOpenAdd(sec)}
-                    className="text-xs font-bold text-[var(--primary)] hover:opacity-80 flex items-center gap-1 transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Add Exercise</span>
                   </button>
                 </div>
@@ -896,29 +896,29 @@ export const WorkoutPage: React.FC = () => {
       )}
 
       {/* Actions to Add New Muscle Section, Create Combination or Browse Exercise Library */}
-      <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="pt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
         <button
           onClick={() => handleOpenCombination()}
-          className="bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          className="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-xs active:scale-95"
         >
           <Layers className="w-4 h-4 text-[var(--primary)]" />
-          <span>Create Combination</span>
+          <span>Combination</span>
         </button>
 
         <button
           onClick={() => setIsAddSectionModalOpen(true)}
-          className="bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          className="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-xs active:scale-95"
         >
           <Plus className="w-4 h-4 text-[var(--primary)]" />
-          <span>Add Muscle Group</span>
+          <span>Muscle Group</span>
         </button>
 
         <button
           onClick={() => navigate('/exercises')}
-          className="bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          className="col-span-2 sm:col-span-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--primary)] rounded-xl p-3 flex items-center justify-center gap-2 text-xs font-bold text-[var(--text-main)] transition-all cursor-pointer shadow-xs active:scale-95"
         >
           <BookOpen className="w-4 h-4 text-[var(--primary)]" />
-          <span>Browse Exercise Library</span>
+          <span>Browse Library</span>
         </button>
       </div>
 
