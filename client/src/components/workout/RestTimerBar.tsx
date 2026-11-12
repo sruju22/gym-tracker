@@ -25,8 +25,8 @@ export const RestTimerBar: React.FC = () => {
   );
 
   return (
-    <div className="fixed bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-sm animate-slide-up">
-      <div className="relative overflow-hidden rounded-2xl bg-[var(--bg-card)]/95 backdrop-blur-md border border-[var(--primary)]/50 shadow-2xl p-2.5 sm:p-3 text-[var(--text-main)] flex items-center justify-between gap-3">
+    <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px)+10px)] md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-sm animate-slide-up pointer-events-auto">
+      <div className="relative overflow-hidden rounded-2xl bg-[#18181B]/95 dark:bg-[#121212]/95 backdrop-blur-xl border border-[var(--primary)]/50 shadow-[0_12px_32px_rgba(0,0,0,0.6),0_0_20px_rgba(239,68,68,0.2)] p-2.5 sm:p-3 text-[var(--text-main)] flex items-center justify-between gap-3">
         {/* Subtle background progress fill */}
         <div
           className="absolute inset-y-0 left-0 bg-[var(--primary)]/10 transition-all duration-1000 ease-linear pointer-events-none"

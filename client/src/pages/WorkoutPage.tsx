@@ -118,41 +118,95 @@ export const WorkoutPage: React.FC = () => {
     return `${pad(mins)}:${pad(secs)}`;
   };
 
+  // Split family classification helper:
+  // Strictly segregates 'push', 'pull', 'legs' to prevent cross-contamination
+  const getSplitCategory = (name?: string): 'push' | 'pull' | 'legs' | 'other' => {
+    if (!name) return 'other';
+    const lower = name.toLowerCase().trim();
+    if (lower.startsWith('push') || lower.includes('push')) return 'push';
+    if (lower.startsWith('pull') || lower.includes('pull')) return 'pull';
+    if (lower.startsWith('leg') || lower.includes('leg')) return 'legs';
+    return 'other';
+  };
+
   // Find last matching completed session for "Load Last [Routine]" button
-  const currentWorkoutName = currentSession?.workoutName;
+  const currentWorkoutName = currentSession?.workoutName?.trim();
   const currentSessionId = currentSession?.id;
+  const currentCategory = getSplitCategory(currentWorkoutName);
+
   const lastMatchingCompletedSession = useMemo(() => {
     if (!currentWorkoutName && !currentSession?.muscleGroups?.length) return null;
     const history = getHistory(userId);
-    return (
-      history.find(
-        (h) =>
-          h.status === 'completed' &&
-          h.exercises &&
-          h.exercises.length > 0 &&
-          (h.workoutName?.toLowerCase() === currentWorkoutName?.toLowerCase() ||
-            h.muscleGroups?.some((mg) => currentSession?.muscleGroups?.includes(mg)))
-      ) || null
+    const completedWithExercises = history.filter(
+      (h) =>
+        h.status === 'completed' &&
+        Array.isArray(h.exercises) &&
+        h.exercises.length > 0 &&
+        h.id !== currentSessionId
     );
-  }, [getHistory, userId, currentWorkoutName, currentSessionId]);
+
+    if (completedWithExercises.length === 0) return null;
+
+    // 1. Exact Workout Name Match (Highest priority)
+    // E.g. If current is "Push B", find the most recent completed "Push B"
+    if (currentWorkoutName) {
+      const exactMatch = completedWithExercises.find(
+        (h) => h.workoutName?.trim().toLowerCase() === currentWorkoutName.toLowerCase()
+      );
+      if (exactMatch) return exactMatch;
+    }
+
+    // 2. Same Split Family Match (Second priority)
+    // E.g. If current is "Push B" and user has never done Push B before, find latest "Push A" or "Push"
+    // CRITICAL: A "Pull" or "Legs" session will NEVER match a "Push" session!
+    if (currentCategory !== 'other') {
+      const sameFamilyMatch = completedWithExercises.find(
+        (h) => getSplitCategory(h.workoutName) === currentCategory
+      );
+      if (sameFamilyMatch) return sameFamilyMatch;
+    }
+
+    // 3. Strict Muscle Group Match (For custom named workouts without push/pull/legs in title)
+    if (currentCategory === 'other' && currentSession?.muscleGroups?.length) {
+      const currentMuscles = new Set(currentSession.muscleGroups);
+      const muscleMatch = completedWithExercises.find((h) => {
+        const pastCategory = getSplitCategory(h.workoutName);
+        if (pastCategory !== 'other') return false; // Don't match generic custom workout to specific Push/Pull/Legs
+        const pastMuscles = h.muscleGroups || [];
+        const shared = pastMuscles.filter((m) => currentMuscles.has(m));
+        return shared.length >= Math.ceil(currentMuscles.size * 0.5);
+      });
+      if (muscleMatch) return muscleMatch;
+    }
+
+    return null;
+  }, [getHistory, userId, currentWorkoutName, currentSessionId, currentCategory, currentSession?.muscleGroups]);
+
+  const isExactRoutineMatch = Boolean(
+    lastMatchingCompletedSession &&
+    currentWorkoutName &&
+    lastMatchingCompletedSession.workoutName?.trim().toLowerCase() === currentWorkoutName.toLowerCase()
+  );
+  const targetRoutineName = lastMatchingCompletedSession?.workoutName || currentWorkoutName || 'Routine';
 
   const handleLoadLastMatchingRoutine = () => {
     if (!lastMatchingCompletedSession || !currentSession) return;
     triggerHaptic('success');
 
     let addedCount = 0;
+    const currentExercises = currentSession.exercises || [];
     lastMatchingCompletedSession.exercises.forEach((pastEx) => {
-      const alreadyPresent = currentSession.exercises.some(
-        (cur) => cur.exerciseId === pastEx.exerciseId || cur.exercise.id === pastEx.exercise.id
+      const alreadyPresent = currentExercises.some(
+        (cur) => cur.exerciseId === pastEx.exerciseId || cur.exercise?.id === pastEx.exercise?.id
       );
-      if (!alreadyPresent) {
+      if (!alreadyPresent && pastEx.exercise) {
         addExerciseToWorkout(userId, pastEx.exercise);
         addedCount++;
       }
     });
 
     setSaveSuccessMsg(
-      `Loaded ${addedCount || lastMatchingCompletedSession.exercises.length} exercises from last ${
+      `Loaded ${addedCount || lastMatchingCompletedSession.exercises.length} exercises from ${
         lastMatchingCompletedSession.workoutName || currentSession.workoutName
       }!`
     );
@@ -739,7 +793,7 @@ export const WorkoutPage: React.FC = () => {
       : '';
 
   return (
-    <div className="space-y-6 pb-24 max-w-full overflow-x-hidden">
+    <div className="space-y-6 pb-36 md:pb-24 max-w-full overflow-x-hidden">
       {/* Editing Mode Banner */}
       {isEditing && editingSession && (
         <div className="bg-[var(--bg-card)] border border-amber-500/30 rounded-xl px-3.5 py-2.5 flex items-center justify-between text-xs">
@@ -851,14 +905,18 @@ export const WorkoutPage: React.FC = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-black text-[var(--text-main)] truncate">
-                  Load Last {lastMatchingCompletedSession.workoutName || activeTitle}
+                  {isExactRoutineMatch
+                    ? `Load Last ${targetRoutineName}`
+                    : `Load Last ${targetRoutineName} Routine`}
                 </span>
                 <span className="text-[9px] font-black uppercase tracking-wider bg-[var(--primary-subtle)] text-[var(--primary)] px-1.5 py-0.5 rounded-full border border-[var(--primary-border)]">
                   {lastMatchingCompletedSession.exercises.length} Exercises
                 </span>
               </div>
               <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
-                Autofill all {lastMatchingCompletedSession.exercises.length} exercises from {formatDateShort(lastMatchingCompletedSession.date)} with your latest weights & reps
+                {isExactRoutineMatch
+                  ? `Autofill all ${lastMatchingCompletedSession.exercises.length} exercises from ${formatDateShort(lastMatchingCompletedSession.date)} with your latest weights & reps`
+                  : `No past ${activeTitle} recorded yet. Autofill from your previous ${targetRoutineName} (${formatDateShort(lastMatchingCompletedSession.date)})`}
               </p>
             </div>
           </div>
@@ -869,7 +927,7 @@ export const WorkoutPage: React.FC = () => {
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white text-xs font-black shadow-xs cursor-pointer shrink-0 transition-all select-none touch-manipulation"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Load Last {activeTitle.split(' ')[0] || 'Routine'}</span>
+            <span>Load {isExactRoutineMatch ? `Last ${targetRoutineName}` : `${targetRoutineName} Routine`}</span>
           </button>
         </div>
       )}
