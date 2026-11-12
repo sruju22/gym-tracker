@@ -11,6 +11,7 @@ import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatDateShort } from '../../utils/formatters';
 import { calculate1RM } from '../../utils/oneRM';
+import { useTimerStore } from '../../store/timerStore';
 
 interface ExerciseCardProps {
   workoutExercise: WorkoutExercise;
@@ -450,6 +451,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           onClick={(e) => {
             e.stopPropagation();
             if (!isDoneEnabled) return;
+            useTimerStore.getState().stopRestTimer();
             if (onDone) {
               onDone();
             } else if (!completed) {

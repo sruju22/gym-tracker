@@ -4,6 +4,7 @@ import { triggerHaptic } from '../utils/haptics';
 interface TimerState {
   restSecondsRemaining: number;
   restTotalSeconds: number;
+  restEndTime: number | null;
   isRestActive: boolean;
   isSoundEnabled: boolean;
   startRestTimer: (durationSeconds?: number) => void;
@@ -52,6 +53,7 @@ const playChime = (type: 'beep' | 'done') => {
 export const useTimerStore = create<TimerState>((set, get) => ({
   restSecondsRemaining: 0,
   restTotalSeconds: 90,
+  restEndTime: null,
   isRestActive: false,
   isSoundEnabled: true,
 
@@ -62,9 +64,13 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 
     triggerHaptic('light');
 
+    const now = Date.now();
+    const endTime = now + durationSeconds * 1000;
+
     set({
       restSecondsRemaining: durationSeconds,
       restTotalSeconds: durationSeconds,
+      restEndTime: endTime,
       isRestActive: true,
     });
 
@@ -76,11 +82,18 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   addSeconds: (seconds = 30) => {
     triggerHaptic('light');
     set((state) => {
-      const nextRemaining = state.restSecondsRemaining + seconds;
+      const currentRemaining = state.restEndTime
+        ? Math.max(0, Math.ceil((state.restEndTime - Date.now()) / 1000))
+        : state.restSecondsRemaining;
+
+      const nextRemaining = currentRemaining + seconds;
+      const nextEndTime = Date.now() + nextRemaining * 1000;
       const nextTotal = Math.max(state.restTotalSeconds, nextRemaining);
+
       return {
         restSecondsRemaining: nextRemaining,
         restTotalSeconds: nextTotal,
+        restEndTime: nextEndTime,
       };
     });
   },
@@ -93,6 +106,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     set({
       isRestActive: false,
       restSecondsRemaining: 0,
+      restEndTime: null,
     });
   },
 
@@ -101,9 +115,12 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   tick: () => {
-    const { restSecondsRemaining, isSoundEnabled } = get();
+    const { restEndTime, isSoundEnabled, isRestActive } = get();
+    if (!isRestActive || !restEndTime) return;
 
-    if (restSecondsRemaining <= 1) {
+    const remaining = Math.max(0, Math.ceil((restEndTime - Date.now()) / 1000));
+
+    if (remaining <= 0) {
       if (restInterval) {
         clearInterval(restInterval);
         restInterval = null;
@@ -117,12 +134,13 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       set({
         isRestActive: false,
         restSecondsRemaining: 0,
+        restEndTime: null,
       });
       return;
     }
 
     // Play subtle countdown beep on last 3 seconds
-    if (restSecondsRemaining <= 4 && restSecondsRemaining > 1) {
+    if (remaining <= 3 && remaining > 0) {
       if (isSoundEnabled) {
         playChime('beep');
       }
@@ -130,7 +148,18 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     }
 
     set({
-      restSecondsRemaining: restSecondsRemaining - 1,
+      restSecondsRemaining: remaining,
     });
   },
 }));
+
+if (typeof window !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      useTimerStore.getState().tick();
+    }
+  });
+  window.addEventListener('focus', () => {
+    useTimerStore.getState().tick();
+  });
+}

@@ -43,6 +43,7 @@ import { getTemplateById } from '../data/workoutTemplates';
 import { MUSCLE_GROUPS } from '../data/muscleGroups';
 import { getTodayDayOfWeek, isSameLocalDay } from '../utils/formatters';
 import { calculate1RM } from '../utils/oneRM';
+import { useTimerStore } from './timerStore';
 import { getLegSection, isLegSubArea } from '../utils/legSection';
 import { reconcileActiveSession } from '../utils/sessionReconciliation';
 import {
@@ -1864,8 +1865,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const newSet: WorkoutSet = {
             id: `set_${Date.now()}_${newSetNumber}`,
             setNumber: newSetNumber,
-            weight: lastSet?.weight ?? (prevSet ? prevSet.weight : null),
-            reps: lastSet?.reps ?? (prevSet ? prevSet.reps : 10),
+            weight: null,
+            reps: null,
             completed: false,
           };
 
@@ -1941,24 +1942,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completed: false,
           isCollapsed: false,
           sets: Array.from({ length: defaultSetsCount }, (_, i) => {
-            const prevSet = prevPerf?.sets?.[i] || prevPerf?.sets?.[prevPerf.sets.length - 1];
-
-            // 1. If user has an applied progression target from the coach, prioritize it
-            // 2. Otherwise, if previous performance exists, pre-fill from last session
-            // 3. Otherwise, for first time, predefine standard 10 reps so user doesn't have to manually type
-            const weightVal = appliedTarget?.targetWeight !== undefined
-              ? appliedTarget.targetWeight
-              : (prevSet ? prevSet.weight : null);
-
-            const repsVal = appliedTarget?.targetReps !== undefined
-              ? appliedTarget.targetReps
-              : (prevSet ? prevSet.reps : 10);
-
+            // Keep sets unlogged (null) initially so previous performance is visible as a light placeholder in the background.
+            // When the user taps a stepper (+2.5) or types, it populates and darkens the values.
             return {
               id: `set_${Date.now()}_${i + 1}`,
               setNumber: i + 1,
-              weight: weightVal,
-              reps: repsVal,
+              weight: appliedTarget?.targetWeight !== undefined ? appliedTarget.targetWeight : null,
+              reps: appliedTarget?.targetReps !== undefined ? appliedTarget.targetReps : null,
               completed: false,
             };
           }),
@@ -2925,6 +2915,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
             }
           });
 
+          // Stop any running rest timer automatically on workout completion
+          try {
+            useTimerStore.getState().stopRestTimer();
+          } catch {
+            // ignore
+          }
+
           // Update store state with completed workout, PRs, goals, and clear active session
           set((state) => ({
             isFinishing: false,
@@ -3004,6 +3001,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       cancelWorkout: (userId) => {
+        try {
+          useTimerStore.getState().stopRestTimer();
+        } catch {
+          // ignore
+        }
         set((state) => ({
           saveError: null,
           userDataMap: {

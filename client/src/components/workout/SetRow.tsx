@@ -155,21 +155,24 @@ export const SetRow: React.FC<SetRowProps> = ({
 
   return (
     <div className="relative overflow-hidden rounded-xl">
-      {/* Background Delete Action Bar revealed on swipe-left */}
-      {canRemove && onRemove && (
+      {/* Background Delete Action Bar revealed ONLY when actively swiping left */}
+      {canRemove && onRemove && swipeX < 0 && (
         <div
           onClick={() => {
             triggerHaptic('warning');
             onRemove();
           }}
-          className="absolute inset-y-0 right-0 w-20 bg-rose-600/90 hover:bg-rose-600 text-white flex flex-col items-center justify-center gap-0.5 cursor-pointer rounded-r-xl select-none transition-colors z-0"
+          style={{
+            opacity: Math.min(1, Math.abs(swipeX) / 30),
+          }}
+          className="absolute inset-y-0 right-0 w-20 bg-rose-600 text-white flex flex-col items-center justify-center gap-0.5 cursor-pointer rounded-r-xl select-none z-0"
         >
           <Trash2 className="w-4 h-4 stroke-[2.5]" />
           <span className="text-[9px] font-black uppercase tracking-wider">Delete</span>
         </div>
       )}
 
-      {/* Main Set Container with Swipe Transform */}
+      {/* Main Set Container with Solid Background */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -178,7 +181,7 @@ export const SetRow: React.FC<SetRowProps> = ({
           transform: `translateX(${swipeX}px)`,
           transition: swipeX === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
-        className="relative z-10 flex flex-col gap-1 bg-[var(--bg-card)]/40 border border-[var(--border-subtle)] rounded-xl p-1.5 sm:p-2 transition-all"
+        className="relative z-10 flex flex-col gap-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-1.5 sm:p-2 shadow-2xs"
       >
         {/* Main Set Input Row */}
         <div
@@ -218,7 +221,7 @@ export const SetRow: React.FC<SetRowProps> = ({
                 placeholder={prevSet ? String(prevSet.weight) : 'kg'}
                 value={set.weight !== null ? set.weight : ''}
                 onChange={handleWeightChange}
-                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-2 py-1.5 pr-8 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[40px] touch-manipulation transition-colors"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-2 py-1.5 pr-8 text-center text-sm font-black text-[var(--text-main)] placeholder:text-[var(--text-muted)]/70 placeholder:font-normal focus:outline-none min-h-[40px] touch-manipulation transition-colors"
               />
               <button
                 type="button"
@@ -246,7 +249,7 @@ export const SetRow: React.FC<SetRowProps> = ({
                 placeholder={prevSet ? String(prevSet.reps) : '10'}
                 value={set.reps !== null ? set.reps : ''}
                 onChange={handleRepsChange}
-                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-2.5 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none min-h-[40px] touch-manipulation transition-colors"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-2.5 py-1.5 text-center text-sm font-black text-[var(--text-main)] placeholder:text-[var(--text-muted)]/70 placeholder:font-normal focus:outline-none min-h-[40px] touch-manipulation transition-colors"
               />
               <span className="absolute right-2 text-[10px] font-bold text-[var(--text-muted)] pointer-events-none select-none">
                 r

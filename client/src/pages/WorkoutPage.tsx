@@ -11,7 +11,7 @@ import { AddExerciseSheet } from '../components/workout/AddExerciseSheet';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { WorkoutCompletionScreen } from '../components/workout/WorkoutCompletionScreen';
 import { LogCardioModal } from '../components/cardio/LogCardioModal';
-import { RestTimerBar } from '../components/workout/RestTimerBar';
+import { useTimerStore } from '../store/timerStore';
 import { triggerHaptic } from '../utils/haptics';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -310,6 +310,7 @@ export const WorkoutPage: React.FC = () => {
     if (hasUnsavedChanges) {
       setIsCancelConfirmOpen(true);
     } else {
+      useTimerStore.getState().stopRestTimer();
       if (isEditing) {
         cancelEditingWorkout(userId);
       } else {
@@ -320,6 +321,7 @@ export const WorkoutPage: React.FC = () => {
   };
 
   const confirmDiscard = () => {
+    useTimerStore.getState().stopRestTimer();
     if (isEditing) {
       cancelEditingWorkout(userId);
     } else {
@@ -792,8 +794,104 @@ export const WorkoutPage: React.FC = () => {
       ? currentSession.sections.map((s) => s.displayName).join(' · ')
       : '';
 
+  // Check if ALL exercises across all sections are actually done
+  const isAllWorkoutCompleted = useMemo(() => {
+    if (isEditing) return false;
+    const exercises = currentSession.exercises;
+    if (!exercises || exercises.length === 0) return false;
+
+    // 1. Every existing exercise in the session must be completed
+    if (!exercises.every((ex) => ex.completed)) return false;
+
+    // 2. If the workout has scheduled muscle sections (e.g. Chest, Shoulders, Triceps in Push B),
+    // every section must contain at least 1 exercise before declaring the workout completed.
+    if (sectionsList && sectionsList.length > 0) {
+      const allSectionsCovered = sectionsList.every((sec) => {
+        const legKey = isLegSubArea(sec.subAreas, sec.displayName);
+        const secExercises = exercises.filter((ex) => {
+          if (legKey) {
+            return getLegSection(ex.exercise) === legKey;
+          }
+          if (sec.subAreas && sec.subAreas.length > 0) {
+            return ex.exercise.muscleAreaEmphasis.some((area) => sec.subAreas!.includes(area));
+          }
+          return ex.exercise.primaryMuscle === sec.name;
+        });
+        return secExercises.length > 0;
+      });
+      if (!allSectionsCovered) return false;
+    }
+
+    return true;
+  }, [isEditing, currentSession.exercises, sectionsList]);
+
   return (
-    <div className="space-y-6 pb-36 md:pb-24 max-w-full overflow-x-hidden">
+    <div className="space-y-6 pb-36 md:pb-24 max-w-full">
+      {/* Workout Sticky Header - Permanently pinned at the top on mobile & desktop */}
+      <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3 bg-[var(--bg-main)]/95 backdrop-blur-md border-b border-[var(--border-subtle)] shadow-xs">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-[10px] font-black uppercase tracking-wider ${
+                  isEditing ? 'text-amber-500' : 'text-[var(--primary)]'
+                }`}
+              >
+                {isEditing ? 'EDITING' : 'IN PROGRESS'}
+              </span>
+              {/* Prominent Live Stopwatch Badge */}
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-main)] font-mono shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{formatStopwatch(elapsedSeconds)}</span>
+              </div>
+            </div>
+            <h1 className="text-base sm:text-lg font-black text-[var(--text-main)] uppercase tracking-tight truncate mt-0.5">
+              {activeTitle}
+            </h1>
+            {activeSubtitle && (
+              <div className="text-[11px] font-medium text-[var(--text-secondary)] truncate">
+                {activeSubtitle}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Safe cancel action */}
+            <button
+              type="button"
+              onClick={handleHeaderCancel}
+              className="text-xs font-bold text-[var(--text-muted)] hover:text-rose-400 px-2 py-1.5 rounded-lg transition-colors cursor-pointer"
+              title="Discard or exit workout"
+            >
+              Cancel
+            </button>
+
+            {isEditing ? (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSaveEdits}
+                disabled={isFinishing}
+                className="font-black h-9 px-3.5 shadow-sm active:scale-95"
+              >
+                <Check className="w-4 h-4 mr-1 stroke-[3]" />
+                <span>{isFinishing ? 'Saving...' : 'Save'}</span>
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsSummaryOpen(true)}
+                className="font-black h-9 px-3.5 shadow-sm active:scale-95 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
+              >
+                <Check className="w-4 h-4 mr-1 stroke-[3]" />
+                <span>Finish</span>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Editing Mode Banner */}
       {isEditing && editingSession && (
         <div className="bg-[var(--bg-card)] border border-amber-500/30 rounded-xl px-3.5 py-2.5 flex items-center justify-between text-xs">
@@ -831,69 +929,6 @@ export const WorkoutPage: React.FC = () => {
           </button>
         </div>
       )}
-
-      {/* Workout Sticky Header */}
-      <div className="flex items-center justify-between py-2.5 px-1 border-b border-[var(--border-subtle)] sticky top-0 bg-[var(--bg-main)]/95 backdrop-blur-md z-20">
-        <div className="min-w-0 mr-2 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-[10px] font-extrabold uppercase tracking-widest ${
-                isEditing ? 'text-amber-500' : 'text-[var(--primary)]'
-              }`}
-            >
-              {isEditing ? 'EDITING' : 'IN PROGRESS'}
-            </span>
-            {/* Live Stopwatch Badge */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-main)] font-mono shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{formatStopwatch(elapsedSeconds)}</span>
-            </span>
-          </div>
-          <h1 className="text-base sm:text-lg font-black text-[var(--text-main)] uppercase tracking-tight truncate mt-0.5">
-            {activeTitle}
-          </h1>
-          {activeSubtitle && (
-            <div className="text-[11px] font-medium text-[var(--text-secondary)] truncate">
-              {activeSubtitle}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Discreet safe cancel action */}
-          <button
-            type="button"
-            onClick={handleHeaderCancel}
-            className="text-[11px] font-bold text-[var(--text-muted)] hover:text-rose-400 p-2 rounded-xl transition-colors cursor-pointer"
-            title="Discard or exit workout"
-          >
-            Cancel
-          </button>
-
-          {isEditing ? (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleSaveEdits}
-              disabled={isFinishing}
-              className="font-extrabold h-9 px-3.5 shadow-sm active:scale-95"
-            >
-              <Check className="w-4 h-4 mr-1 stroke-[3]" />
-              <span>{isFinishing ? 'Saving...' : 'Save'}</span>
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsSummaryOpen(true)}
-              className="font-extrabold h-9 px-3.5 shadow-sm active:scale-95"
-            >
-              <Check className="w-4 h-4 mr-1 stroke-[3]" />
-              <span>Finish</span>
-            </Button>
-          )}
-        </div>
-      </div>
 
       {/* ⚡ Quick Routine Loader: "Load Last [Workout Name]" */}
       {!isEditing && lastMatchingCompletedSession && (
@@ -1024,10 +1059,8 @@ export const WorkoutPage: React.FC = () => {
       </div>
 
       {/* Completion Indication Banner (Active Session only) */}
-      {!isEditing &&
-        currentSession.exercises.length > 0 &&
-        currentSession.exercises.every((ex) => ex.completed) && (
-          <div className="bg-[var(--success-subtle)] border border-[var(--success-border)] rounded-2xl p-5 text-center space-y-2.5 my-4">
+      {isAllWorkoutCompleted && (
+        <div className="bg-[var(--success-subtle)] border border-[var(--success-border)] rounded-2xl p-5 text-center space-y-2.5 my-4">
             <div className="w-11 h-11 rounded-full bg-[var(--success)] text-white flex items-center justify-center mx-auto shadow-sm">
               <Check className="w-6 h-6 stroke-[3]" />
             </div>
@@ -1298,9 +1331,6 @@ export const WorkoutPage: React.FC = () => {
           </div>
         </div>
       </Modal>
-
-      {/* Floating Sticky In-Workout Rest Timer */}
-      <RestTimerBar />
     </div>
   );
 };
