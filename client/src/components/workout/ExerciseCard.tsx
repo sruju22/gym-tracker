@@ -12,6 +12,7 @@ import { useAuthStore } from '../../store/authStore';
 import { formatDateShort } from '../../utils/formatters';
 import { calculate1RM } from '../../utils/oneRM';
 import { useTimerStore } from '../../store/timerStore';
+import { triggerHaptic } from '../../utils/haptics';
 
 interface ExerciseCardProps {
   workoutExercise: WorkoutExercise;
@@ -102,14 +103,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     e.stopPropagation();
     // Protect if any set has been logged or marked completed
     if (hasValidSet || completed || sets.some((s) => s.completed || (s.weight && s.weight > 0) || (s.reps && s.reps > 0))) {
+      triggerHaptic('warning');
       setShowDeleteConfirm(true);
     } else {
+      triggerHaptic('light');
+      useTimerStore.getState().stopRestTimer();
       removeExerciseFromWorkout(userId, workoutExercise.id);
     }
   };
 
   const handleConfirmDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    triggerHaptic('warning');
+    useTimerStore.getState().stopRestTimer();
     removeExerciseFromWorkout(userId, workoutExercise.id);
     setShowDeleteConfirm(false);
   };
@@ -427,7 +433,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => addSetToExercise(userId, workoutExercise.id)}
+            onClick={() => {
+              triggerHaptic('light');
+              addSetToExercise(userId, workoutExercise.id);
+            }}
             className="text-xs"
           >
             <Plus className="w-3.5 h-3.5 mr-1 text-[var(--primary)]" />
@@ -435,7 +444,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </Button>
 
           <button
-            onClick={() => setShowNotes(!showNotes)}
+            onClick={() => {
+              triggerHaptic('light');
+              setShowNotes(!showNotes);
+            }}
             className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors font-medium cursor-pointer"
           >
             <StickyNote className="w-3.5 h-3.5" />
@@ -451,6 +463,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           onClick={(e) => {
             e.stopPropagation();
             if (!isDoneEnabled) return;
+            triggerHaptic('success');
             useTimerStore.getState().stopRestTimer();
             if (onDone) {
               onDone();

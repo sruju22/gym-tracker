@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Timer, Plus, X, Volume2, VolumeX } from 'lucide-react';
 import { useTimerStore } from '../../store/timerStore';
+import { useWorkoutStore } from '../../store/workoutStore';
+import { useAuthStore } from '../../store/authStore';
 
 export const RestTimerBar: React.FC = () => {
   const {
@@ -13,7 +15,26 @@ export const RestTimerBar: React.FC = () => {
     toggleSound,
   } = useTimerStore();
 
-  if (!isRestActive || restSecondsRemaining <= 0) return null;
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const userId = currentUser?.id || 'guest';
+  const activeSession = useWorkoutStore((state) => state.getActiveSession(userId));
+  const editingSession = useWorkoutStore((state) => state.getEditingSession(userId));
+  const currentSession = editingSession || activeSession;
+
+  // A rest timer is strictly valid only when an active workout with exercises is present
+  const hasValidSessionExercises = Boolean(
+    currentSession &&
+    currentSession.exercises &&
+    currentSession.exercises.length > 0
+  );
+
+  useEffect(() => {
+    if (isRestActive && !hasValidSessionExercises) {
+      stopRestTimer();
+    }
+  }, [isRestActive, hasValidSessionExercises, stopRestTimer]);
+
+  if (!isRestActive || restSecondsRemaining <= 0 || !hasValidSessionExercises) return null;
 
   const minutes = Math.floor(restSecondsRemaining / 60);
   const seconds = restSecondsRemaining % 60;

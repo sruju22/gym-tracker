@@ -1178,6 +1178,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       startTodayWorkout: (userId: string) => {
+        try {
+          useTimerStore.getState().stopRestTimer();
+        } catch {}
         const active = get().getActiveSession(userId);
         const userData = get().getUserData(userId);
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
@@ -1225,6 +1228,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       startScheduledWorkout: (userId: string, day: DayOfWeek) => {
+        try {
+          useTimerStore.getState().stopRestTimer();
+        } catch {}
         const active = get().getActiveSession(userId);
         const userData = get().getUserData(userId);
         const plan = userData.weeklyPlan || DEFAULT_WORKOUT_PLAN;
@@ -1271,6 +1277,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       startCustomWorkout: (userId: string, muscleGroups: MuscleGroup[]) => {
+        try {
+          useTimerStore.getState().stopRestTimer();
+        } catch {}
         const active = get().getActiveSession(userId);
         if (
           active &&
@@ -2012,6 +2021,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       removeExerciseFromWorkout: (userId, exerciseId) => {
+        try {
+          useTimerStore.getState().stopRestTimer();
+        } catch {}
         const userData = get().getUserData(userId);
         const targetSession = userData.editingSession || userData.activeSession;
         const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';

@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { Home, Dumbbell, BookOpen, History, TrendingUp } from 'lucide-react';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
+import { triggerHaptic } from '../../utils/haptics';
 
 export const BottomNav: React.FC = () => {
   const currentUser = useAuthStore((state) => state.currentUser);
@@ -37,6 +38,7 @@ export const BottomNav: React.FC = () => {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
+              onClick={() => triggerHaptic('light')}
               className={({ isActive }) =>
                 `group flex flex-col items-center justify-center flex-1 min-h-[44px] py-0.5 transition-all duration-150 cursor-pointer select-none ${
                   isActive
