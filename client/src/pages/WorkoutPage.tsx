@@ -35,6 +35,7 @@ export const WorkoutPage: React.FC = () => {
     getEditingSession,
     getTodayCompletedWorkout,
     getWeeklyPlan,
+    getHistory,
     startTodayWorkout,
     startCustomWorkout,
     startEditingWorkout,
@@ -84,18 +85,25 @@ export const WorkoutPage: React.FC = () => {
   const sessionStartedAt = currentSession?.startedAt;
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(() => {
     if (!sessionStartedAt) return 0;
-    const diff = Math.floor((Date.now() - new Date(sessionStartedAt).getTime()) / 1000);
-    return Math.max(0, diff);
+    const ms = new Date(sessionStartedAt).getTime();
+    return isNaN(ms) ? 0 : Math.max(0, Math.floor((Date.now() - ms) / 1000));
   });
 
   useEffect(() => {
-    if (!sessionStartedAt) return;
-    const updateElapsed = () => {
-      const diff = Math.floor((Date.now() - new Date(sessionStartedAt).getTime()) / 1000);
-      setElapsedSeconds(Math.max(0, diff));
+    if (!sessionStartedAt) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const calcElapsed = () => {
+      const ms = new Date(sessionStartedAt).getTime();
+      return isNaN(ms) ? 0 : Math.max(0, Math.floor((Date.now() - ms) / 1000));
     };
-    updateElapsed();
-    const interval = setInterval(updateElapsed, 1000);
+
+    const interval = setInterval(() => {
+      setElapsedSeconds(calcElapsed());
+    }, 1000);
+
     return () => clearInterval(interval);
   }, [sessionStartedAt]);
 
@@ -111,18 +119,22 @@ export const WorkoutPage: React.FC = () => {
   };
 
   // Find last matching completed session for "Load Last [Routine]" button
-  const workoutHistory = useWorkoutStore((state) => state.getHistory(userId));
+  const currentWorkoutName = currentSession?.workoutName;
+  const currentSessionId = currentSession?.id;
   const lastMatchingCompletedSession = useMemo(() => {
-    if (!currentSession) return null;
-    return workoutHistory.find(
-      (h) =>
-        h.status === 'completed' &&
-        h.exercises &&
-        h.exercises.length > 0 &&
-        (h.workoutName?.toLowerCase() === currentSession.workoutName?.toLowerCase() ||
-          h.muscleGroups?.some((mg) => currentSession.muscleGroups?.includes(mg)))
+    if (!currentWorkoutName && !currentSession?.muscleGroups?.length) return null;
+    const history = getHistory(userId);
+    return (
+      history.find(
+        (h) =>
+          h.status === 'completed' &&
+          h.exercises &&
+          h.exercises.length > 0 &&
+          (h.workoutName?.toLowerCase() === currentWorkoutName?.toLowerCase() ||
+            h.muscleGroups?.some((mg) => currentSession?.muscleGroups?.includes(mg)))
+      ) || null
     );
-  }, [workoutHistory, currentSession]);
+  }, [getHistory, userId, currentWorkoutName, currentSessionId]);
 
   const handleLoadLastMatchingRoutine = () => {
     if (!lastMatchingCompletedSession || !currentSession) return;
