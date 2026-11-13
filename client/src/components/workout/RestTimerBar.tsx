@@ -1,14 +1,27 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Timer, Plus, X, Volume2, VolumeX, ArrowRight } from 'lucide-react';
+import { Timer, Plus, X, Volume2, VolumeX, ArrowRight, Bell } from 'lucide-react';
 import { useTimerStore } from '../../store/timerStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
+import { triggerHaptic } from '../../utils/haptics';
+import {
+  getNotificationPermissionState,
+  requestTimerNotificationPermission,
+  showRestCompleteNotification,
+  isNotificationSupported,
+} from '../../utils/timerNotification';
 
 export const RestTimerBar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isWorkoutPage = location.pathname === '/workout';
+
+  const [permState, setPermState] = useState<NotificationPermission | 'unsupported'>('unsupported');
+
+  useEffect(() => {
+    setPermState(getNotificationPermissionState());
+  }, []);
 
   const {
     restSecondsRemaining,
@@ -51,6 +64,17 @@ export const RestTimerBar: React.FC = () => {
     Math.max(0, ((restTotalSeconds - restSecondsRemaining) / (restTotalSeconds || 1)) * 100)
   );
 
+  const handleRequestPermission = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const granted = await requestTimerNotificationPermission();
+    const nextState = getNotificationPermissionState();
+    setPermState(nextState);
+    if (granted) {
+      triggerHaptic('success');
+      showRestCompleteNotification('Rest alerts enabled! 🏋️');
+    }
+  };
+
   return (
     <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px)+10px)] md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-sm animate-slide-up pointer-events-auto">
       <div className="relative overflow-hidden rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-red-500/50 shadow-[0_16px_40px_rgba(0,0,0,0.7),0_0_24px_rgba(239,68,68,0.22)] p-2.5 sm:p-3 text-[var(--text-main)] flex items-center justify-between gap-3">
@@ -78,7 +102,7 @@ export const RestTimerBar: React.FC = () => {
             <Timer className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[10px] font-black uppercase tracking-wider text-red-400">
                 Rest Timer
               </span>
@@ -97,6 +121,20 @@ export const RestTimerBar: React.FC = () => {
                   <VolumeX className="w-3 h-3 text-[var(--text-muted)]" />
                 )}
               </button>
+
+              {/* iOS / Browser Notification Permission Prompt */}
+              {isNotificationSupported() && permState !== 'granted' && permState !== 'unsupported' && (
+                <button
+                  type="button"
+                  onClick={handleRequestPermission}
+                  className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 px-1.5 py-0.5 rounded-md border border-amber-500/30 transition-all cursor-pointer animate-pulse select-none active:scale-95"
+                  title="Enable iPhone lock-screen notifications"
+                >
+                  <Bell className="w-2.5 h-2.5" />
+                  <span>Enable Alerts</span>
+                </button>
+              )}
+
               {!isWorkoutPage && (
                 <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-red-300 bg-red-500/20 px-1.5 py-0.2 rounded-md">
                   Resume <ArrowRight className="w-2.5 h-2.5" />

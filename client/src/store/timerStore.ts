@@ -5,6 +5,8 @@ import {
   showRestCompleteNotification,
   updateTabTitleWithTimer,
   restoreDefaultTabTitle,
+  startBackgroundKeepAlive,
+  stopBackgroundKeepAlive,
 } from '../utils/timerNotification';
 
 interface TimerState {
@@ -76,6 +78,9 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     // Gracefully request notification permission on user interaction
     requestTimerNotificationPermission().catch(() => {});
 
+    // Keep iOS WebKit timer awake in background during rest period
+    startBackgroundKeepAlive();
+
     triggerHaptic('light');
 
     const now = Date.now();
@@ -119,6 +124,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       clearInterval(restInterval);
       restInterval = null;
     }
+    stopBackgroundKeepAlive();
     restoreDefaultTabTitle();
     set({
       isRestActive: false,
@@ -147,6 +153,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         clearInterval(restInterval);
         restInterval = null;
       }
+      stopBackgroundKeepAlive();
 
       if (isSoundEnabled) {
         playChime('done');

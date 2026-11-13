@@ -1,11 +1,13 @@
 /**
  * GymTrackie Rest Timer Notification & Dynamic Tab Title Utilities
- * Safely handles Web Notifications, tight auto-closing, and out-of-tab title indicators.
+ * Supports iOS PWA WebKit ServiceWorker showNotification, Background Audio Keep-Alive,
+ * dynamic tab title updates, and tight auto-closing.
  */
 
 const DEFAULT_TITLE = 'GymTrackie — Fitness & Workout Tracking';
 let activeNotification: Notification | null = null;
 let titleResetTimeout: ReturnType<typeof setTimeout> | null = null;
+let silentAudio: HTMLAudioElement | null = null;
 
 /**
  * Determine recommended rest duration based on exercise mechanics:
@@ -20,10 +22,73 @@ export const getRecommendedRestSeconds = (exerciseType?: string): number => {
 };
 
 /**
- * Safely request notification permissions in background without disrupting user flow.
+ * Check if the browser environment supports Notifications.
+ */
+export const isNotificationSupported = (): boolean => {
+  return typeof window !== 'undefined' && 'Notification' in window;
+};
+
+/**
+ * Get current notification permission state safely.
+ */
+export const getNotificationPermissionState = (): NotificationPermission | 'unsupported' => {
+  if (!isNotificationSupported()) return 'unsupported';
+  try {
+    return Notification.permission;
+  } catch {
+    return 'unsupported';
+  }
+};
+
+/**
+ * Check whether app is running as an installed standalone PWA on iOS.
+ */
+export const isIOSDevice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return /iPhone|iPad|iPod/.test(navigator.userAgent || '');
+};
+
+export const isStandalonePWA = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as any).standalone === true
+  );
+};
+
+/**
+ * iOS WebKit Background Audio Keep-Alive:
+ * Prevents iOS from freezing the background JavaScript timer during a rest period.
+ */
+export const startBackgroundKeepAlive = (): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (!silentAudio) {
+      // 1-second inaudible WAV audio data URI
+      silentAudio = new Audio(
+        'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
+      );
+      silentAudio.loop = true;
+      silentAudio.volume = 0.01;
+    }
+    silentAudio.play().catch(() => {});
+  } catch {}
+};
+
+export const stopBackgroundKeepAlive = (): void => {
+  if (silentAudio) {
+    try {
+      silentAudio.pause();
+      silentAudio.currentTime = 0;
+    } catch {}
+  }
+};
+
+/**
+ * Safely request notification permissions in response to a direct user action.
  */
 export const requestTimerNotificationPermission = async (): Promise<boolean> => {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
+  if (!isNotificationSupported()) {
     return false;
   }
 
@@ -86,56 +151,66 @@ export const restoreDefaultTabTitle = (): void => {
 
 /**
  * Trigger system notification when outside the app / browser tab is backgrounded.
- * Automatically tightly closes after 5 seconds to prevent system clutter.
+ * Uses ServiceWorker registration (mandatory for iOS PWA) with standard Notification fallback.
  */
-export const showRestCompleteNotification = (exerciseName?: string | null): void => {
-  if (typeof window === 'undefined' || !('Notification' in window)) return;
-  if (Notification.permission !== 'granted') return;
+export const showRestCompleteNotification = async (exerciseName?: string | null): Promise<void> => {
+  if (typeof window === 'undefined') return;
 
-  try {
-    // Close existing notification if any
-    if (activeNotification) {
-      try {
-        activeNotification.close();
-      } catch {}
-      activeNotification = null;
+  const title = 'Ready for Next Set! 🏋️';
+  const body = exerciseName
+    ? `Rest finished! Time to hit your next set of ${exerciseName}.`
+    : 'Rest finished! Time to hit your next set.';
+
+  const notificationOptions: NotificationOptions & { renotify?: boolean } = {
+    body,
+    icon: '/gymtrackie-icon.svg',
+    badge: '/favicon.svg',
+    tag: 'gymtrackie-rest-notification',
+    renotify: true,
+    silent: false,
+  };
+
+  // 1. Service Worker showNotification (Required for iOS WebKit PWA and modern Android/Chrome)
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg && typeof reg.showNotification === 'function') {
+        await reg.showNotification(title, notificationOptions);
+        return;
+      }
+    } catch {
+      // Fall through to standard notification if service worker invocation fails
     }
+  }
 
-    const title = 'Ready for Next Set! 🏋️';
-    const body = exerciseName
-      ? `Rest finished! Time to hit your next set of ${exerciseName}.`
-      : 'Rest finished! Time to hit your next set.';
+  // 2. Standard Notification fallback (for desktop browsers)
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      if (activeNotification) {
+        try {
+          activeNotification.close();
+        } catch {}
+        activeNotification = null;
+      }
 
-    const notificationOptions: NotificationOptions & { renotify?: boolean } = {
-      body,
-      icon: '/gymtrackie-icon.svg',
-      badge: '/favicon.svg',
-      tag: 'gymtrackie-rest-notification',
-      renotify: true,
-      silent: false,
-    };
+      const notification = new Notification(title, notificationOptions);
+      activeNotification = notification;
 
-    const notification = new Notification(title, notificationOptions);
-
-    activeNotification = notification;
-
-    notification.onclick = () => {
-      try {
-        window.focus();
-        notification.close();
-      } catch {}
-    };
-
-    // Tightly close notification after 5 seconds so it doesn't linger forever
-    setTimeout(() => {
-      try {
-        if (activeNotification === notification) {
+      notification.onclick = () => {
+        try {
+          window.focus();
           notification.close();
-          activeNotification = null;
-        }
-      } catch {}
-    }, 5000);
-  } catch {
-    // Notification constructor failed or blocked
+        } catch {}
+      };
+
+      setTimeout(() => {
+        try {
+          if (activeNotification === notification) {
+            notification.close();
+            activeNotification = null;
+          }
+        } catch {}
+      }, 5000);
+    } catch {}
   }
 };
