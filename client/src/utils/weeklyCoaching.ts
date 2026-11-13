@@ -643,11 +643,62 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
     });
   }
 
-  // Check 1: Missed Workout in Current Week
+  // Helper: Split family classification for intelligent catch-up satisfaction
+  const getSplitCategory = (name?: string): 'push' | 'pull' | 'legs' | 'other' => {
+    if (!name) return 'other';
+    const lower = name.toLowerCase().trim();
+    if (lower.startsWith('push') || lower.includes('push')) return 'push';
+    if (lower.startsWith('pull') || lower.includes('pull')) return 'pull';
+    if (lower.startsWith('leg') || lower.includes('leg') || lower.includes('squat')) return 'legs';
+    return 'other';
+  };
+
+  const isMissedWorkoutSatisfied = (missed: DayScheduleAudit): boolean => {
+    const missedCategory = getSplitCategory(missed.scheduledWorkoutName);
+    const missedMuscles = (missed.scheduledMuscleGroups || []).map((m) => m.toLowerCase());
+
+    return curStrengthSessions.some((session) => {
+      const sCategory = getSplitCategory(session.workoutName);
+
+      // 1. Same split family completed in current week (e.g. completed "Push B" satisfies missed "Push A")
+      if (missedCategory !== 'other' && sCategory === missedCategory) {
+        return true;
+      }
+
+      // 2. Exact or matching workout name
+      const missedName = (missed.scheduledWorkoutName || '').trim().toLowerCase();
+      const sName = (session.workoutName || '').trim().toLowerCase();
+      if (missedName && sName && (sName.includes(missedName) || missedName.includes(sName))) {
+        return true;
+      }
+
+      // 3. Muscle overlap: if completed session covered >= 60% of the missed session's muscle groups
+      if (missedMuscles.length > 0) {
+        const sessionMuscles = new Set<string>();
+        (session.muscleGroups || []).forEach((m) => sessionMuscles.add(m.toLowerCase()));
+        (session.exercises || []).forEach((e) => {
+          const p = (e.exercise?.primaryMuscle || (e as any).primaryMuscle || '').toLowerCase();
+          if (p) sessionMuscles.add(p);
+        });
+
+        const matchCount = missedMuscles.filter((m) => sessionMuscles.has(m)).length;
+        if (matchCount >= Math.ceil(missedMuscles.length * 0.6)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  };
+
+  // Check 1: Missed Workout in Current Week (Only if NOT already satisfied by a completed session in same split family/muscles)
   const missedDays = scheduleAudit.filter((d) => d.status === 'missed');
-  if (missedDays.length > 0) {
-    const firstMissed = missedDays[0];
+  const activeMissedDays = missedDays.filter((d) => !isMissedWorkoutSatisfied(d));
+
+  if (activeMissedDays.length > 0) {
+    const firstMissed = activeMissedDays[0];
     const musclesStr = firstMissed.scheduledMuscleGroups.map(formatMuscleName).join(', ');
+    const isTodayScheduledTraining = Boolean(todayAudit && !todayAudit.isRest && todayAudit.status === 'today');
 
     if (isRestDay) {
       // On a scheduled rest day, NEVER pressure the user with high-priority "Start Workout".
@@ -674,6 +725,17 @@ export function deriveWeeklyCoaching(context: WeeklyCoachingContext): WeeklyCoac
         actionLabel: 'Review Split',
         actionRoute: '/workout',
         actionType: 'view_plan',
+      });
+    } else if (isTodayScheduledTraining) {
+      candidateSteps.push({
+        id: `step_missed_${firstMissed.day}`,
+        category: 'schedule_adherence',
+        priority: 'high',
+        title: `Catch Up: Missed ${firstMissed.scheduledWorkoutName || firstMissed.dayName}`,
+        rationale: `${firstMissed.dayName}'s scheduled workout (${musclesStr || 'session'}) was missed earlier. Complete today's scheduled ${todayAudit?.scheduledWorkoutName || 'routine'} as planned to maintain split balance, or make up missed key compound sets on your rest day.`,
+        actionLabel: 'Start Workout',
+        actionRoute: '/workout',
+        actionType: 'start_workout',
       });
     } else {
       candidateSteps.push({

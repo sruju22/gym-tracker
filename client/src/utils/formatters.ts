@@ -17,8 +17,10 @@ export function formatDateShort(dateString: string): string {
 
 export function formatDateLabel(dateStr: string): string {
   try {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
+    if (!dateStr) return '';
+    const date = parseLocalDate(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -27,9 +29,9 @@ export function formatDateLabel(dateStr: string): string {
     if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
 
     return date.toLocaleDateString(undefined, {
-      weekday: 'short',
       month: 'short',
       day: 'numeric',
+      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
     });
   } catch {
     return dateStr;

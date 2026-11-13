@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import { LogWeightModal } from './LogWeightModal';
 import { ConfirmDeleteModal } from '../ui/ConfirmDeleteModal';
 import { WeightLog } from '../../types';
+import { formatDateLabel } from '../../utils/formatters';
 
 export const BodyWeightCard: React.FC = () => {
   const { currentUser } = useAuthStore();
@@ -56,35 +57,13 @@ export const BodyWeightCard: React.FC = () => {
     return Math.round(diff * 10) / 10;
   }, [sortedLogs, latestLog]);
 
-  const formatDateLabel = (dateStr: string) => {
+  const formatLogTime = (dateStr: string) => {
     try {
-      const [year, month, day] = dateStr.split('-').map(Number);
-      const date = new Date(year, month - 1, day);
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
-
-      if (
-        date.getDate() === today.getDate() &&
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear()
-      ) {
-        return 'Today';
-      }
-      if (
-        date.getDate() === yesterday.getDate() &&
-        date.getMonth() === yesterday.getMonth() &&
-        date.getFullYear() === yesterday.getFullYear()
-      ) {
-        return 'Yesterday';
-      }
-
-      return date.toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-      });
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     } catch {
-      return dateStr;
+      return '';
     }
   };
 
@@ -249,13 +228,15 @@ export const BodyWeightCard: React.FC = () => {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-xs font-bold text-[var(--text-main)]">
                                 {formatDateLabel(log.date)}
                               </span>
-                              <span className="text-[10px] text-[var(--text-muted)]">
-                                ({log.date})
-                              </span>
+                              {formatLogTime(log.date) && (
+                                <span className="text-[10px] text-[var(--text-muted)]">
+                                  · {formatLogTime(log.date)}
+                                </span>
+                              )}
                             </div>
                             {log.notes && (
                               <p className="text-[11px] text-[var(--text-secondary)] truncate max-w-[200px] sm:max-w-xs">

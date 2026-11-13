@@ -562,6 +562,58 @@ async function runTests() {
     assertEqual(prStep?.actionLabel, 'View Progression', 'Action label is View Progression');
   }
 
+  // ==========================================
+  // Test 11: Missed Workout Satisfied by Later Routine in Same Split Family
+  // ==========================================
+  console.log('--- Test 11: Missed Push A Satisfied by Completed Push B ---');
+  {
+    // User missed Monday (Push A: chest, shoulders, triceps).
+    // On Thursday (Oct 22), user completed Push B (chest, shoulders, triceps).
+    // Today is Friday (Oct 23: Pull B).
+    const thursdayPushB: WorkoutSession = {
+      id: 's_push_b',
+      date: '2026-10-22T10:00:00Z',
+      completedAt: '2026-10-22T11:00:00Z',
+      dayOfWeek: 'thursday',
+      status: 'completed',
+      workoutName: 'Push B',
+      muscleGroups: ['chest', 'shoulders', 'triceps'],
+      totalVolume: 6500,
+      totalSets: 15,
+      exercises: [],
+    };
+
+    const pplWeeklyPlan: WeeklySchedule = {
+      monday: { name: 'Push A', isRest: false, muscleGroups: [{ name: 'chest', displayName: 'CHEST' }, { name: 'shoulders', displayName: 'SHOULDERS' }, { name: 'triceps', displayName: 'TRICEPS' }] },
+      tuesday: { name: 'Pull A', isRest: false, muscleGroups: [{ name: 'back', displayName: 'BACK' }, { name: 'biceps', displayName: 'BICEPS' }] },
+      wednesday: { name: 'Legs A', isRest: false, muscleGroups: [{ name: 'legs', displayName: 'LEGS' }] },
+      thursday: { name: 'Push B', isRest: false, muscleGroups: [{ name: 'chest', displayName: 'CHEST' }, { name: 'shoulders', displayName: 'SHOULDERS' }, { name: 'triceps', displayName: 'TRICEPS' }] },
+      friday: { name: 'Pull B', isRest: false, muscleGroups: [{ name: 'back', displayName: 'BACK' }, { name: 'biceps', displayName: 'BICEPS' }] },
+      saturday: { name: 'Legs B', isRest: false, muscleGroups: [{ name: 'legs', displayName: 'LEGS' }] },
+      sunday: { name: 'Rest Day', isRest: true, muscleGroups: [] },
+    };
+
+    const fridayRefDate = new Date('2026-10-23T10:00:00Z'); // Friday
+
+    const result = deriveWeeklyCoaching({
+      userId: 'test_ppl_catchup',
+      history: [thursdayPushB],
+      weeklyPlan: pplWeeklyPlan,
+      referenceDate: fridayRefDate,
+    });
+
+    // Monday Push A should NOT be surfaced as an active catch-up step because Push B was completed!
+    const missedPushStep = result.actionableSteps.find(
+      (s) => s.id.includes('missed_monday') || s.title.includes('Push A')
+    );
+    assertEqual(missedPushStep, undefined, 'Missed Push A is suppressed because Push B already satisfied the split');
+
+    // Today's Pull B session should be surfaced
+    const todayStep = result.actionableSteps.find((s) => s.id.includes('today_friday'));
+    assert(Boolean(todayStep), "Surfaces today's Friday Pull B session");
+    assert(Boolean(todayStep?.title.includes('Pull B')), "Title cites Pull B");
+  }
+
   console.log('\n=== ALL PHASE 6 WEEKLY COACHING TESTS PASSED SUCCESSFULLY ===\n');
 }
 
