@@ -255,7 +255,7 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
             </span>
             {adaptiveDecision?.primaryAction === 'recovery_aware_recommendation' && (
               <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 font-semibold">
-                Recovery Window: Hold Load
+                Recovery Window (~48h)
               </span>
             )}
             {adaptiveDecision?.confidence === 'provisional' && (
@@ -318,7 +318,11 @@ export const ExerciseProgressionInsightCard: React.FC<ExerciseProgressionInsight
             onClick={handleApplyClick}
             className="px-3 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
           >
-            <span>Apply in Workout</span>
+            <span>
+              {adaptiveDecision?.primaryAction === 'recovery_aware_recommendation'
+                ? 'Stage for Next Session'
+                : 'Apply in Workout'}
+            </span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         )}

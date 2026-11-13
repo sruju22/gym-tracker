@@ -348,14 +348,22 @@ export function evaluateAdaptiveDecision(
   if (isPrimaryFatigued || isPrimaryInActiveRecovery) {
     const hoursText = hoursSinceLastTrained !== null ? `${Math.round(hoursSinceLastTrained)}h ago` : 'recently';
     const acuteScoreText = primaryAcuteLoadScore.toFixed(1);
+    const weightDisplay = currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'load';
+
+    // Calculate intelligent recovery timeline (typical 48-72h recovery curve)
+    const hoursElapsed = hoursSinceLastTrained !== null ? Math.round(hoursSinceLastTrained) : 0;
+    const hoursRemaining = Math.max(12, 48 - hoursElapsed);
+    const recoveryTimelineText = hoursElapsed < 24
+      ? `in ~${hoursRemaining}h (allow 48h rest)`
+      : `in ~${Math.max(6, 72 - hoursElapsed)}h`;
 
     const headline = isPrimaryFatigued
-      ? `Hold ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'load'} for recovery (high acute fatigue)`
-      : `Hold ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'load'} (active recovery window)`;
+      ? `Hold ${weightDisplay} for recovery (high acute fatigue • target next session)`
+      : `Hold ${weightDisplay} (active recovery window • target next session)`;
 
     const rationale = isPrimaryFatigued
-      ? `While performance history earned a progression, your ${primaryMuscle} has high acute training fatigue (${acuteScoreText} acute score logged ${hoursText}). Attempting a heavier load while fatigued elevates joint strain and technical breakdown. Hold ${currentWorkingWeight > 0 ? `${currentWorkingWeight} kg` : 'working load'} until acute recovery is restored.`
-      : `Your ${primaryMuscle} was directly loaded ${hoursText} (acute score: ${acuteScoreText}) and remains in its active recovery window. Joint capsules and connective tissues are adapting; hold current working load and prioritize crisp rep tempo.`;
+      ? `Your ${primaryMuscle} was directly loaded ${hoursText} (acute fatigue: ${acuteScoreText}). Allow full muscular recovery (${recoveryTimelineText}) before your next direct ${primaryMuscle} session. When you return fresh for your next workout: hold ${weightDisplay} as your working base and aim for ${targetRepRange.max} clean reps across all working sets before stepping up in weight.`
+      : `Your ${primaryMuscle} was directly loaded ${hoursText} (acute score: ${acuteScoreText}) and is in its active recovery & rebuilding window. Allow ~48h for full tissue recovery (${recoveryTimelineText}). On your next scheduled session: maintain ${weightDisplay} and push toward ${Math.min(targetRepRange.max, currentReps + 1)} reps once fully recovered.`;
 
     // Check synergists for any advisory as well
     for (const syn of synergistReadinessSummary) {
@@ -390,7 +398,8 @@ export function evaluateAdaptiveDecision(
       primaryRationale: rationale,
       supportingEvidence: [
         `Primary muscle (${primaryMuscle}) readiness: ${primaryReadiness} (acute score: ${acuteScoreText}).`,
-        `Last trained: ${hoursText}. Gating prevents premature weight advances during active recovery.`,
+        `Last trained: ${hoursText}. Full recovery anticipated ${recoveryTimelineText}.`,
+        `Next session goal: Maintain ${weightDisplay} as working baseline and build reps to ${targetRepRange.max} before advancing weight.`,
       ],
       targets: {
         recommendedWeight: currentWorkingWeight > 0 ? currentWorkingWeight : null,
