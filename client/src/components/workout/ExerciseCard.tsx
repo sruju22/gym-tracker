@@ -13,6 +13,7 @@ import { formatDateShort } from '../../utils/formatters';
 import { calculate1RM } from '../../utils/oneRM';
 import { useTimerStore } from '../../store/timerStore';
 import { triggerHaptic } from '../../utils/haptics';
+import { getRecommendedRestSeconds } from '../../utils/timerNotification';
 
 interface ExerciseCardProps {
   workoutExercise: WorkoutExercise;
@@ -410,6 +411,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             prevPerf?.sets?.[idx] ||
             (prevPerf?.sets && prevPerf.sets.length > 0 ? prevPerf.sets[prevPerf.sets.length - 1] : undefined);
 
+          const autoRestSeconds = getRecommendedRestSeconds(exercise.exerciseType);
+
           return (
             <SetRow
               key={set.id}
@@ -422,6 +425,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               }
               onRemove={() => removeSetFromExercise(userId, workoutExercise.id, idx)}
               canRemove={sets.length > 1}
+              defaultRestSeconds={autoRestSeconds}
+              exerciseName={exercise.name}
             />
           );
         })}

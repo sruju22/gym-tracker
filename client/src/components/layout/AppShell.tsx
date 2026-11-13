@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Dumbbell, ArrowRight } from 'lucide-react';
+import { Dumbbell, ArrowRight, X, Flame } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 import { DesktopNav } from './DesktopNav';
 import { UserModal } from '../auth/UserModal';
@@ -9,6 +9,7 @@ import { AICoachFAB } from '../coach/AICoachFAB';
 import { RestTimerBar } from '../workout/RestTimerBar';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
+import { useTimerStore } from '../../store/timerStore';
 
 interface AppShellProps {
   children?: React.ReactNode;
@@ -20,6 +21,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const currentUser = useAuthStore((state) => state.currentUser);
   const userId = currentUser?.id || 'guest';
   const activeSession = useWorkoutStore((state) => state.getActiveSession(userId));
+
+  const isReadyNotificationPending = useTimerStore((state) => state.isReadyNotificationPending);
+  const exerciseName = useTimerStore((state) => state.exerciseName);
+  const dismissReadyNotification = useTimerStore((state) => state.dismissReadyNotification);
+
+  const isWorkoutPage = location.pathname === '/workout';
+
+  // Automatically dismiss the pending alert when user returns to /workout page
+  React.useEffect(() => {
+    if (isWorkoutPage && isReadyNotificationPending) {
+      dismissReadyNotification();
+    }
+  }, [isWorkoutPage, isReadyNotificationPending, dismissReadyNotification]);
 
   React.useEffect(() => {
     // Warm up the sign in background image in the browser cache ahead of user interaction
@@ -33,7 +47,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     activeSession.exercises &&
     activeSession.exercises.length > 0
   );
-  const isWorkoutPage = location.pathname === '/workout';
 
   // Live Elapsed Workout Stopwatch for global resume banner
   const [elapsedSeconds, setElapsedSeconds] = React.useState<number>(0);
@@ -65,8 +78,64 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     <div className="min-h-[100dvh] w-full max-w-full min-w-0 bg-[var(--bg-main)] text-[var(--text-main)] font-sans flex flex-col transition-colors">
       <DesktopNav />
 
-      {/* Floating Active Workout Banner when navigating outside workout page */}
-      {hasActiveWorkout && !isWorkoutPage && (
+      {/* "Ready for Next Set" Alert: Displays ONLY when switched to another tab/page outside /workout */}
+      {isReadyNotificationPending && !isWorkoutPage && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="sticky top-0 md:top-16 z-40 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white px-4 py-2.5 shadow-xl animate-slide-down select-none"
+        >
+          <div className="max-w-xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto flex items-center justify-between gap-3 text-xs">
+            <div
+              className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+              onClick={() => {
+                dismissReadyNotification();
+                navigate('/workout');
+              }}
+            >
+              <span className="flex h-3 w-3 relative shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+              </span>
+              <div className="min-w-0 flex items-center gap-2 truncate">
+                <span className="font-black text-sm uppercase tracking-wide flex items-center gap-1 shrink-0">
+                  <Flame className="w-4 h-4 text-amber-300 fill-amber-300 animate-pulse" />
+                  Ready for Next Set!
+                </span>
+                {exerciseName && (
+                  <span className="truncate font-semibold text-emerald-100 hidden sm:inline">
+                    · {exerciseName}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  dismissReadyNotification();
+                  navigate('/workout');
+                }}
+                className="flex items-center gap-1 bg-white text-emerald-900 hover:bg-emerald-50 px-3 py-1 rounded-lg text-xs font-black shadow-sm transition-transform active:scale-95 cursor-pointer"
+              >
+                <span>Go to Workout</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={dismissReadyNotification}
+                className="p-1 rounded-lg bg-black/20 hover:bg-black/30 text-white transition-colors cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* Floating Active Workout Banner when navigating outside workout page and no rest ready alert */}
+      {hasActiveWorkout && !isWorkoutPage && !isReadyNotificationPending && (
         <aside
           role="status"
           aria-label="Active workout in progress"

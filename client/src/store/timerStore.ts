@@ -1,5 +1,11 @@
 import { create } from 'zustand';
 import { triggerHaptic } from '../utils/haptics';
+import {
+  requestTimerNotificationPermission,
+  showRestCompleteNotification,
+  updateTabTitleWithTimer,
+  restoreDefaultTabTitle,
+} from '../utils/timerNotification';
 
 interface TimerState {
   restSecondsRemaining: number;
@@ -7,9 +13,12 @@ interface TimerState {
   restEndTime: number | null;
   isRestActive: boolean;
   isSoundEnabled: boolean;
-  startRestTimer: (durationSeconds?: number) => void;
+  exerciseName?: string | null;
+  isReadyNotificationPending: boolean;
+  startRestTimer: (durationSeconds?: number, exerciseName?: string) => void;
   addSeconds: (seconds: number) => void;
   stopRestTimer: () => void;
+  dismissReadyNotification: () => void;
   toggleSound: () => void;
   tick: () => void;
 }
@@ -56,11 +65,16 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   restEndTime: null,
   isRestActive: false,
   isSoundEnabled: true,
+  exerciseName: null,
+  isReadyNotificationPending: false,
 
-  startRestTimer: (durationSeconds = 90) => {
+  startRestTimer: (durationSeconds = 90, exerciseName?: string) => {
     if (restInterval) {
       clearInterval(restInterval);
     }
+
+    // Gracefully request notification permission on user interaction
+    requestTimerNotificationPermission().catch(() => {});
 
     triggerHaptic('light');
 
@@ -72,6 +86,8 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       restTotalSeconds: durationSeconds,
       restEndTime: endTime,
       isRestActive: true,
+      exerciseName: exerciseName || null,
+      isReadyNotificationPending: false,
     });
 
     restInterval = setInterval(() => {
@@ -103,11 +119,17 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       clearInterval(restInterval);
       restInterval = null;
     }
+    restoreDefaultTabTitle();
     set({
       isRestActive: false,
       restSecondsRemaining: 0,
       restEndTime: null,
+      isReadyNotificationPending: false,
     });
+  },
+
+  dismissReadyNotification: () => {
+    set({ isReadyNotificationPending: false });
   },
 
   toggleSound: () => {
@@ -115,7 +137,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   tick: () => {
-    const { restEndTime, isSoundEnabled, isRestActive } = get();
+    const { restEndTime, isSoundEnabled, isRestActive, exerciseName } = get();
     if (!isRestActive || !restEndTime) return;
 
     const remaining = Math.max(0, Math.ceil((restEndTime - Date.now()) / 1000));
@@ -131,12 +153,24 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       }
       triggerHaptic('success');
 
+      // When tab/app is backgrounded, dispatch system notification and indicate in tab title
+      if (typeof document !== 'undefined' && document.hidden) {
+        showRestCompleteNotification(exerciseName);
+        updateTabTitleWithTimer(0, true);
+      }
+
       set({
         isRestActive: false,
         restSecondsRemaining: 0,
         restEndTime: null,
+        isReadyNotificationPending: true,
       });
       return;
+    }
+
+    // Keep tab title in sync while countdown runs in background
+    if (typeof document !== 'undefined' && document.hidden) {
+      updateTabTitleWithTimer(remaining, false);
     }
 
     set({
@@ -148,10 +182,12 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
+      restoreDefaultTabTitle();
       useTimerStore.getState().tick();
     }
   });
   window.addEventListener('focus', () => {
+    restoreDefaultTabTitle();
     useTimerStore.getState().tick();
   });
 }

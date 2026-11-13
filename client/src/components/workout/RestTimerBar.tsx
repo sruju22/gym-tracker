@@ -1,15 +1,21 @@
 import React, { useEffect } from 'react';
-import { Timer, Plus, X, Volume2, VolumeX } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Timer, Plus, X, Volume2, VolumeX, ArrowRight } from 'lucide-react';
 import { useTimerStore } from '../../store/timerStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
 
 export const RestTimerBar: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isWorkoutPage = location.pathname === '/workout';
+
   const {
     restSecondsRemaining,
     restTotalSeconds,
     isRestActive,
     isSoundEnabled,
+    exerciseName,
     addSeconds,
     stopRestTimer,
     toggleSound,
@@ -60,8 +66,14 @@ export const RestTimerBar: React.FC = () => {
           style={{ width: `${progressPercent}%` }}
         />
 
-        {/* Timer Display */}
-        <div className="relative flex items-center gap-2.5 min-w-0">
+        {/* Timer Display (clickable to return to workout if on another tab) */}
+        <div
+          onClick={() => {
+            if (!isWorkoutPage) navigate('/workout');
+          }}
+          className={`relative flex items-center gap-2.5 min-w-0 ${!isWorkoutPage ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+          title={!isWorkoutPage ? 'Tap to return to workout' : undefined}
+        >
           <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/40 flex items-center justify-center text-red-500 shrink-0 shadow-xs animate-pulse">
             <Timer className="w-5 h-5 stroke-[2.5]" />
           </div>
@@ -72,7 +84,10 @@ export const RestTimerBar: React.FC = () => {
               </span>
               <button
                 type="button"
-                onClick={toggleSound}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSound();
+                }}
                 className="text-[var(--text-muted)] hover:text-white transition-colors p-0.5 cursor-pointer"
                 title={isSoundEnabled ? 'Mute chime' : 'Enable chime'}
               >
@@ -82,10 +97,22 @@ export const RestTimerBar: React.FC = () => {
                   <VolumeX className="w-3 h-3 text-[var(--text-muted)]" />
                 )}
               </button>
+              {!isWorkoutPage && (
+                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-red-300 bg-red-500/20 px-1.5 py-0.2 rounded-md">
+                  Resume <ArrowRight className="w-2.5 h-2.5" />
+                </span>
+              )}
             </div>
-            <span className="text-lg sm:text-xl font-black text-white tracking-tight font-mono drop-shadow-[0_2px_8px_rgba(239,68,68,0.3)]">
-              {formattedTime}
-            </span>
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <span className="text-lg sm:text-xl font-black text-white tracking-tight font-mono drop-shadow-[0_2px_8px_rgba(239,68,68,0.3)]">
+                {formattedTime}
+              </span>
+              {exerciseName && (
+                <span className="text-[11px] text-zinc-400 font-medium truncate max-w-[110px] sm:max-w-[140px]">
+                  {exerciseName}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

@@ -13,6 +13,8 @@ interface SetRowProps {
   onCompleteWithAutoFill?: (fallbackWeight?: number | null, fallbackReps?: number | null) => boolean;
   onRemove?: () => void;
   canRemove?: boolean;
+  defaultRestSeconds?: number;
+  exerciseName?: string;
 }
 
 export const SetRow: React.FC<SetRowProps> = ({
@@ -23,6 +25,8 @@ export const SetRow: React.FC<SetRowProps> = ({
   onCompleteWithAutoFill,
   onRemove,
   canRemove = false,
+  defaultRestSeconds = 90,
+  exerciseName,
 }) => {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [isPlateModalOpen, setIsPlateModalOpen] = useState(false);
@@ -122,7 +126,7 @@ export const SetRow: React.FC<SetRowProps> = ({
       } else {
         onToggleComplete();
       }
-      useTimerStore.getState().startRestTimer(90);
+      useTimerStore.getState().startRestTimer(defaultRestSeconds, exerciseName);
       setFeedbackMsg(null);
       return;
     }
@@ -139,7 +143,7 @@ export const SetRow: React.FC<SetRowProps> = ({
         onUpdate(finalWeight, finalReps);
         onToggleComplete();
       }
-      useTimerStore.getState().startRestTimer(90);
+      useTimerStore.getState().startRestTimer(defaultRestSeconds, exerciseName);
       setFeedbackMsg(null);
       return;
     }
