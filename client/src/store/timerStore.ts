@@ -5,8 +5,8 @@ import {
   showRestCompleteNotification,
   updateTabTitleWithTimer,
   restoreDefaultTabTitle,
-  startBackgroundKeepAlive,
-  stopBackgroundKeepAlive,
+  scheduleServiceWorkerNotification,
+  cancelServiceWorkerNotification,
 } from '../utils/timerNotification';
 
 interface TimerState {
@@ -56,6 +56,13 @@ const playChime = (type: 'beep' | 'done') => {
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
     }
+
+    // Tightly close AudioContext after chime completes to release audio focus immediately
+    setTimeout(() => {
+      try {
+        ctx.close();
+      } catch {}
+    }, 600);
   } catch {
     // Audio Context might be suspended until user interaction
   }
@@ -78,8 +85,8 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     // Gracefully request notification permission on user interaction
     requestTimerNotificationPermission().catch(() => {});
 
-    // Keep iOS WebKit timer awake in background during rest period
-    startBackgroundKeepAlive();
+    // Schedule background notification silently without hijacking device audio session
+    scheduleServiceWorkerNotification(durationSeconds * 1000, exerciseName);
 
     triggerHaptic('light');
 
@@ -111,6 +118,8 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       const nextEndTime = Date.now() + nextRemaining * 1000;
       const nextTotal = Math.max(state.restTotalSeconds, nextRemaining);
 
+      scheduleServiceWorkerNotification(nextRemaining * 1000, state.exerciseName);
+
       return {
         restSecondsRemaining: nextRemaining,
         restTotalSeconds: nextTotal,
@@ -124,7 +133,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       clearInterval(restInterval);
       restInterval = null;
     }
-    stopBackgroundKeepAlive();
+    cancelServiceWorkerNotification();
     restoreDefaultTabTitle();
     set({
       isRestActive: false,
@@ -153,7 +162,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         clearInterval(restInterval);
         restInterval = null;
       }
-      stopBackgroundKeepAlive();
+      cancelServiceWorkerNotification();
 
       if (isSoundEnabled) {
         playChime('done');

@@ -8,6 +8,32 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Handle scheduled notification messages from client
+let scheduledTimerTimeout = null;
+
+self.addEventListener('message', (event) => {
+  if (!event.data) return;
+
+  if (event.data.type === 'SCHEDULE_NOTIFICATION') {
+    if (scheduledTimerTimeout) {
+      clearTimeout(scheduledTimerTimeout);
+      scheduledTimerTimeout = null;
+    }
+    const { delayMs, title, options } = event.data;
+    if (typeof delayMs === 'number' && delayMs > 0) {
+      scheduledTimerTimeout = setTimeout(() => {
+        self.registration.showNotification(title || 'Ready for Next Set! 🏋️', options || {});
+        scheduledTimerTimeout = null;
+      }, delayMs);
+    }
+  } else if (event.data.type === 'CANCEL_NOTIFICATION') {
+    if (scheduledTimerTimeout) {
+      clearTimeout(scheduledTimerTimeout);
+      scheduledTimerTimeout = null;
+    }
+  }
+});
+
 // Handle clicks on lock-screen or banner notifications
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

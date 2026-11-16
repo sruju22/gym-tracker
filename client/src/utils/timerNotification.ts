@@ -7,7 +7,6 @@
 const DEFAULT_TITLE = 'GymTrackie — Fitness & Workout Tracking';
 let activeNotification: Notification | null = null;
 let titleResetTimeout: ReturnType<typeof setTimeout> | null = null;
-let silentAudio: HTMLAudioElement | null = null;
 
 /**
  * Determine recommended rest duration based on exercise mechanics:
@@ -57,31 +56,60 @@ export const isStandalonePWA = (): boolean => {
 };
 
 /**
- * iOS WebKit Background Audio Keep-Alive:
- * Prevents iOS from freezing the background JavaScript timer during a rest period.
+ * Schedule rest timer notification through the background Service Worker
+ * (Runs completely silently with ZERO audio takeover, preserving Spotify/Apple Music playback).
  */
-export const startBackgroundKeepAlive = (): void => {
-  if (typeof window === 'undefined') return;
+export const scheduleServiceWorkerNotification = (delayMs: number, exerciseName?: string | null): void => {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
   try {
-    if (!silentAudio) {
-      // 1-second inaudible WAV audio data URI
-      silentAudio = new Audio(
-        'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
-      );
-      silentAudio.loop = true;
-      silentAudio.volume = 0.01;
+    const title = 'Ready for Next Set! 🏋️';
+    const body = exerciseName
+      ? `Rest finished! Time to hit your next set of ${exerciseName}.`
+      : 'Rest finished! Time to hit your next set.';
+
+    const options: NotificationOptions & { renotify?: boolean } = {
+      body,
+      icon: '/gymtrackie-icon.svg',
+      badge: '/favicon.svg',
+      tag: 'gymtrackie-rest-notification',
+      renotify: true,
+      silent: false,
+    };
+
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SCHEDULE_NOTIFICATION',
+        delayMs,
+        title,
+        options,
+      });
+    } else {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.active?.postMessage({
+          type: 'SCHEDULE_NOTIFICATION',
+          delayMs,
+          title,
+          options,
+        });
+      }).catch(() => {});
     }
-    silentAudio.play().catch(() => {});
   } catch {}
 };
 
-export const stopBackgroundKeepAlive = (): void => {
-  if (silentAudio) {
-    try {
-      silentAudio.pause();
-      silentAudio.currentTime = 0;
-    } catch {}
-  }
+/**
+ * Cancel any pending scheduled notification in the Service Worker.
+ */
+export const cancelServiceWorkerNotification = (): void => {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+  try {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'CANCEL_NOTIFICATION' });
+    } else {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.active?.postMessage({ type: 'CANCEL_NOTIFICATION' });
+      }).catch(() => {});
+    }
+  } catch {}
 };
 
 /**
