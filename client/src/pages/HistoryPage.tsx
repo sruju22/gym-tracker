@@ -16,6 +16,7 @@ import {
   Layers,
   Plus,
   ArrowUpDown,
+  RotateCw,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -117,6 +118,7 @@ export const HistoryPage: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSyncingStrength, setIsSyncingStrength] = useState(false);
 
   // Cardio modal & delete state
   const [isLogCardioOpen, setIsLogCardioOpen] = useState(false);
@@ -147,6 +149,33 @@ export const HistoryPage: React.FC = () => {
   const history = useMemo(() => {
     return getHistory(userId);
   }, [getHistory, userId, userHistoryVersion]);
+
+  // Live reference to the selected strength session (so background sync / edits reflect immediately)
+  const activeSelectedSession = useMemo(() => {
+    if (!selectedSession) return null;
+    return (
+      history.find(
+        (h) =>
+          h.id === selectedSession.id ||
+          (h.clientSessionId && h.clientSessionId === selectedSession.id) ||
+          (selectedSession.clientSessionId && h.id === selectedSession.clientSessionId)
+      ) || selectedSession
+    );
+  }, [selectedSession, history]);
+
+  // Sync any pending local workouts when opening history or re-connecting online
+  useEffect(() => {
+    if (userId && userId !== 'guest') {
+      useWorkoutStore.getState().syncPendingWorkouts(userId);
+    }
+    const handleOnline = () => {
+      if (userId && userId !== 'guest') {
+        useWorkoutStore.getState().syncPendingWorkouts(userId);
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [userId]);
 
   // 2. Raw Cardio Sessions
   const rawCardio = useWorkoutStore((state) =>
@@ -410,9 +439,10 @@ export const HistoryPage: React.FC = () => {
   }, [unifiedFeed, visibleCount]);
 
   const handleDeleteSession = async () => {
-    if (!selectedSession) return;
+    const sessionToDelete = activeSelectedSession || selectedSession;
+    if (!sessionToDelete) return;
     setIsDeleting(true);
-    await deleteWorkout(userId, selectedSession.id);
+    await deleteWorkout(userId, sessionToDelete.id);
     setIsDeleting(false);
     setIsDeleteConfirmOpen(false);
     setSelectedSession(null);
@@ -1088,29 +1118,36 @@ export const HistoryPage: React.FC = () => {
       )}
 
       {/* Strength Workout Details Modal */}
-      {selectedSession && (
+      {activeSelectedSession && (
         <Modal
-          isOpen={Boolean(selectedSession)}
+          isOpen={Boolean(activeSelectedSession)}
           onClose={() => {
             setSelectedSession(null);
             setIsDeleteConfirmOpen(false);
           }}
-          title={`${formatDateShort(selectedSession.completedAt || selectedSession.date)} — ${(
-            selectedSession.workoutName || selectedSession.muscleGroups.join(' + ')
+          title={`${formatDateShort(activeSelectedSession.completedAt || activeSelectedSession.date)} — ${(
+            activeSelectedSession.workoutName || activeSelectedSession.muscleGroups.join(' + ')
           ).toUpperCase()}`}
         >
           <div className="space-y-3">
-            {selectedSession.syncedToBackend === false && (
+            {activeSelectedSession.syncedToBackend === false && (
               <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-2.5 text-xs text-amber-400 font-semibold flex items-center justify-between">
                 <span>Stored locally on this device • Cloud sync pending</span>
                 <button
                   type="button"
-                  onClick={() => {
-                    useWorkoutStore.getState().syncPendingWorkouts(userId);
+                  disabled={isSyncingStrength}
+                  onClick={async () => {
+                    setIsSyncingStrength(true);
+                    try {
+                      await useWorkoutStore.getState().syncPendingWorkouts(userId);
+                    } finally {
+                      setIsSyncingStrength(false);
+                    }
                   }}
-                  className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-[11px] font-bold text-amber-300 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-[11px] font-bold text-amber-300 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  Sync Now
+                  <RotateCw className={`w-3 h-3 ${isSyncingStrength ? 'animate-spin' : ''}`} />
+                  <span>{isSyncingStrength ? 'Syncing...' : 'Sync Now'}</span>
                 </button>
               </div>
             )}
@@ -1120,24 +1157,24 @@ export const HistoryPage: React.FC = () => {
               <div>
                 <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Exercises</div>
                 <div className="text-sm font-black text-[var(--text-main)]">
-                  {selectedSession.exercises.length}
+                  {activeSelectedSession.exercises.length}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Total Sets</div>
-                <div className="text-sm font-black text-[var(--text-main)]">{selectedSession.totalSets}</div>
+                <div className="text-sm font-black text-[var(--text-main)]">{activeSelectedSession.totalSets}</div>
               </div>
               <div>
                 <div className="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Volume</div>
                 <div className="text-sm font-black text-[var(--primary)]">
-                  {selectedSession.totalVolume} kg
+                  {activeSelectedSession.totalVolume} kg
                 </div>
               </div>
             </div>
 
             {/* Exercises & Sets Breakdown */}
             <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-              {normalizeCombinationExercises(selectedSession.exercises).map((ex, exIdx) => {
+              {normalizeCombinationExercises(activeSelectedSession.exercises).map((ex, exIdx) => {
                 const hasNestedStages = ex.sets && ex.sets.some((s) => s.stages && s.stages.length > 0);
 
                 return (
@@ -1222,7 +1259,7 @@ export const HistoryPage: React.FC = () => {
                 variant="primary"
                 size="md"
                 fullWidth
-                onClick={() => handleRepeatWorkout(selectedSession)}
+                onClick={() => handleRepeatWorkout(activeSelectedSession)}
                 className="font-black flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm active:scale-95"
               >
                 <RotateCcw className="w-4 h-4 stroke-[2.5]" />
@@ -1234,7 +1271,7 @@ export const HistoryPage: React.FC = () => {
                 size="md"
                 fullWidth
                 onClick={() => {
-                  startEditingWorkout(userId, selectedSession);
+                  startEditingWorkout(userId, activeSelectedSession);
                   setSelectedSession(null);
                   navigate('/workout');
                 }}

@@ -43,6 +43,7 @@ export const WorkoutPage: React.FC = () => {
     addMuscleSectionToWorkout,
     moveExerciseInWorkout,
     toggleExerciseCompleted,
+    markExerciseDone,
     setExerciseCollapsed,
     toggleExerciseExpanded,
     cancelWorkout,
@@ -386,7 +387,7 @@ export const WorkoutPage: React.FC = () => {
   };
 
   const handleExerciseDone = (currentExId: string) => {
-    toggleExerciseCompleted(userId, currentExId);
+    markExerciseDone(userId, currentExId);
   };
 
   const formatCompletionTime = (isoString?: string) => {

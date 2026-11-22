@@ -257,6 +257,7 @@ interface WorkoutStore {
   removeExerciseFromWorkout: (userId: string, exerciseId: string) => void;
   moveExerciseInWorkout: (userId: string, exerciseId: string, direction: 'up' | 'down') => void;
   toggleExerciseCompleted: (userId: string, exerciseId: string) => void;
+  markExerciseDone: (userId: string, exerciseId: string) => void;
   setExerciseCollapsed: (userId: string, exerciseId: string, isCollapsed: boolean) => void;
   toggleExerciseExpanded: (userId: string, exerciseId: string) => void;
   updateExerciseNotes: (userId: string, exerciseId: string, notes: string) => void;
@@ -2513,6 +2514,43 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
       },
 
+      markExerciseDone: (userId, exerciseId) => {
+        const userData = get().getUserData(userId);
+        const targetSession = userData.editingSession || userData.activeSession;
+        const sessionKey = userData.editingSession ? 'editingSession' : 'activeSession';
+        if (!targetSession) return;
+
+        const updatedExercises = targetSession.exercises.map((ex) => {
+          if (ex.exerciseId === exerciseId || ex.id === exerciseId) {
+            const updatedSets = ex.sets.map((s) => {
+              const isValid = s.weight !== null && s.weight > 0 && s.reps !== null && s.reps > 0;
+              return { ...s, completed: s.completed || isValid };
+            });
+
+            return {
+              ...ex,
+              completed: true,
+              isCollapsed: true,
+              sets: updatedSets,
+            };
+          }
+          return ex;
+        });
+
+        set((state) => ({
+          userDataMap: {
+            ...state.userDataMap,
+            [userId]: {
+              ...state.getUserData(userId),
+              [sessionKey]: {
+                ...targetSession,
+                exercises: updatedExercises,
+              },
+            },
+          },
+        }));
+      },
+
       setExerciseCollapsed: (userId, exerciseId, isCollapsed) => {
         const userData = get().getUserData(userId);
         const targetSession = userData.editingSession || userData.activeSession;
@@ -2856,14 +2894,14 @@ export const useWorkoutStore = create<WorkoutStore>()(
           const token = getStoredToken();
           let syncedToBackend = false;
 
-          // Fast API persistence: race the network call against a 1.2s timeout
+          // Fast API persistence: race the network call against a 4.0s timeout
           // If the backend takes longer or is offline, save locally immediately and sync in the background
           let apiPromise: Promise<any> | null = null;
           if (userId !== 'guest' && token) {
             try {
               apiPromise = createWorkoutHistoryApi(apiPayload);
               const timeoutPromise = new Promise<{ timeout: true }>((resolve) =>
-                setTimeout(() => resolve({ timeout: true }), 1200)
+                setTimeout(() => resolve({ timeout: true }), 4000)
               );
               const raceResult = await Promise.race([apiPromise, timeoutPromise]);
               if (raceResult && !('timeout' in raceResult) && raceResult.workout?._id) {

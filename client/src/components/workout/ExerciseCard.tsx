@@ -48,6 +48,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     removeSetFromExercise,
     removeExerciseFromWorkout,
     toggleExerciseCompleted,
+    markExerciseDone,
     updateExerciseNotes,
     getPreviousPerformance,
     getExercisePR,
@@ -472,8 +473,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             useTimerStore.getState().stopRestTimer();
             if (onDone) {
               onDone();
-            } else if (!completed) {
-              toggleExerciseCompleted(userId, workoutExercise.id);
+            } else {
+              markExerciseDone(userId, workoutExercise.id);
             }
           }}
           className={`font-black px-4 min-h-[38px] transition-all ${
@@ -485,7 +486,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           }`}
         >
           <Check className="w-4 h-4 mr-1 stroke-[3]" />
-          <span>{completed ? 'Done ✓' : 'Done'}</span>
+          <span>Done</span>
         </Button>
       </div>
 

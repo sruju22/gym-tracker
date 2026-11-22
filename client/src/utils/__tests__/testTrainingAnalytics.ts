@@ -930,8 +930,8 @@ async function runTrainingAnalyticsTests() {
       },
     ];
 
-    const userAAnalytics = getComprehensiveAnalytics(userAHistory, allExercises);
-    const userBAnalytics = getComprehensiveAnalytics(userBHistory, allExercises);
+    const userAAnalytics = getComprehensiveAnalytics(userAHistory, allExercises, undefined, 4, 'all');
+    const userBAnalytics = getComprehensiveAnalytics(userBHistory, allExercises, undefined, 4, 'all');
 
     assert(userAAnalytics.volume.totalLoadVolume === 600, 'User A volume is 600 kg');
     assert(userBAnalytics.volume.totalLoadVolume === 400, 'User B volume is 400 kg');

@@ -47,6 +47,14 @@ export const WorkoutCompletionScreen: React.FC<WorkoutCompletionScreenProps> = (
 
   const weightUnit = settings.weightUnit || 'kg';
   const history = getHistory(userId);
+  const lastCompletedSession = useWorkoutStore((state) => state.lastCompletedSession);
+  const currentSession =
+    lastCompletedSession &&
+    (lastCompletedSession.id === session.id ||
+      lastCompletedSession.clientSessionId === session.id ||
+      (session.clientSessionId && lastCompletedSession.id === session.clientSessionId))
+      ? lastCompletedSession
+      : session;
 
   // Collapsible breakdown state (default collapsed for an uncluttered mobile view)
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
@@ -159,7 +167,7 @@ export const WorkoutCompletionScreen: React.FC<WorkoutCompletionScreenProps> = (
         </div>
 
         <div>
-          {session.syncedToBackend === false ? (
+          {currentSession.syncedToBackend === false ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-400 mb-1">
               <span>Saved on device • Cloud sync will resume when connected</span>
             </div>
@@ -174,7 +182,7 @@ export const WorkoutCompletionScreen: React.FC<WorkoutCompletionScreenProps> = (
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 font-medium">
             <span className="text-zinc-200 font-bold">
-              {session.workoutName || 'Workout Session'}
+              {currentSession.workoutName || 'Workout Session'}
             </span>{' '}
             · {formattedDate}
           </p>
