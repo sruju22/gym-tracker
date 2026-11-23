@@ -694,6 +694,18 @@ export function getRecommendedExercises(
     return [];
   }
 
+  // 3b. When specific target sub-areas are specified (e.g. ['side_delts'] or ['front_delts']),
+  // filter candidates strictly to exercises that emphasize those target sub-areas.
+  if (targetSubAreas && targetSubAreas.length > 0 && !targetLegKey) {
+    const subAreaFiltered = candidates.filter((ex) =>
+      Array.isArray(ex.muscleAreaEmphasis) &&
+      ex.muscleAreaEmphasis.some((area) => targetSubAreas.includes(area as MuscleArea))
+    );
+    if (subAreaFiltered.length > 0) {
+      candidates = subAreaFiltered;
+    }
+  }
+
   // 4. Equipment filter with graceful fallback (never eliminate all choices if equipment is constrained)
   const compatibleCandidates = candidates.filter((ex) =>
     isEquipmentCompatible(ex.equipment, equipmentPreference)

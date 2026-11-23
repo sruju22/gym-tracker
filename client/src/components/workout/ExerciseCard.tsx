@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, StickyNote, Dumbbell, History, Trophy, Check, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, StickyNote, Dumbbell, History, Trophy, Check, ChevronUp, ChevronDown, AlertTriangle, Disc } from 'lucide-react';
 import { WorkoutExercise } from '../../types';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { SetRow } from './SetRow';
 import { ExerciseImageModal } from './ExerciseImageModal';
+import { PlateCalculatorModal } from './PlateCalculatorModal';
 import { getMuscleAreaName } from '../../data/muscleGroups';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useAuthStore } from '../../store/authStore';
@@ -57,9 +58,25 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [showNotes, setShowNotes] = useState(Boolean(notes));
   const [imgError, setImgError] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isPlateModalOpen, setIsPlateModalOpen] = useState(false);
   const [internalExpanded, setInternalExpanded] = useState(false);
   const [showHistoryDetails, setShowHistoryDetails] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Compute current working weight for the plate calculator
+  const currentWorkingWeight = useMemo(() => {
+    const validSet = sets.find((s) => s.weight !== null && s.weight > 0);
+    return validSet?.weight || 60;
+  }, [sets]);
+
+  const handleApplyPlateWeight = (newWeight: number) => {
+    const targetIdx = sets.findIndex((s) => !s.completed);
+    const idxToUpdate = targetIdx >= 0 ? targetIdx : sets.length - 1;
+    const currentSet = sets[idxToUpdate];
+    if (currentSet) {
+      updateSet(userId, workoutExercise.id, idxToUpdate, newWeight, currentSet.reps);
+    }
+  };
 
   const isCardExpanded = isExpanded !== undefined ? isExpanded : internalExpanded;
   const toggleExpand = onToggleExpand || (() => setInternalExpanded(!internalExpanded));
@@ -459,6 +476,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <StickyNote className="w-3.5 h-3.5" />
             <span>{notes ? 'Edit Note' : 'Add Note'}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('light');
+              setIsPlateModalOpen(true);
+            }}
+            className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors font-medium cursor-pointer"
+            title="Barbell Plate Calculator"
+          >
+            <Disc className="w-3.5 h-3.5" />
+            <span>Plates</span>
+          </button>
         </div>
 
         {/* Done / Finish Exercise Action */}
@@ -507,6 +537,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         exercise={exercise}
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
+      />
+
+      {/* Barbell Plate Calculator Modal */}
+      <PlateCalculatorModal
+        isOpen={isPlateModalOpen}
+        onClose={() => setIsPlateModalOpen(false)}
+        initialWeight={currentWorkingWeight}
+        exerciseName={exercise.name}
+        onApplyWeight={handleApplyPlateWeight}
       />
     </Card>
   );

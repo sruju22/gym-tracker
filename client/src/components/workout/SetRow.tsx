@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Check, Trash2, AlertCircle, Disc } from 'lucide-react';
+import { Check, Trash2, AlertCircle } from 'lucide-react';
 import { WorkoutSet } from '../../types';
 import { triggerHaptic } from '../../utils/haptics';
 import { useTimerStore } from '../../store/timerStore';
-import { PlateCalculatorModal } from './PlateCalculatorModal';
 
 interface SetRowProps {
   set: WorkoutSet;
@@ -29,7 +28,6 @@ export const SetRow: React.FC<SetRowProps> = ({
   exerciseName,
 }) => {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
-  const [isPlateModalOpen, setIsPlateModalOpen] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -215,7 +213,7 @@ export const SetRow: React.FC<SetRowProps> = ({
             {prevSet ? `${prevSet.weight}kg × ${prevSet.reps}` : '—'}
           </div>
 
-          {/* Weight Input + Plate Helper Button */}
+          {/* Weight Input */}
           <div className="flex-1 min-w-[75px] sm:min-w-[90px]">
             <div className="relative flex items-center">
               <input
@@ -227,18 +225,9 @@ export const SetRow: React.FC<SetRowProps> = ({
                 onChange={handleWeightChange}
                 className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] focus:border-[var(--primary)] rounded-lg px-2 py-1.5 pr-8 text-center text-sm font-black text-[var(--text-main)] placeholder:text-[var(--text-muted)]/70 placeholder:font-normal focus:outline-none min-h-[40px] touch-manipulation transition-colors"
               />
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic('light');
-                  setIsPlateModalOpen(true);
-                }}
-                className="absolute right-1 px-1 py-0.5 rounded text-[10px] font-bold text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer flex items-center gap-0.5"
-                title="Open Plate Breakdown Helper"
-              >
-                <span>kg</span>
-                <Disc className="w-2.5 h-2.5 opacity-60" />
-              </button>
+              <span className="absolute right-2 text-[10px] font-bold text-[var(--text-muted)] pointer-events-none select-none">
+                kg
+              </span>
             </div>
           </div>
 
@@ -378,13 +367,6 @@ export const SetRow: React.FC<SetRowProps> = ({
           {canRemove && onRemove && <div className="w-4 shrink-0" />}
         </div>
       </div>
-
-      {/* Plate Calculator Modal */}
-      <PlateCalculatorModal
-        isOpen={isPlateModalOpen}
-        onClose={() => setIsPlateModalOpen(false)}
-        initialWeight={set.weight || prevSet?.weight || 60}
-      />
     </div>
   );
 };

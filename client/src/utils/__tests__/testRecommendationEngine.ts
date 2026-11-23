@@ -1170,7 +1170,47 @@ async function runPhase3Tests() {
     );
   }
 
-  console.log('\n🎉 ALL 16 PHASE 3 TESTS + 7 CUSTOM EXERCISE VERIFICATION TESTS PASSED SUCCESSFULLY!\n');
+  // -------------------------------------------------------------------------
+  // TEST C8: Target sub-area filtering (Side Delts / Front Delts / Rear Delts)
+  // -------------------------------------------------------------------------
+  console.log('\n--- Test C8: Target sub-area recommendation filtering ---');
+  {
+    const shoulderExercises = allExercises.filter((e) => e.primaryMuscle === 'shoulders');
+
+    // 8a: Selecting 'side_delts' MUST only recommend side delts exercises
+    const sideDeltRecs = getRecommendedExercises({
+      targetMuscleGroup: 'shoulders',
+      targetSubAreas: ['side_delts'],
+      allExercises: shoulderExercises,
+      currentExercises: [],
+    });
+
+    assert(sideDeltRecs.length > 0, 'Side delts recommendations returned');
+    assert(
+      sideDeltRecs.every((r) => r.exercise.muscleAreaEmphasis.includes('side_delts')),
+      'All side delts recommendations strictly emphasize side_delts'
+    );
+    assert(
+      !sideDeltRecs.some((r) => r.exercise.muscleAreaEmphasis.includes('rear_delts') && !r.exercise.muscleAreaEmphasis.includes('side_delts')),
+      'Never recommends pure rear delts exercises when side delts is selected'
+    );
+
+    // 8b: Selecting 'rear_delts' MUST only recommend rear delts exercises
+    const rearDeltRecs = getRecommendedExercises({
+      targetMuscleGroup: 'shoulders',
+      targetSubAreas: ['rear_delts'],
+      allExercises: shoulderExercises,
+      currentExercises: [],
+    });
+
+    assert(rearDeltRecs.length > 0, 'Rear delts recommendations returned');
+    assert(
+      rearDeltRecs.every((r) => r.exercise.muscleAreaEmphasis.includes('rear_delts')),
+      'All rear delts recommendations strictly emphasize rear_delts'
+    );
+  }
+
+  console.log('\n🎉 ALL 16 PHASE 3 TESTS + 8 CUSTOM EXERCISE & SUB-AREA TESTS PASSED SUCCESSFULLY!\n');
 }
 
 runPhase3Tests().catch((err) => {
